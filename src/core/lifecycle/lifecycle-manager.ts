@@ -14,12 +14,15 @@ import type {
   ILogger,
   INavigationWatcher,
   IOverlayManager,
+  IConditionEvaluator,
+  IProgressManager,
 } from '@/core/interfaces';
 import type { KenzoInitOptions, SdkState } from '@/types';
 
 export class LifecycleManager implements ILifecycleManager {
   private state: SdkState = 'uninitialized';
   private initOptions: KenzoInitOptions | null = null;
+  private navigationUnsubscribe: (() => void) | null = null;
 
   constructor(
     private readonly config: IConfigService,
@@ -31,6 +34,8 @@ export class LifecycleManager implements ILifecycleManager {
     private readonly analytics: IAnalyticsTracker,
     private readonly eventBus: IEventBus,
     private readonly logger: ILogger,
+    private readonly conditionEvaluator: IConditionEvaluator,
+    private readonly progressManager: IProgressManager,
   ) {}
 
   getState(): SdkState {
@@ -75,6 +80,14 @@ export class LifecycleManager implements ILifecycleManager {
       this.state = 'ready';
       this.eventBus.emit('sdk:initialized', undefined);
       this.logger.info('Kenzo SDK initialized successfully');
+
+      // Auto-trigger matching flow
+      void this.triggerMatchingFlow();
+
+      // Listen for navigation changes to trigger matching flows
+      this.navigationUnsubscribe = this.navigationWatcher.onNavigate(() => {
+        void this.triggerMatchingFlow();
+      });
     } catch (error) {
       this.state = 'error';
       this.logger.error('SDK initialization failed', error as Error);
@@ -91,6 +104,9 @@ export class LifecycleManager implements ILifecycleManager {
     this.analytics.destroy();
     this.auth.clear();
 
+    this.navigationUnsubscribe?.();
+    this.navigationUnsubscribe = null;
+
     this.state = 'destroyed';
     this.eventBus.emit('sdk:destroyed', undefined);
     this.logger.info('Kenzo SDK destroyed');
@@ -103,6 +119,37 @@ export class LifecycleManager implements ILifecycleManager {
 
     if (options) {
       await this.initialize(options);
+    }
+  }
+
+  private async triggerMatchingFlow(): Promise<void> {
+    if (this.flowRunner.isRunning()) {
+      return;
+    }
+
+    try {
+      const flows = await this.flowLoader.loadAll();
+      for (const flow of flows) {
+        // Exclude completed or dismissed flows so we don't spam the user every page load
+        const progress = this.progressManager.getProgress(flow.id);
+        if (progress?.completed || progress?.dismissed) {
+          continue;
+        }
+
+        const urlRules = flow.urlRules || [];
+        const matchesUrl = urlRules.length === 0 || this.conditionEvaluator.evaluateUrlRules(urlRules);
+
+        const conditions = flow.conditions || [];
+        const matchesConditions = conditions.length === 0 || this.conditionEvaluator.evaluateConditions(conditions);
+
+        if (matchesUrl && matchesConditions) {
+          this.logger.info(`Auto-starting matching flow: ${flow.name} (${flow.id})`);
+          await this.flowRunner.start(flow);
+          break; // Start only the first matching flow
+        }
+      }
+    } catch (error) {
+      this.logger.error('Error during auto-triggering matching flow', error as Error);
     }
   }
 }

@@ -214,6 +214,8 @@ export function createContainer(): Container {
       container.resolve(TOKENS.AnalyticsTracker),
       container.resolve(TOKENS.EventBus),
       container.resolve(TOKENS.Logger),
+      container.resolve(TOKENS.ConditionEvaluator),
+      container.resolve(TOKENS.ProgressManager),
     );
   });
 
