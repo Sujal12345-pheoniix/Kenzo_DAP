@@ -107,7 +107,7 @@ export default function App() {
         method: 'DELETE',
       });
       if (res.ok) {
-        setFlows(flows.filter(f => f.id !== flowId));
+        setFlows(flows.filter((f: Flow) => f.id !== flowId));
         if (editingFlow?.id === flowId) setEditingFlow(null);
         loadData();
       }
@@ -157,8 +157,8 @@ export default function App() {
   // Helper calculation for global completion metrics
   const getCompletionRate = () => {
     if (!analytics || analytics.tourMetrics.length === 0) return '0%';
-    const totalStarts = analytics.tourMetrics.reduce((sum, item) => sum + item.starts, 0);
-    const totalCompletions = analytics.tourMetrics.reduce((sum, item) => sum + item.completions, 0);
+    const totalStarts = analytics.tourMetrics.reduce((sum: number, item: any) => sum + item.starts, 0);
+    const totalCompletions = analytics.tourMetrics.reduce((sum: number, item: any) => sum + item.completions, 0);
     if (totalStarts === 0) return '0%';
     return `${((totalCompletions / totalStarts) * 100).toFixed(1)}%`;
   };
