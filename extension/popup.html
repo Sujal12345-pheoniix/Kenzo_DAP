@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      width: 320px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      padding: 16px;
+      margin: 0;
+      background: #0f111a;
+      color: #f1f1f1;
+    }
+    h2 {
+      margin-top: 0;
+      font-size: 1.1rem;
+      background: linear-gradient(135deg, #a5b4fc, #6366f1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 12px;
+    }
+    .field {
+      margin-bottom: 12px;
+    }
+    label {
+      display: block;
+      font-size: 0.75rem;
+      color: #888;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+      letter-spacing: 0.05em;
+    }
+    input {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      padding: 8px;
+      color: #fff;
+      box-sizing: border-box;
+      outline: none;
+      font-size: 0.85rem;
+    }
+    input:focus {
+      border-color: #6366f1;
+    }
+    button {
+      background: #6366f1;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 10px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      width: 100%;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #4f46e5;
+    }
+    .status {
+      font-size: 0.75rem;
+      color: #888;
+      text-align: center;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Kenzo Extension Builder</h2>
+  <div class="field">
+    <label>Backend Server URL</label>
+    <input type="text" id="server-url" value="http://localhost:3000">
+  </div>
+  <div class="field">
+    <label>Project API Key</label>
+    <input type="text" id="api-key" value="kenzo_project_dev_api_key_2026">
+  </div>
+  <button id="inject-btn">Launch Visual Tour Builder</button>
+  <div class="status" id="status-text">Ready to inject.</div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>

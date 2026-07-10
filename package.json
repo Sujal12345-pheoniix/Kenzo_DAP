@@ -1,0 +1,61 @@
+{
+  "name": "@kenzo/sdk",
+  "version": "1.0.0",
+  "description": "Kenzo Digital Adoption Platform SDK — embed walkthroughs, tooltips, and spotlights into any website",
+  "type": "module",
+  "main": "./dist/kenzo-sdk.umd.cjs",
+  "module": "./dist/kenzo-sdk.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/kenzo-sdk.js",
+      "require": "./dist/kenzo-sdk.umd.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --emitDeclarationOnly && vite build",
+    "preview": "vite preview",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "server:dev": "npm --prefix server run dev",
+    "dashboard:dev": "npm --prefix dashboard run dev",
+    "dashboard:build": "npm --prefix dashboard run build",
+    "build:all": "npm run build && npm run dashboard:build",
+    "start:all": "npm run build:all && npm --prefix server start"
+  },
+  "keywords": [
+    "digital-adoption",
+    "walkthrough",
+    "onboarding",
+    "tooltip",
+    "spotlight",
+    "dap"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@floating-ui/dom": "^1.6.13",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "@typescript-eslint/eslint-plugin": "^8.26.1",
+    "@typescript-eslint/parser": "^8.26.1",
+    "eslint": "^9.22.0",
+    "eslint-config-prettier": "^10.1.1",
+    "jsdom": "^26.0.0",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.2",
+    "vite": "^6.2.2",
+    "vitest": "^3.0.9"
+  },
+  "sideEffects": false
+}
