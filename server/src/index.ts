@@ -41,6 +41,8 @@ app.use('/sdk.js.map', express.static(path.join(__dirname, '../../dist/kenzo-sdk
 
 // Serve the dashboard files and sandbox files
 app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.static(path.join(__dirname, '../public/dashboard')));
+
 
 // --- Authentication Middleware ---
 interface AuthenticatedRequest extends Request {
