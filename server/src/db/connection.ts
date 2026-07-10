@@ -3,12 +3,18 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const connectionString = process.env.DATABASE_URL;
+let connectionString = process.env.DATABASE_URL;
 
 if (!connectionString) {
   console.error('[Database] ERROR: DATABASE_URL is not set in environment variables.');
   process.exit(1);
 }
+
+// Silence the pg-connection-string / pg v9 compatibility warnings by replacing sslmode=require/prefer/verify-ca with verify-full
+connectionString = connectionString
+  .replace('sslmode=require', 'sslmode=verify-full')
+  .replace('sslmode=prefer', 'sslmode=verify-full')
+  .replace('sslmode=verify-ca', 'sslmode=verify-full');
 
 export const pool = new Pool({
   connectionString,
