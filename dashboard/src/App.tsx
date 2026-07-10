@@ -63,12 +63,22 @@ export default function App() {
     setLoading(true);
     try {
       const flowsRes = await fetch('/api/v1/admin/flows');
-      const flowsData = await flowsRes.json();
-      setFlows(Array.isArray(flowsData) ? flowsData : []);
+      if (flowsRes.ok) {
+        const flowsData = await flowsRes.json();
+        setFlows(Array.isArray(flowsData) ? flowsData : []);
+      } else {
+        console.error('Failed to fetch flows:', flowsRes.statusText);
+        setFlows([]);
+      }
 
       const analyticsRes = await fetch('/api/v1/admin/analytics/summary');
-      const analyticsData = await analyticsRes.json();
-      setAnalytics(analyticsData);
+      if (analyticsRes.ok) {
+        const analyticsData = await analyticsRes.json();
+        setAnalytics(analyticsData);
+      } else {
+        console.error('Failed to fetch analytics summary:', analyticsRes.statusText);
+        setAnalytics(null);
+      }
     } catch (err) {
       console.error('Error loading admin portal data:', err);
     } finally {
@@ -156,7 +166,7 @@ export default function App() {
 
   // Helper calculation for global completion metrics
   const getCompletionRate = () => {
-    if (!analytics || analytics.tourMetrics.length === 0) return '0%';
+    if (!analytics || !analytics.tourMetrics || analytics.tourMetrics.length === 0) return '0%';
     const totalStarts = analytics.tourMetrics.reduce((sum: number, item: any) => sum + item.starts, 0);
     const totalCompletions = analytics.tourMetrics.reduce((sum: number, item: any) => sum + item.completions, 0);
     if (totalStarts === 0) return '0%';
@@ -289,7 +299,7 @@ export default function App() {
                       <TrendingUp size={16} style={{ color: '#6366f1' }} />
                     </div>
                     <div style={{ fontSize: '2.5rem', fontWeight: 700, fontFamily: 'Outfit, sans-serif' }}>
-                      {analytics?.totalEvents.toLocaleString() ?? 0}
+                      {analytics?.totalEvents?.toLocaleString() ?? 0}
                     </div>
                     <span style={{ fontSize: '0.8rem', color: 'var(--success)' }}>Active tracking running</span>
                   </div>
@@ -320,7 +330,7 @@ export default function App() {
                 {/* Flow Metrics Table */}
                 <div className="glass" style={{ padding: '24px', marginBottom: '40px' }}>
                   <h3 style={{ marginTop: 0, marginBottom: '20px', fontFamily: 'Outfit, sans-serif', fontSize: '1.25rem' }}>Walkthrough Onboarding Funnel</h3>
-                  {(!analytics || analytics.tourMetrics.length === 0) ? (
+                  {(!analytics || !analytics.tourMetrics || analytics.tourMetrics.length === 0) ? (
                     <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
                       No tour interactions recorded yet. Launch the sandbox and play a tour to record analytics!
                     </div>

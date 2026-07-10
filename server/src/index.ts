@@ -505,7 +505,8 @@ app.get('/api/v1/admin/analytics/summary', authenticateAdmin, async (req: Authen
        FROM analytics_events ae
        WHERE ae.project_id = $1 AND ae.type = 'step_viewed'
        GROUP BY ae.flow_id, ae.step_id, "stepIndex"
-       ORDER BY ae.flow_id, "stepIndex" ASC`
+       ORDER BY ae.flow_id, "stepIndex" ASC`,
+      [req.projectId]
     );
 
     res.json({
