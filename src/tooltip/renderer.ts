@@ -117,7 +117,9 @@ export class TooltipRenderer implements ITooltipRenderer {
   }
 
   private renderButtons(footer: HTMLElement, options: TooltipRenderOptions): void {
-    const buttons = options.step.buttons ?? this.getDefaultButtons(options);
+    const buttons = (options.step.buttons && options.step.buttons.length > 0)
+      ? options.step.buttons
+      : this.getDefaultButtons(options);
 
     for (const btn of buttons) {
       const button = document.createElement('button');

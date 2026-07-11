@@ -86,6 +86,9 @@ export class LifecycleManager implements ILifecycleManager {
       this.eventBus.emit('sdk:initialized', undefined);
       this.logger.info('Kenzo SDK initialized successfully');
 
+      // Render the floating "Start Guide" launcher widget ("ken")
+      this.renderKenLauncher();
+
       // Auto-trigger matching flow
       void this.triggerMatchingFlow();
 
@@ -111,6 +114,10 @@ export class LifecycleManager implements ILifecycleManager {
 
     this.navigationUnsubscribe?.();
     this.navigationUnsubscribe = null;
+
+    if (typeof document !== 'undefined') {
+      document.getElementById('ken-launcher-widget')?.remove();
+    }
 
     this.state = 'destroyed';
     this.eventBus.emit('sdk:destroyed', undefined);
@@ -161,5 +168,115 @@ export class LifecycleManager implements ILifecycleManager {
     } catch (error) {
       this.logger.error('Error during auto-triggering matching flow', error as Error);
     }
+  }
+
+  private renderKenLauncher(): void {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+
+    // Check if the launcher already exists
+    const LAUNCHER_ID = 'ken-launcher-widget';
+    if (document.getElementById(LAUNCHER_ID)) return;
+
+    // Inject styles for the launcher
+    const STYLE_ID = 'ken-launcher-styles';
+    if (!document.getElementById(STYLE_ID)) {
+      const style = document.createElement('style');
+      style.id = STYLE_ID;
+      style.textContent = `
+        #ken-launcher-widget {
+          position: fixed;
+          bottom: 24px;
+          right: 24px;
+          background: linear-gradient(135deg, #6366f1, #4f46e5);
+          color: #ffffff;
+          border: none;
+          border-radius: 30px;
+          padding: 12px 24px;
+          font-family: -apple-system, BlinkMacSystemFont, 'Outfit', 'Segoe UI', Roboto, sans-serif;
+          font-size: 14px;
+          font-weight: 600;
+          box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+          cursor: pointer;
+          z-index: 2147482000;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          transition: all 0.3s ease;
+          animation: ken-pulse 2s infinite ease-in-out;
+        }
+
+        #ken-launcher-widget:hover {
+          transform: scale(1.05);
+          background: linear-gradient(135deg, #4f46e5, #4338ca);
+          box-shadow: 0 6px 24px rgba(99, 102, 241, 0.5);
+        }
+
+        #ken-launcher-widget svg {
+          animation: ken-spin 4s infinite linear;
+        }
+
+        @keyframes ken-pulse {
+          0%, 100% {
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+            opacity: 0.95;
+          }
+          50% {
+            box-shadow: 0 4px 30px rgba(99, 102, 241, 0.7);
+            opacity: 1;
+          }
+        }
+
+        @keyframes ken-spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    // Create the button element
+    const btn = document.createElement('button');
+    btn.id = LAUNCHER_ID;
+    btn.innerHTML = `
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 21l8.982-11.795m-8.982 6.795L21 4.5l-12.018 7.378z"></path>
+      </svg>
+      Start Guide
+    `;
+
+    // Click handler to run matching flow
+    btn.addEventListener('click', async () => {
+      try {
+        const flows = await this.flowLoader.loadAll();
+        let matchedFlow = null;
+        for (const flow of flows) {
+          const urlRules = flow.urlRules || [];
+          const matchesUrl = urlRules.length === 0 || this.conditionEvaluator.evaluateUrlRules(urlRules);
+          const conditions = flow.conditions || [];
+          const matchesConditions = conditions.length === 0 || this.conditionEvaluator.evaluateConditions(conditions);
+
+          if (matchesUrl && matchesConditions) {
+            matchedFlow = flow;
+            break;
+          }
+        }
+
+        if (matchedFlow) {
+          // If a flow is already running, stop it first
+          if (this.flowRunner.isRunning()) {
+            this.flowRunner.stop();
+          }
+          // Force reset the flow progress so it plays from the beginning
+          this.progressManager.reset(matchedFlow.id);
+          await this.flowRunner.start(matchedFlow);
+        } else {
+          alert('No onboarding guides available for this page.');
+        }
+      } catch (err) {
+        this.logger.error('Failed to trigger flow via launcher', err as Error);
+      }
+    });
+
+    document.body.appendChild(btn);
   }
 }
