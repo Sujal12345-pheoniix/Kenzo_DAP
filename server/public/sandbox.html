@@ -388,7 +388,7 @@
   </div>
 
   <!-- Load Kenzo SDK -->
-  <script src="/sdk.js"></script>
+  <script src="https://kenzo-dap.onrender.com/sdk.js"></script>
   <script>
     // Initialize Kenzo SDK with Local Sandbox credentials
     document.addEventListener('DOMContentLoaded', async () => {
@@ -396,7 +396,7 @@
         try {
           await Kenzo.init({
             apiKey: 'kenzo_project_dev_api_key_2026',
-            apiBaseUrl: '/api/v1',
+            apiBaseUrl: 'https://kenzo-dap.onrender.com/api/v1',
             debug: true
           });
           console.log('[Sandbox] Kenzo SDK successfully initialized.');
@@ -422,7 +422,7 @@
       if (typeof Kenzo !== 'undefined') {
         try {
           // Fetch flows published on database
-          const response = await fetch('/api/v1/flows/published', {
+          const response = await fetch('https://kenzo-dap.onrender.com/api/v1/flows/published', {
             headers: {
               'Authorization': 'Bearer ' + localStorage.getItem('auth_token') // Optional fallback
             }
