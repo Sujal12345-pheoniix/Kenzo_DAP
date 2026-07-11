@@ -64,7 +64,12 @@ export class LifecycleManager implements ILifecycleManager {
       }
 
       await this.auth.authenticate(config.apiKey);
-      await this.flowLoader.loadAll();
+      const flows = await this.flowLoader.loadAll();
+
+      // Reset progress for all flows on startup to ensure walkthroughs run on every fresh page load
+      for (const flow of flows) {
+        this.progressManager.reset(flow.id);
+      }
 
       this.navigationWatcher.start();
 
