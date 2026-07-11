@@ -35,9 +35,9 @@ const upload = multer({ storage });
 app.use(cors());
 app.use(express.json());
 
-// Serve the compiled SDK bundle statically
-app.use('/sdk.js', express.static(path.join(__dirname, '../../dist/kenzo-sdk.js')));
-app.use('/sdk.js.map', express.static(path.join(__dirname, '../../dist/kenzo-sdk.js.map')));
+// Serve the compiled SDK bundle statically (UMD version for classic script tags)
+app.use('/sdk.js', express.static(path.join(__dirname, '../../dist/kenzo-sdk.umd.cjs')));
+app.use('/sdk.js.map', express.static(path.join(__dirname, '../../dist/kenzo-sdk.umd.cjs.map')));
 
 // Serve the dashboard files and sandbox files
 app.use(express.static(path.join(__dirname, '../public')));
