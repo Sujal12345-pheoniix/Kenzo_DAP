@@ -132,8 +132,13 @@ export class LifecycleManager implements ILifecycleManager {
       for (const flow of flows) {
         // Exclude completed or dismissed flows so we don't spam the user every page load
         const progress = this.progressManager.getProgress(flow.id);
+        const isForceRun = typeof window !== 'undefined' && 
+          (window.location.search.includes('kenzo_force=true') || window.location.search.includes('kenzo_builder=true'));
+
         if (progress?.completed || progress?.dismissed) {
-          continue;
+          if (!isForceRun) {
+            continue;
+          }
         }
 
         const urlRules = flow.urlRules || [];

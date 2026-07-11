@@ -146,9 +146,6 @@ export class StepEngine implements IStepEngine {
       this.logger.error('Cannot render step — element not found', undefined, {
         stepId: step.id,
       });
-      if (this.canGoNext()) {
-        await this.next();
-      }
       return;
     }
 

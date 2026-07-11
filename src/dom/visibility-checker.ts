@@ -12,8 +12,7 @@ export class VisibilityChecker implements IVisibilityChecker {
     const style = window.getComputedStyle(element);
     if (
       style.display === 'none' ||
-      style.visibility === 'hidden' ||
-      parseFloat(style.opacity) === 0
+      style.visibility === 'hidden'
     ) {
       return false;
     }
