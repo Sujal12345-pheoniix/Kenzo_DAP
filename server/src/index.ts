@@ -197,6 +197,44 @@ app.post('/api/v1/analytics', authenticateSdk, async (req: AuthenticatedRequest,
   }
 });
 
+// 3b. Save SDK Analytics Batch (Bypasses adblockers by using a generic path /api/v1/data/sync)
+app.post('/api/v1/data/sync', authenticateSdk, async (req: AuthenticatedRequest, res: Response) => {
+  const { events } = req.body;
+  if (!Array.isArray(events)) {
+    res.status(400).json({ message: 'events array is required' });
+    return;
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    for (const event of events) {
+      const { type, flowId, stepId, sessionId, url, userAgent, properties } = event;
+      await client.query(
+        `INSERT INTO analytics_events (project_id, flow_id, step_id, session_id, type, url, user_agent, properties) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [
+          req.projectId,
+          flowId || null,
+          stepId || null,
+          sessionId || 'anonymous',
+          type,
+          url || '',
+          userAgent || '',
+          JSON.stringify(properties || {})
+        ]
+      );
+    }
+    await client.query('COMMIT');
+    res.json({ success: true });
+  } catch (err: any) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ message: 'Server error', error: err.message });
+  } finally {
+    client.release();
+  }
+});
+
 // 4. Get/Update User Progress
 app.get('/api/v1/progress/:flowId', authenticateSdk, async (req: AuthenticatedRequest, res: Response) => {
   const { flowId } = req.params;

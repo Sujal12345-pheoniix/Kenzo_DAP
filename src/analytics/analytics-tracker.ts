@@ -71,7 +71,7 @@ export class AnalyticsTracker implements IAnalyticsTracker {
     const batch = this.queue.splice(0, MAX_BATCH_SIZE);
 
     try {
-      await this.apiClient.post('/analytics/events', { events: batch });
+      await this.apiClient.post('/data/sync', { events: batch });
       this.logger.debug('Analytics batch flushed', { count: batch.length });
     } catch (err) {
       this.queue.unshift(...batch);
