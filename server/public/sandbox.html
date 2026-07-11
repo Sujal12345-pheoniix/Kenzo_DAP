@@ -787,7 +787,19 @@
     document.getElementById('k-trigger-flow-btn').addEventListener('click', async () => {
       if (typeof Kenzo !== 'undefined') {
         try {
-          const response = await fetch('/api/v1/flows/published');
+          // Retrieve the auth token from local storage cache
+          const authData = localStorage.getItem('kenzo_local_auth_token');
+          const token = authData ? JSON.parse(authData).token : null;
+
+          const response = await fetch('/api/v1/flows/published', {
+            headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+          });
+
+          if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.message || 'Unauthorized');
+          }
+
           const data = await response.json();
           // Filter flows that match the current pathname "/sandbox.html" or are global
           const crmFlows = data.flows.filter(f => {
