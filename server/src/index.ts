@@ -443,6 +443,12 @@ app.post('/api/v1/admin/projects', async (req: Request, res: Response) => {
     // Seed default campaign flows and walkthrough steps automatically
     await seedProjectData(newProject.id, name, url);
 
+    res.json(newProject);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
 // 0c. Delete a project (website)
 app.delete('/api/v1/admin/projects/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
