@@ -1,0 +1,1639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rajkiran Hospital Management System</title>
+  <meta name="description" content="Rajkiran Hospital Management System — Digital Patient Care, Appointments, Staff & Analytics.">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:        #05070f;
+      --surface:   #0d1117;
+      --card:      #111827;
+      --card-hover:#151e2e;
+      --border:    rgba(255,255,255,0.07);
+      --border-h:  rgba(255,255,255,0.13);
+      --primary:   #10b981;
+      --primary-h: #059669;
+      --primary-g: linear-gradient(135deg, #10b981, #0ea5e9);
+      --accent:    #0ea5e9;
+      --danger:    #ef4444;
+      --warn:      #f59e0b;
+      --text:      #f1f5f9;
+      --muted:     #94a3b8;
+      --sidebar-w: 270px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      font-size: 14px;
+    }
+
+    /* ──────────── SIDEBAR ──────────── */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+      flex-shrink: 0;
+      overflow-y: auto;
+    }
+
+    .sidebar-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 22px 24px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--primary-g);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .brand-text {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+    }
+
+    .brand-sub {
+      font-size: 0.68rem;
+      color: var(--muted);
+      font-weight: 400;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .sidebar-section {
+      padding: 16px 12px 4px;
+    }
+
+    .sidebar-section-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      padding: 0 12px;
+      margin-bottom: 6px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 11px 14px;
+      border-radius: 10px;
+      color: var(--muted);
+      font-size: 0.88rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.18s;
+      border: 1px solid transparent;
+      text-decoration: none;
+      position: relative;
+    }
+
+    .nav-item svg { flex-shrink: 0; }
+
+    .nav-item:hover {
+      color: var(--text);
+      background: rgba(255,255,255,0.05);
+      border-color: var(--border);
+    }
+
+    .nav-item.active {
+      color: var(--primary);
+      background: rgba(16,185,129,0.1);
+      border-color: rgba(16,185,129,0.2);
+    }
+
+    .nav-item.active::before {
+      content: '';
+      position: absolute;
+      left: -12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 3px;
+      height: 20px;
+      background: var(--primary);
+      border-radius: 2px;
+    }
+
+    .nav-badge {
+      margin-left: auto;
+      background: rgba(239,68,68,0.15);
+      color: #ef4444;
+      border: 1px solid rgba(239,68,68,0.25);
+      border-radius: 20px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 7px;
+    }
+
+    .nav-badge.green {
+      background: rgba(16,185,129,0.1);
+      color: var(--primary);
+      border-color: rgba(16,185,129,0.2);
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .doctor-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: border-color 0.18s;
+    }
+
+    .doctor-card:hover { border-color: var(--border-h); }
+
+    .doctor-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      background: var(--primary-g);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .doctor-name { font-size: 0.82rem; font-weight: 600; }
+    .doctor-role { font-size: 0.7rem; color: var(--muted); }
+
+    /* ──────────── MAIN ──────────── */
+    .main-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    /* ──────────── TOP NAV ──────────── */
+    .topnav {
+      height: 64px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      flex-shrink: 0;
+    }
+
+    .topnav-left { display: flex; align-items: center; gap: 16px; }
+
+    .topnav-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .topnav-right { display: flex; align-items: center; gap: 12px; }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 14px;
+      width: 260px;
+      transition: border-color 0.18s;
+    }
+
+    .search-box:focus-within { border-color: var(--primary); }
+
+    .search-box input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-size: 0.84rem;
+      font-family: inherit;
+      width: 100%;
+    }
+
+    .search-box input::placeholder { color: var(--muted); }
+
+    .icon-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--muted);
+      transition: all 0.18s;
+      position: relative;
+    }
+
+    .icon-btn:hover { color: var(--text); border-color: var(--border-h); background: var(--card-hover); }
+
+    .notif-dot {
+      position: absolute;
+      top: 7px;
+      right: 7px;
+      width: 7px;
+      height: 7px;
+      background: var(--danger);
+      border-radius: 50%;
+      border: 1.5px solid var(--surface);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 18px;
+      border-radius: 10px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.18s;
+      border: none;
+      font-family: inherit;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: var(--primary-g);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(16,185,129,0.25);
+    }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(16,185,129,0.35); }
+
+    .btn-secondary {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .btn-secondary:hover { color: var(--text); border-color: var(--border-h); }
+
+    /* ──────────── CONTENT AREA ──────────── */
+    .content-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px 32px;
+    }
+
+    /* PAGE HEADER */
+    .page-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 28px;
+    }
+
+    .page-title { font-family: 'Outfit', sans-serif; font-size: 1.6rem; font-weight: 700; }
+    .page-subtitle { font-size: 0.82rem; color: var(--muted); margin-top: 3px; }
+
+    .page-actions { display: flex; gap: 10px; align-items: center; }
+
+    /* KPI GRID */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+      margin-bottom: 28px;
+    }
+
+    .kpi-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px 20px;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi-card::after {
+      content: '';
+      position: absolute;
+      top: 0; right: 0;
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      opacity: 0.05;
+      transform: translate(30%, -30%);
+    }
+
+    .kpi-card.green::after  { background: #10b981; }
+    .kpi-card.blue::after   { background: #0ea5e9; }
+    .kpi-card.yellow::after { background: #f59e0b; }
+    .kpi-card.red::after    { background: #ef4444; }
+
+    .kpi-card:hover { border-color: var(--border-h); background: var(--card-hover); }
+
+    .kpi-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 14px;
+      font-size: 18px;
+    }
+
+    .kpi-icon.green  { background: rgba(16,185,129,0.12); }
+    .kpi-icon.blue   { background: rgba(14,165,233,0.12); }
+    .kpi-icon.yellow { background: rgba(245,158,11,0.12); }
+    .kpi-icon.red    { background: rgba(239,68,68,0.12); }
+
+    .kpi-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-bottom: 6px; }
+    .kpi-value { font-family: 'Outfit', sans-serif; font-size: 2rem; font-weight: 700; line-height: 1; margin-bottom: 8px; }
+    .kpi-trend { font-size: 0.76rem; }
+    .trend-up   { color: var(--primary); }
+    .trend-down { color: var(--danger); }
+
+    /* MAIN GRID */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    /* PANEL */
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-title { font-family: 'Outfit', sans-serif; font-size: 1rem; font-weight: 600; }
+    .panel-subtitle { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+
+    /* TABLE */
+    .table-wrapper { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead th {
+      background: rgba(255,255,255,0.02);
+      padding: 11px 18px;
+      text-align: left;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--muted);
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+    }
+
+    tbody td {
+      padding: 14px 18px;
+      font-size: 0.84rem;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      vertical-align: middle;
+    }
+
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: rgba(255,255,255,0.02); }
+
+    /* STATUS BADGES */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+
+    .badge-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+    }
+
+    .badge.stable    { background: rgba(16,185,129,0.1);  color: #10b981; }
+    .badge.stable .badge-dot { background: #10b981; }
+    .badge.critical  { background: rgba(239,68,68,0.12); color: #ef4444; }
+    .badge.critical .badge-dot { background: #ef4444; }
+    .badge.pending   { background: rgba(245,158,11,0.1); color: #f59e0b; }
+    .badge.pending .badge-dot { background: #f59e0b; }
+    .badge.discharged{ background: rgba(14,165,233,0.1); color: #0ea5e9; }
+    .badge.discharged .badge-dot { background: #0ea5e9; }
+
+    /* AVATAR */
+    .patient-row { display: flex; align-items: center; gap: 10px; }
+    .patient-avatar {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 12px;
+      flex-shrink: 0;
+    }
+
+    /* APPOINTMENTS LIST */
+    .appt-list { padding: 4px 0; }
+
+    .appt-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      transition: background 0.16s;
+      cursor: pointer;
+    }
+
+    .appt-item:last-child { border-bottom: none; }
+    .appt-item:hover { background: rgba(255,255,255,0.02); }
+
+    .appt-time-block {
+      text-align: center;
+      min-width: 48px;
+    }
+
+    .appt-time {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .appt-ampm { font-size: 0.62rem; color: var(--muted); }
+
+    .appt-vline {
+      width: 1px;
+      height: 36px;
+      background: var(--border);
+    }
+
+    .appt-name { font-size: 0.84rem; font-weight: 600; }
+    .appt-type { font-size: 0.72rem; color: var(--muted); }
+
+    .appt-right { margin-left: auto; }
+
+    /* BOTTOM GRID */
+    .bottom-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    /* QUICK ACTIONS */
+    .quick-actions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding: 18px 20px;
+    }
+
+    .quick-action-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 16px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.18s;
+      font-family: inherit;
+      text-align: left;
+    }
+
+    .quick-action-btn:hover {
+      background: rgba(255,255,255,0.06);
+      border-color: var(--border-h);
+      transform: translateY(-1px);
+    }
+
+    .qa-icon {
+      width: 36px; height: 36px;
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+
+    .qa-label { font-size: 0.8rem; font-weight: 600; color: var(--text); }
+    .qa-desc  { font-size: 0.68rem; color: var(--muted); }
+
+    /* STAFF TABLE */
+    .staff-list { padding: 0; }
+
+    .staff-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .staff-row:last-child { border-bottom: none; }
+
+    .staff-ava {
+      width: 36px; height: 36px;
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+
+    .staff-name  { font-size: 0.83rem; font-weight: 600; }
+    .staff-dept  { font-size: 0.7rem; color: var(--muted); }
+    .staff-status-chip {
+      margin-left: auto;
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-size: 0.67rem;
+      font-weight: 600;
+    }
+
+    .chip-on  { background: rgba(16,185,129,0.1);  color: #10b981; }
+    .chip-off { background: rgba(148,163,184,0.1); color: var(--muted); }
+
+    /* HELPER BAR */
+    .guide-bar {
+      background: linear-gradient(135deg, rgba(16,185,129,0.08), rgba(14,165,233,0.06));
+      border: 1px solid rgba(16,185,129,0.2);
+      border-radius: 14px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      gap: 16px;
+    }
+
+    .guide-bar-text h4 { font-size: 0.92rem; font-weight: 700; margin-bottom: 3px; }
+    .guide-bar-text p  { font-size: 0.78rem; color: var(--muted); }
+
+    .guide-bar-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+    /* ──────────── MODAL ──────────── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.22s;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal-box {
+      background: #131b27;
+      border: 1px solid var(--border-h);
+      border-radius: 16px;
+      padding: 28px;
+      width: 480px;
+      max-width: 95vw;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+      transform: scale(0.96) translateY(8px);
+      transition: transform 0.22s;
+    }
+
+    .modal-overlay.open .modal-box {
+      transform: scale(1) translateY(0);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .modal-title { font-family: 'Outfit', sans-serif; font-size: 1.15rem; font-weight: 700; }
+
+    .modal-close {
+      width: 30px; height: 30px;
+      border-radius: 8px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 18px;
+      transition: all 0.16s;
+    }
+
+    .modal-close:hover { color: var(--text); border-color: var(--border-h); }
+
+    .form-group { margin-bottom: 16px; }
+
+    .form-label {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--muted);
+      margin-bottom: 7px;
+    }
+
+    .form-input, .form-select {
+      width: 100%;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-size: 0.88rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.18s;
+    }
+
+    .form-input:focus, .form-select:focus { border-color: var(--primary); }
+
+    .form-select option { background: #131b27; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+    .modal-footer {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 24px;
+    }
+
+    /* ──────────── VIEWS ──────────── */
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ──────────── PATIENTS VIEW ──────────── */
+    #patients-view .page-header { margin-bottom: 22px; }
+
+    /* ──────────── APPOINTMENTS VIEW ──────────── */
+    .appt-full-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      transition: background 0.15s;
+    }
+
+    .appt-full-item:hover { background: rgba(255,255,255,0.02); }
+
+    .appt-date-badge {
+      background: rgba(16,185,129,0.1);
+      border: 1px solid rgba(16,185,129,0.2);
+      border-radius: 10px;
+      padding: 8px 14px;
+      text-align: center;
+      min-width: 62px;
+    }
+
+    .appt-date-day { font-size: 1.3rem; font-weight: 700; color: var(--primary); font-family: 'Outfit', sans-serif; }
+    .appt-date-mon { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+
+    /* SCROLLBAR */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════ SIDEBAR ═══════════════ -->
+  <nav class="sidebar" id="rk-sidebar">
+    <div class="sidebar-brand" id="rk-brand-area">
+      <div class="brand-icon">🏥</div>
+      <div>
+        <div class="brand-text">Rajkiran HMS</div>
+        <div class="brand-sub">Hospital System</div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Overview</div>
+      <div class="nav-item active" id="rk-nav-dashboard" data-view="dashboard-view">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </div>
+      <div class="nav-item" id="rk-nav-patients" data-view="patients-view">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        Patients
+        <span class="nav-badge">4</span>
+      </div>
+      <div class="nav-item" id="rk-nav-appointments" data-view="appointments-view">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Appointments
+        <span class="nav-badge green">7</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Hospital</div>
+      <div class="nav-item" id="rk-nav-staff" data-view="staff-view">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Staff & Doctors
+      </div>
+      <div class="nav-item" id="rk-nav-wards">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Wards & Beds
+      </div>
+      <div class="nav-item" id="rk-nav-lab">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v11l-4 7h14l-4-7V3"/></svg>
+        Lab Reports
+      </div>
+      <div class="nav-item" id="rk-nav-pharmacy">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 11V9a7 7 0 10-14 0v2a2 2 0 00-2 2v3a2 2 0 002 2h1a2 2 0 002-2v-1h4v1a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2z"/></svg>
+        Pharmacy
+      </div>
+      <div class="nav-item" id="rk-nav-billing">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        Billing
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">System</div>
+      <div class="nav-item" id="rk-nav-reports">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Analytics
+      </div>
+      <div class="nav-item" id="rk-nav-settings">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        Settings
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="doctor-card" id="rk-user-profile">
+        <div class="doctor-avatar">DR</div>
+        <div>
+          <div class="doctor-name">Dr. Rajkiran</div>
+          <div class="doctor-role">Chief Medical Officer</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ═══════════════ MAIN AREA ═══════════════ -->
+  <div class="main-container">
+
+    <!-- TOP NAV -->
+    <header class="topnav" id="rk-topnav">
+      <div class="topnav-left">
+        <span class="topnav-title" id="rk-topnav-title">Dashboard</span>
+      </div>
+      <div class="topnav-right">
+        <div class="search-box" id="rk-search-box">
+          <svg width="15" height="15" fill="none" stroke="#94a3b8" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="rk-search-input" placeholder="Search patients, doctors…">
+        </div>
+
+        <div class="icon-btn" id="rk-notif-btn" title="Notifications">
+          <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+          <div class="notif-dot"></div>
+        </div>
+
+        <a href="/dashboard" class="btn btn-secondary" id="rk-admin-portal-btn">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          Admin Portal
+        </a>
+
+        <button class="btn btn-secondary" id="rk-toggle-builder-btn">🛠 Builder</button>
+      </div>
+    </header>
+
+    <!-- ═══ CONTENT VIEWS ═══ -->
+    <div class="content-area" id="rk-content-area">
+
+      <!-- ─── DASHBOARD VIEW ─── -->
+      <div class="view active" id="dashboard-view">
+
+        <!-- Guide Bar -->
+        <div class="guide-bar" id="rk-guide-bar">
+          <div class="guide-bar-text">
+            <h4>🩺 Welcome to Rajkiran Hospital Management System</h4>
+            <p>Take an interactive walkthrough to understand all the key features. Use <kbd style="background:rgba(255,255,255,0.1);padding:2px 7px;border-radius:4px;font-family:monospace">Ctrl+Shift+K</kbd> to open the visual builder.</p>
+          </div>
+          <div class="guide-bar-actions">
+            <button class="btn btn-secondary" id="rk-trigger-flow-btn">⚡ Start Tour</button>
+            <button class="btn btn-primary" id="rk-admit-patient-btn">+ Admit Patient</button>
+          </div>
+        </div>
+
+        <!-- Page Header -->
+        <div class="page-header" id="rk-dashboard-header">
+          <div>
+            <div class="page-title">Good Morning, Dr. Rajkiran 👋</div>
+            <div class="page-subtitle">Here's what's happening across the hospital today — July 14, 2026</div>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-secondary" id="rk-export-btn">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export
+            </button>
+          </div>
+        </div>
+
+        <!-- KPI CARDS -->
+        <div class="kpi-grid" id="rk-kpi-grid">
+          <div class="kpi-card green" id="rk-kpi-patients">
+            <div class="kpi-icon green">🧑‍⚕️</div>
+            <div class="kpi-label">Total Patients</div>
+            <div class="kpi-value" id="rk-kpi-patients-val">1,284</div>
+            <div class="kpi-trend trend-up">▲ 8.2% from last month</div>
+          </div>
+
+          <div class="kpi-card blue" id="rk-kpi-appointments">
+            <div class="kpi-icon blue">📅</div>
+            <div class="kpi-label">Today's Appointments</div>
+            <div class="kpi-value" id="rk-kpi-appointments-val">47</div>
+            <div class="kpi-trend trend-up">▲ 12 new bookings</div>
+          </div>
+
+          <div class="kpi-card yellow" id="rk-kpi-beds">
+            <div class="kpi-icon yellow">🛏️</div>
+            <div class="kpi-label">Beds Occupied</div>
+            <div class="kpi-value">83<span style="font-size:1rem;color:var(--muted)">%</span></div>
+            <div class="kpi-trend" style="color:var(--warn)">▲ 120 / 145 beds filled</div>
+          </div>
+
+          <div class="kpi-card red" id="rk-kpi-emergency">
+            <div class="kpi-icon red">🚨</div>
+            <div class="kpi-label">Emergency Cases</div>
+            <div class="kpi-value" id="rk-kpi-emergency-val">6</div>
+            <div class="kpi-trend trend-down">▼ 2 critical alerts</div>
+          </div>
+        </div>
+
+        <!-- MAIN GRID -->
+        <div class="main-grid">
+
+          <!-- Recent Patients Panel -->
+          <div class="panel" id="rk-patients-panel">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">Recent Patients</div>
+                <div class="panel-subtitle">Admitted & under observation today</div>
+              </div>
+              <button class="btn btn-secondary" id="rk-add-patient-btn" style="font-size:0.78rem;padding:7px 14px;">+ New Patient</button>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Patient</th>
+                    <th>Ward</th>
+                    <th>Doctor</th>
+                    <th>Condition</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="rk-patients-table-body">
+                  <tr>
+                    <td>
+                      <div class="patient-row">
+                        <div class="patient-avatar" style="background:rgba(16,185,129,0.12);color:#10b981;">AM</div>
+                        <div>
+                          <div style="font-weight:600">Amit Mehta</div>
+                          <div style="font-size:0.7rem;color:var(--muted)">P-001 · M, 42</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>General - B12</td>
+                    <td>Dr. Patel</td>
+                    <td>Hypertension</td>
+                    <td><span class="badge stable"><span class="badge-dot"></span>Stable</span></td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div class="patient-row">
+                        <div class="patient-avatar" style="background:rgba(239,68,68,0.1);color:#ef4444;">SR</div>
+                        <div>
+                          <div style="font-weight:600">Sunita Rao</div>
+                          <div style="font-size:0.7rem;color:var(--muted)">P-002 · F, 58</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>ICU - A3</td>
+                    <td>Dr. Sharma</td>
+                    <td>Cardiac Event</td>
+                    <td><span class="badge critical"><span class="badge-dot"></span>Critical</span></td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div class="patient-row">
+                        <div class="patient-avatar" style="background:rgba(245,158,11,0.1);color:#f59e0b;">RK</div>
+                        <div>
+                          <div style="font-weight:600">Rahul Kumar</div>
+                          <div style="font-size:0.7rem;color:var(--muted)">P-003 · M, 34</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>Ortho - C7</td>
+                    <td>Dr. Joshi</td>
+                    <td>Fracture (Leg)</td>
+                    <td><span class="badge pending"><span class="badge-dot"></span>Post-Op</span></td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div class="patient-row">
+                        <div class="patient-avatar" style="background:rgba(14,165,233,0.1);color:#0ea5e9;">PD</div>
+                        <div>
+                          <div style="font-weight:600">Priya Desai</div>
+                          <div style="font-size:0.7rem;color:var(--muted)">P-004 · F, 27</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>Maternity - M1</td>
+                    <td>Dr. Nair</td>
+                    <td>Pregnancy (38w)</td>
+                    <td><span class="badge discharged"><span class="badge-dot"></span>Monitoring</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Today's Appointments Side Panel -->
+          <div class="panel" id="rk-appointments-panel">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">Today's Schedule</div>
+                <div class="panel-subtitle">7 appointments pending</div>
+              </div>
+            </div>
+            <div class="appt-list" id="rk-appt-list">
+              <div class="appt-item">
+                <div class="appt-time-block">
+                  <div class="appt-time">09:00</div>
+                  <div class="appt-ampm">AM</div>
+                </div>
+                <div class="appt-vline"></div>
+                <div>
+                  <div class="appt-name">Vikram Singh</div>
+                  <div class="appt-type">Cardiology Consult</div>
+                </div>
+                <div class="appt-right"><span class="badge stable">Confirmed</span></div>
+              </div>
+              <div class="appt-item">
+                <div class="appt-time-block">
+                  <div class="appt-time">10:30</div>
+                  <div class="appt-ampm">AM</div>
+                </div>
+                <div class="appt-vline"></div>
+                <div>
+                  <div class="appt-name">Meena Iyer</div>
+                  <div class="appt-type">Dermatology Follow-up</div>
+                </div>
+                <div class="appt-right"><span class="badge stable">Confirmed</span></div>
+              </div>
+              <div class="appt-item">
+                <div class="appt-time-block">
+                  <div class="appt-time">11:45</div>
+                  <div class="appt-ampm">AM</div>
+                </div>
+                <div class="appt-vline"></div>
+                <div>
+                  <div class="appt-name">Arjun Nair</div>
+                  <div class="appt-type">Orthopaedics Check</div>
+                </div>
+                <div class="appt-right"><span class="badge pending">Waiting</span></div>
+              </div>
+              <div class="appt-item">
+                <div class="appt-time-block">
+                  <div class="appt-time">02:00</div>
+                  <div class="appt-ampm">PM</div>
+                </div>
+                <div class="appt-vline"></div>
+                <div>
+                  <div class="appt-name">Kavitha Reddy</div>
+                  <div class="appt-type">Gynaecology Consult</div>
+                </div>
+                <div class="appt-right"><span class="badge stable">Confirmed</span></div>
+              </div>
+              <div class="appt-item">
+                <div class="appt-time-block">
+                  <div class="appt-time">04:30</div>
+                  <div class="appt-ampm">PM</div>
+                </div>
+                <div class="appt-vline"></div>
+                <div>
+                  <div class="appt-name">Ramesh Pillai</div>
+                  <div class="appt-type">General OPD</div>
+                </div>
+                <div class="appt-right"><span class="badge discharged">Arrived</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOTTOM GRID -->
+        <div class="bottom-grid">
+
+          <!-- Quick Actions -->
+          <div class="panel" id="rk-quick-actions-panel">
+            <div class="panel-header">
+              <div class="panel-title">Quick Actions</div>
+            </div>
+            <div class="quick-actions-grid">
+              <button class="quick-action-btn" id="rk-qa-admit">
+                <div class="qa-icon" style="background:rgba(16,185,129,0.12);">🏥</div>
+                <div class="qa-label">Admit Patient</div>
+                <div class="qa-desc">Register new inpatient</div>
+              </button>
+              <button class="quick-action-btn" id="rk-qa-appointment">
+                <div class="qa-icon" style="background:rgba(14,165,233,0.12);">📅</div>
+                <div class="qa-label">New Appointment</div>
+                <div class="qa-desc">Schedule a visit</div>
+              </button>
+              <button class="quick-action-btn" id="rk-qa-lab">
+                <div class="qa-icon" style="background:rgba(245,158,11,0.12);">🧪</div>
+                <div class="qa-label">Lab Request</div>
+                <div class="qa-desc">Request tests</div>
+              </button>
+              <button class="quick-action-btn" id="rk-qa-discharge">
+                <div class="qa-icon" style="background:rgba(239,68,68,0.1);">📋</div>
+                <div class="qa-label">Discharge Patient</div>
+                <div class="qa-desc">Process discharge</div>
+              </button>
+            </div>
+          </div>
+
+          <!-- On-duty Staff -->
+          <div class="panel" id="rk-staff-panel">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">On-Duty Staff</div>
+                <div class="panel-subtitle">Currently active in hospital</div>
+              </div>
+            </div>
+            <div class="staff-list" id="rk-staff-list">
+              <div class="staff-row">
+                <div class="staff-ava" style="background:rgba(16,185,129,0.12);color:#10b981;">SP</div>
+                <div>
+                  <div class="staff-name">Dr. Suresh Patel</div>
+                  <div class="staff-dept">Cardiology · OPD Room 3</div>
+                </div>
+                <div class="staff-status-chip chip-on">On Duty</div>
+              </div>
+              <div class="staff-row">
+                <div class="staff-ava" style="background:rgba(14,165,233,0.12);color:#0ea5e9;">NS</div>
+                <div>
+                  <div class="staff-name">Nurse Nita Shah</div>
+                  <div class="staff-dept">ICU · Floor 2</div>
+                </div>
+                <div class="staff-status-chip chip-on">On Duty</div>
+              </div>
+              <div class="staff-row">
+                <div class="staff-ava" style="background:rgba(245,158,11,0.1);color:#f59e0b;">AJ</div>
+                <div>
+                  <div class="staff-name">Dr. Anita Joshi</div>
+                  <div class="staff-dept">Orthopaedics · OT</div>
+                </div>
+                <div class="staff-status-chip chip-on">In Surgery</div>
+              </div>
+              <div class="staff-row">
+                <div class="staff-ava" style="background:rgba(148,163,184,0.1);color:var(--muted);">RN</div>
+                <div>
+                  <div class="staff-name">Dr. Ravi Nair</div>
+                  <div class="staff-dept">Gynaecology</div>
+                </div>
+                <div class="staff-status-chip chip-off">Off Duty</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div><!-- END DASHBOARD VIEW -->
+
+
+      <!-- ─── PATIENTS VIEW ─── -->
+      <div class="view" id="patients-view">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Patient Records</div>
+            <div class="page-subtitle">All admitted and outpatient records</div>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-primary" id="rk-patients-add-btn">+ Add Patient</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">All Patients</div>
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Patient ID</th>
+                  <th>Name</th>
+                  <th>Age / Sex</th>
+                  <th>Department</th>
+                  <th>Doctor</th>
+                  <th>Admission Date</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>P-001</td><td>Amit Mehta</td><td>42 / M</td><td>General Medicine</td><td>Dr. Patel</td><td>10 Jul 2026</td><td><span class="badge stable">Stable</span></td></tr>
+                <tr><td>P-002</td><td>Sunita Rao</td><td>58 / F</td><td>Cardiology</td><td>Dr. Sharma</td><td>12 Jul 2026</td><td><span class="badge critical">Critical</span></td></tr>
+                <tr><td>P-003</td><td>Rahul Kumar</td><td>34 / M</td><td>Orthopaedics</td><td>Dr. Joshi</td><td>11 Jul 2026</td><td><span class="badge pending">Post-Op</span></td></tr>
+                <tr><td>P-004</td><td>Priya Desai</td><td>27 / F</td><td>Maternity</td><td>Dr. Nair</td><td>13 Jul 2026</td><td><span class="badge discharged">Monitoring</span></td></tr>
+                <tr><td>P-005</td><td>Suresh Verma</td><td>65 / M</td><td>Neurology</td><td>Dr. Reddy</td><td>09 Jul 2026</td><td><span class="badge stable">Stable</span></td></tr>
+                <tr><td>P-006</td><td>Lata Yadav</td><td>50 / F</td><td>Oncology</td><td>Dr. Bose</td><td>08 Jul 2026</td><td><span class="badge pending">Chemo</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── APPOINTMENTS VIEW ─── -->
+      <div class="view" id="appointments-view">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Appointments</div>
+            <div class="page-subtitle">Manage hospital appointments and scheduling</div>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-primary" id="rk-appt-new-btn">+ Book Appointment</button>
+          </div>
+        </div>
+        <div class="panel" id="rk-full-appt-panel">
+          <div class="panel-header">
+            <div class="panel-title">All Upcoming Appointments</div>
+          </div>
+          <div id="rk-full-appt-list">
+            <div class="appt-full-item">
+              <div class="appt-date-badge"><div class="appt-date-day">14</div><div class="appt-date-mon">Jul</div></div>
+              <div><div class="appt-name" style="font-size:0.9rem;font-weight:700;">Vikram Singh</div><div class="appt-type" style="font-size:0.78rem;color:var(--muted);">09:00 AM · Cardiology Consult · Dr. Suresh Patel</div></div>
+              <div style="margin-left:auto;"><span class="badge stable">Confirmed</span></div>
+            </div>
+            <div class="appt-full-item">
+              <div class="appt-date-badge"><div class="appt-date-day">14</div><div class="appt-date-mon">Jul</div></div>
+              <div><div class="appt-name" style="font-size:0.9rem;font-weight:700;">Meena Iyer</div><div class="appt-type" style="font-size:0.78rem;color:var(--muted);">10:30 AM · Dermatology Follow-up · Dr. Kapoor</div></div>
+              <div style="margin-left:auto;"><span class="badge stable">Confirmed</span></div>
+            </div>
+            <div class="appt-full-item">
+              <div class="appt-date-badge"><div class="appt-date-day">15</div><div class="appt-date-mon">Jul</div></div>
+              <div><div class="appt-name" style="font-size:0.9rem;font-weight:700;">Anil Gupta</div><div class="appt-type" style="font-size:0.78rem;color:var(--muted);">03:00 PM · ENT Consultation · Dr. Mehta</div></div>
+              <div style="margin-left:auto;"><span class="badge pending">Pending</span></div>
+            </div>
+            <div class="appt-full-item">
+              <div class="appt-date-badge"><div class="appt-date-day">16</div><div class="appt-date-mon">Jul</div></div>
+              <div><div class="appt-name" style="font-size:0.9rem;font-weight:700;">Pooja Bhatt</div><div class="appt-type" style="font-size:0.78rem;color:var(--muted);">11:00 AM · Paediatrics · Dr. Krishna</div></div>
+              <div style="margin-left:auto;"><span class="badge discharged">Arrived</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── STAFF VIEW ─── -->
+      <div class="view" id="staff-view">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Staff & Doctors</div>
+            <div class="page-subtitle">All registered medical and support staff</div>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-primary" id="rk-add-staff-btn">+ Add Staff</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Medical Staff Directory</div>
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Role</th>
+                  <th>Department</th>
+                  <th>Employee ID</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>Dr. Suresh Patel</td><td>Cardiologist</td><td>Cardiology</td><td>E-101</td><td><span class="badge stable">On Duty</span></td></tr>
+                <tr><td>Dr. Anita Joshi</td><td>Orthopaedic Surgeon</td><td>Orthopaedics</td><td>E-102</td><td><span class="badge pending">In Surgery</span></td></tr>
+                <tr><td>Dr. Ravi Nair</td><td>Gynaecologist</td><td>Maternity</td><td>E-103</td><td><span class="badge discharged">Off Duty</span></td></tr>
+                <tr><td>Nurse Nita Shah</td><td>Head Nurse</td><td>ICU</td><td>N-201</td><td><span class="badge stable">On Duty</span></td></tr>
+                <tr><td>Nurse Ajay Rane</td><td>Ward Nurse</td><td>General</td><td>N-202</td><td><span class="badge stable">On Duty</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- END CONTENT AREA -->
+  </div><!-- END MAIN CONTAINER -->
+
+
+  <!-- ═══════════════ ADMIT PATIENT MODAL ═══════════════ -->
+  <div class="modal-overlay" id="rk-admit-modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title">🏥 Admit New Patient</div>
+        <button class="modal-close" id="rk-admit-modal-close">&times;</button>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">First Name *</label>
+          <input type="text" class="form-input" id="rk-patient-fname" placeholder="e.g. Rajesh">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Last Name *</label>
+          <input type="text" class="form-input" id="rk-patient-lname" placeholder="e.g. Sharma">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Age</label>
+          <input type="number" class="form-input" id="rk-patient-age" placeholder="e.g. 45">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Gender</label>
+          <select class="form-select" id="rk-patient-gender">
+            <option>Male</option>
+            <option>Female</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Department</label>
+        <select class="form-select" id="rk-patient-dept">
+          <option>General Medicine</option>
+          <option>Cardiology</option>
+          <option>Orthopaedics</option>
+          <option>Maternity</option>
+          <option>Neurology</option>
+          <option>Oncology</option>
+          <option>ICU</option>
+          <option>Emergency</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Attending Doctor</label>
+        <select class="form-select" id="rk-patient-doctor">
+          <option>Dr. Suresh Patel</option>
+          <option>Dr. Anita Joshi</option>
+          <option>Dr. Ravi Nair</option>
+          <option>Dr. Rajkiran</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Diagnosis / Complaint</label>
+        <input type="text" class="form-input" id="rk-patient-diagnosis" placeholder="e.g. Chest pain, fever">
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="rk-admit-cancel-btn">Cancel</button>
+        <button class="btn btn-primary" id="rk-admit-save-btn">Admit Patient</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════ KENZO SDK ═══════════════ -->
+  <script src="/sdk.js"></script>
+  <script>
+    // ── Initialize Kenzo SDK ──────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (typeof Kenzo !== 'undefined') {
+        // Support passing api_key via query param (multi-tenant), fallback to default dev key
+        const urlParams = new URLSearchParams(window.location.search);
+        const apiKey = urlParams.get('api_key') || 'kenzo_project_dev_api_key_2026';
+        try {
+          await Kenzo.init({
+            apiKey: apiKey,
+            apiBaseUrl: '/api/v1',
+            debug: true,
+            darkMode: true
+          });
+          console.log('[Rajkiran HMS] Kenzo SDK initialized with API Key:', apiKey);
+          // Auto-trigger the first available flow for this page on load
+          autoStartOnboardingFlow(apiKey);
+        } catch (e) {
+          console.error('[Rajkiran HMS] Kenzo SDK init failed:', e);
+        }
+      } else {
+        console.warn('[Rajkiran HMS] Kenzo SDK not found. Make sure the server is running.');
+      }
+    });
+
+    // ── Auto-start: Trigger a published tour for this page on first visit ─
+    async function autoStartOnboardingFlow(apiKey) {
+      try {
+        // Only auto-start if user hasn't dismissed before
+        const dismissed = sessionStorage.getItem('rk_tour_dismissed');
+        if (dismissed) return;
+
+        const authData = localStorage.getItem('kenzo_local_auth_token');
+        const token = authData ? JSON.parse(authData).token : null;
+        if (!token) return;
+
+        const response = await fetch('/api/v1/flows/published', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+
+        // Find flows that target this page (rajkiran) or are global
+        const rajkiranFlows = (data.flows || []).filter(f => {
+          const rules = f.urlRules || [];
+          if (rules.length === 0) return true;
+          return rules.some(r =>
+            r.pattern.includes('rajkiran') ||
+            r.pattern === '/' ||
+            window.location.pathname.includes(r.pattern)
+          );
+        });
+
+        // Start the highest-priority flow automatically
+        if (rajkiranFlows.length > 0) {
+          // Small delay to let the page settle
+          setTimeout(async () => {
+            try {
+              await Kenzo.startFlow(rajkiranFlows[0].id);
+              console.log('[Rajkiran HMS] Auto-started walkthrough flow:', rajkiranFlows[0].id);
+            } catch (e) {
+              console.warn('[Rajkiran HMS] Auto-start flow error:', e.message);
+            }
+          }, 1200);
+        }
+      } catch (e) {
+        console.warn('[Rajkiran HMS] Could not auto-start flow:', e.message);
+      }
+    }
+
+    // ── Manual "Start Tour" Button ─────────────────────────────────────────
+    document.getElementById('rk-trigger-flow-btn').addEventListener('click', async () => {
+      if (typeof Kenzo === 'undefined') {
+        alert('[Rajkiran HMS] Kenzo SDK is not loaded. Check the server.');
+        return;
+      }
+      try {
+        const authData = localStorage.getItem('kenzo_local_auth_token');
+        const token = authData ? JSON.parse(authData).token : null;
+
+        const response = await fetch('/api/v1/flows/published', {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.message || 'Server error');
+        }
+
+        const data = await response.json();
+        const flows = (data.flows || []).filter(f => {
+          const rules = f.urlRules || [];
+          if (rules.length === 0) return true;
+          return rules.some(r =>
+            r.pattern.includes('rajkiran') ||
+            r.pattern === '/' ||
+            window.location.pathname.includes(r.pattern)
+          );
+        });
+
+        if (flows && flows.length > 0) {
+          sessionStorage.removeItem('rk_tour_dismissed');
+          await Kenzo.startFlow(flows[0].id);
+          console.log('[Rajkiran HMS] Walkthrough flow started:', flows[0].id);
+        } else {
+          alert('No published walkthrough tours found for this page.\n\nClick "Builder" above to create and publish a tour for the Rajkiran HMS from the Admin Dashboard!');
+        }
+      } catch (e) {
+        alert('Failed to start tour: ' + e.message);
+      }
+    });
+
+    // ── View Navigation (SPA routing) ─────────────────────────────────────
+    const navItems = document.querySelectorAll('.nav-item[data-view]');
+    const views    = document.querySelectorAll('.view');
+    const titleEl  = document.getElementById('rk-topnav-title');
+
+    const viewTitles = {
+      'dashboard-view':    'Dashboard',
+      'patients-view':     'Patients',
+      'appointments-view': 'Appointments',
+      'staff-view':        'Staff & Doctors'
+    };
+
+    navItems.forEach(item => {
+      item.addEventListener('click', () => {
+        const targetView = item.getAttribute('data-view');
+
+        // Update active nav
+        navItems.forEach(n => n.classList.remove('active'));
+        item.classList.add('active');
+
+        // Show correct view
+        views.forEach(v => v.classList.remove('active'));
+        const target = document.getElementById(targetView);
+        if (target) target.classList.add('active');
+
+        // Update title
+        if (titleEl && viewTitles[targetView]) {
+          titleEl.textContent = viewTitles[targetView];
+        }
+
+        // Track navigation
+        if (typeof Kenzo !== 'undefined') {
+          Kenzo.track('navigation_clicked', { view: targetView, page: 'rajkiran-hms' });
+        }
+      });
+    });
+
+    // ── Admit Patient Modal ────────────────────────────────────────────────
+    const admitModal    = document.getElementById('rk-admit-modal');
+    const admitBtns     = [
+      document.getElementById('rk-admit-patient-btn'),
+      document.getElementById('rk-add-patient-btn'),
+      document.getElementById('rk-qa-admit')
+    ];
+    const admitClose    = document.getElementById('rk-admit-modal-close');
+    const admitCancel   = document.getElementById('rk-admit-cancel-btn');
+    const admitSave     = document.getElementById('rk-admit-save-btn');
+
+    function openAdmitModal() {
+      admitModal.classList.add('open');
+      document.getElementById('rk-patient-fname').focus();
+    }
+
+    function closeAdmitModal() {
+      admitModal.classList.remove('open');
+    }
+
+    admitBtns.forEach(btn => { if (btn) btn.addEventListener('click', openAdmitModal); });
+    admitClose.addEventListener('click', closeAdmitModal);
+    admitCancel.addEventListener('click', closeAdmitModal);
+    admitModal.addEventListener('click', e => { if (e.target === admitModal) closeAdmitModal(); });
+
+    admitSave.addEventListener('click', () => {
+      const fname = document.getElementById('rk-patient-fname').value.trim();
+      const lname = document.getElementById('rk-patient-lname').value.trim();
+      const age   = document.getElementById('rk-patient-age').value;
+      const gender = document.getElementById('rk-patient-gender').value;
+      const dept  = document.getElementById('rk-patient-dept').value;
+      const doc   = document.getElementById('rk-patient-doctor').value;
+      const diag  = document.getElementById('rk-patient-diagnosis').value.trim();
+
+      if (!fname || !lname) {
+        alert('Please fill in at least First Name and Last Name.');
+        return;
+      }
+
+      const tbody = document.getElementById('rk-patients-table-body');
+      const nextId = `P-00${tbody.rows.length + 5}`;
+      const initials = (fname[0] + lname[0]).toUpperCase();
+      const colors = [
+        ['rgba(16,185,129,0.12)','#10b981'],
+        ['rgba(14,165,233,0.12)','#0ea5e9'],
+        ['rgba(245,158,11,0.10)','#f59e0b'],
+        ['rgba(239,68,68,0.10)','#ef4444'],
+      ];
+      const [bg, fg] = colors[tbody.rows.length % colors.length];
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>
+          <div class="patient-row">
+            <div class="patient-avatar" style="background:${bg};color:${fg};">${initials}</div>
+            <div>
+              <div style="font-weight:600">${fname} ${lname}</div>
+              <div style="font-size:0.7rem;color:var(--muted)">${nextId} · ${gender[0]}, ${age || '—'}</div>
+            </div>
+          </div>
+        </td>
+        <td>${dept.split(' ')[0]} - W${tbody.rows.length + 5}</td>
+        <td>${doc}</td>
+        <td>${diag || 'General'}</td>
+        <td><span class="badge pending"><span class="badge-dot"></span>New</span></td>
+      `;
+      tbody.appendChild(tr);
+
+      // Update KPI counter
+      const kpiEl = document.getElementById('rk-kpi-patients-val');
+      const curr = parseInt(kpiEl.textContent.replace(/,/g, ''));
+      kpiEl.textContent = (curr + 1).toLocaleString();
+
+      closeAdmitModal();
+      clearAdmitForm();
+
+      // Track the admit action
+      if (typeof Kenzo !== 'undefined') {
+        Kenzo.track('patient_admitted', { name: `${fname} ${lname}`, dept, doctor: doc });
+      }
+    });
+
+    function clearAdmitForm() {
+      document.getElementById('rk-patient-fname').value = '';
+      document.getElementById('rk-patient-lname').value = '';
+      document.getElementById('rk-patient-age').value   = '';
+      document.getElementById('rk-patient-diagnosis').value = '';
+      document.getElementById('rk-patient-gender').value = 'Male';
+      document.getElementById('rk-patient-dept').value  = 'General Medicine';
+    }
+
+    // ── Quick action shortcuts ─────────────────────────────────────────────
+    document.getElementById('rk-qa-appointment').addEventListener('click', () => {
+      // Switch to appointments view
+      navItems.forEach(n => n.classList.remove('active'));
+      document.getElementById('rk-nav-appointments').classList.add('active');
+      views.forEach(v => v.classList.remove('active'));
+      document.getElementById('appointments-view').classList.add('active');
+      if (titleEl) titleEl.textContent = 'Appointments';
+    });
+
+    document.getElementById('rk-qa-discharge').addEventListener('click', () => {
+      alert('Discharge workflow: Select a patient from the Patients tab to process discharge.');
+    });
+
+    document.getElementById('rk-qa-lab').addEventListener('click', () => {
+      alert('Lab request submitted! The pathology team will be notified.');
+      if (typeof Kenzo !== 'undefined') Kenzo.track('lab_request_submitted', {});
+    });
+
+    // ── Builder Toggle ─────────────────────────────────────────────────────
+    document.getElementById('rk-toggle-builder-btn').addEventListener('click', () => {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get('kenzo_builder') === 'true') {
+        url.searchParams.delete('kenzo_builder');
+      } else {
+        url.searchParams.set('kenzo_builder', 'true');
+      }
+      window.location.href = url.toString();
+    });
+
+    // Track dismissals so we don't spam the tour
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        sessionStorage.setItem('rk_tour_dismissed', '1');
+      }
+    });
+  </script>
+</body>
+</html>
