@@ -130,12 +130,12 @@ export default function App() {
     }
   }, [activeProjectId]);
 
-  const handleCreateProject = async (name: string) => {
+  const handleCreateProject = async (name: string, url?: string) => {
     try {
       const res = await fetch('/api/v1/admin/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name })
+        body: JSON.stringify({ name, url })
       });
       if (res.ok) {
         const newProj = await res.json();

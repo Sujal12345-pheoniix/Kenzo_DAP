@@ -294,7 +294,17 @@ app.get('/api/v1/admin/projects', async (req: Request, res: Response) => {
 });
 
 // Helper to seed template flows and steps for newly registered projects
-async function seedProjectData(projectId: string) {
+async function seedProjectData(projectId: string, projectName: string, websiteUrl?: string) {
+  let targetPattern = '/';
+  if (websiteUrl) {
+    try {
+      const parsedUrl = new URL(websiteUrl.startsWith('http') ? websiteUrl : `http://${websiteUrl}`);
+      targetPattern = parsedUrl.pathname || '/';
+    } catch (e) {
+      targetPattern = '/';
+    }
+  }
+
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -306,37 +316,37 @@ async function seedProjectData(projectId: string) {
       RETURNING id
     `, [
       projectId, 
-      'Platform Overview Onboarding', 
-      'Quick guide to help users understand the main CRM dashboard layout.', 
+      `Welcome to ${projectName}!`, 
+      `Interactive onboarding guide for ${projectName} pages.`, 
       'published', 
-      JSON.stringify([{ type: 'contains', pattern: '/' }])
+      JSON.stringify([{ type: 'contains', pattern: targetPattern }])
     ]);
     
     const flow1Id = flow1Result.rows[0].id;
     
-    // Step 1: Welcome
+    // Step 1: Welcome Overlay (Body Modal)
     await client.query(`
       INSERT INTO steps (flow_id, order_index, title, content, selector, placement, display_mode, buttons)
       VALUES ($1, 0, $2, $3, $4, $5, $6, $7)
     `, [
       flow1Id,
-      'Welcome to Kenzo CRM!',
-      'This interactive guide will show you how to navigate your customer relationship manager. Click next to continue.',
-      JSON.stringify({ type: 'css', value: '.logo-container' }),
-      'right',
-      'tooltip',
-      JSON.stringify([{ text: 'Next', action: 'next', style: 'primary' }])
+      `Explore ${projectName}`,
+      `This quick tour will show you how to navigate our features. Click next to continue.`,
+      JSON.stringify({ type: 'css', value: 'body' }),
+      'center',
+      'modal',
+      JSON.stringify([{ text: 'Start Tour', action: 'next', style: 'primary' }])
     ]);
 
-    // Step 2: KPI Grid
+    // Step 2: Header Navigation
     await client.query(`
       INSERT INTO steps (flow_id, order_index, title, content, selector, placement, display_mode, buttons)
       VALUES ($1, 1, $2, $3, $4, $5, $6, $7)
     `, [
       flow1Id,
-      'Overview Metrics',
-      'Track real-time leads, closed deals, and revenue directly from this summary grid.',
-      JSON.stringify({ type: 'css', value: '#kpi-grid' }),
+      'Main Header & Menus',
+      'Navigate to key workspaces, page categories, or dashboard statistics from here.',
+      JSON.stringify({ type: 'css', value: 'header, nav, .header, #header, .logo-container' }),
       'bottom',
       'tooltip',
       JSON.stringify([
@@ -345,16 +355,16 @@ async function seedProjectData(projectId: string) {
       ])
     ]);
 
-    // Step 3: Leads navigation
+    // Step 3: Main body elements
     await client.query(`
       INSERT INTO steps (flow_id, order_index, title, content, selector, placement, display_mode, buttons)
       VALUES ($1, 2, $2, $3, $4, $5, $6, $7)
     `, [
       flow1Id,
-      'Sales Pipeline Leads',
-      'Navigate to the Leads workspace to add prospects, manage contact status, and log closed deals.',
-      JSON.stringify({ type: 'css', value: '#crm-sidebar-leads' }),
-      'right',
+      'Main Content Area',
+      'This pane displays your dashboards, tables, configurations, and core features.',
+      JSON.stringify({ type: 'css', value: 'main, .main, #main, .content, #kpi-grid, body' }),
+      'bottom',
       'tooltip',
       JSON.stringify([
         { text: 'Back', action: 'prev', style: 'secondary' },
@@ -362,44 +372,44 @@ async function seedProjectData(projectId: string) {
       ])
     ]);
 
-    // 2. Create second flow: Sales Lead Management
+    // 2. Create second flow: Advanced Controls Guide
     const flow2Result = await client.query(`
       INSERT INTO flows (project_id, name, description, status, version, url_rules, priority)
       VALUES ($1, $2, $3, $4, 1, $5, 5)
       RETURNING id
     `, [
       projectId,
-      'Sales Lead Management',
-      'Walks through how to add new leads and convert them in the pipeline.',
+      'Advanced Interface Guide',
+      'Guides users through action forms, buttons, and settings panels.',
       'published',
-      JSON.stringify([{ type: 'contains', pattern: 'leads' }])
+      JSON.stringify([{ type: 'contains', pattern: targetPattern }])
     ]);
 
     const flow2Id = flow2Result.rows[0].id;
 
-    // Step 1: Add Lead button
+    // Step 1: Buttons
     await client.query(`
       INSERT INTO steps (flow_id, order_index, title, content, selector, placement, display_mode, buttons)
       VALUES ($1, 0, $2, $3, $4, $5, $6, $7)
     `, [
       flow2Id,
-      'Adding Prospects',
-      'Click the "+ Add New Lead" button to log new customer contacts and pipeline value.',
-      JSON.stringify({ type: 'css', value: '#add-lead-btn' }),
+      'Actions & Controls',
+      'Click buttons, submit inputs, or trigger search logs to perform primary operations.',
+      JSON.stringify({ type: 'css', value: 'button, .btn, a.btn, input[type="submit"], #add-lead-btn' }),
       'bottom',
       'tooltip',
       JSON.stringify([{ text: 'Got it', action: 'next', style: 'primary' }])
     ]);
 
-    // Step 2: Leads Table
+    // Step 2: Footer
     await client.query(`
       INSERT INTO steps (flow_id, order_index, title, content, selector, placement, display_mode, buttons)
       VALUES ($1, 1, $2, $3, $4, $5, $6, $7)
     `, [
       flow2Id,
-      'Interactive Sales Funnel',
-      'Double click any lead row to edit details, toggle status parameters, or delete contacts.',
-      JSON.stringify({ type: 'css', value: '#leads-table-container' }),
+      'Links & Info',
+      'Find supporting documentation, system settings, and copyright information here.',
+      JSON.stringify({ type: 'css', value: 'footer, .footer, #footer, #leads-table-container' }),
       'top',
       'tooltip',
       JSON.stringify([{ text: 'Finish Guide', action: 'close', style: 'primary' }])
@@ -417,7 +427,7 @@ async function seedProjectData(projectId: string) {
 
 // 0b. Create a project (website)
 app.post('/api/v1/admin/projects', async (req: Request, res: Response) => {
-  const { name } = req.body;
+  const { name, url } = req.body;
   if (!name) {
     res.status(400).json({ message: 'Project name is required' });
     return;
@@ -431,7 +441,7 @@ app.post('/api/v1/admin/projects', async (req: Request, res: Response) => {
     const newProject = result.rows[0];
 
     // Seed default campaign flows and walkthrough steps automatically
-    await seedProjectData(newProject.id);
+    await seedProjectData(newProject.id, name, url);
 
     res.json(newProject);
   } catch (err: any) {

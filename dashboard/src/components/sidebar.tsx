@@ -29,7 +29,7 @@ interface SidebarProps {
   projects: Project[];
   activeProjectId: string;
   setActiveProjectId: (id: string) => void;
-  onCreateProject: (name: string) => Promise<void>;
+  onCreateProject: (name: string, url?: string) => Promise<void>;
 }
 
 interface NavItem {
@@ -139,9 +139,10 @@ export default function Sidebar({
                   </div>
                   <button 
                     onClick={() => {
-                      const name = prompt('Enter Website Domain or Name (e.g. Acme Portal):');
+                      const name = prompt('Enter Website Name (e.g. CrickBuddy):');
                       if (name && name.trim()) {
-                        onCreateProject(name.trim());
+                        const url = prompt('Enter Website URL (optional, e.g. https://crickbuddy.com):') || '';
+                        onCreateProject(name.trim(), url.trim());
                       }
                       setWorkspaceMenuOpen(false);
                     }}
