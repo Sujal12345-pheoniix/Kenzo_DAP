@@ -2,6 +2,8 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import path from 'path';
 import jwt from 'jsonwebtoken';
+import https from 'https';
+import http from 'http';
 import { v2 as cloudinary } from 'cloudinary';
 import multer from 'multer';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
@@ -293,23 +295,77 @@ app.get('/api/v1/admin/projects', async (req: Request, res: Response) => {
   }
 });
 
-// Helper to seed template flows and steps for newly registered projects
+// Helper to request URL contents asynchronously using Node's standard libraries
+function fetchHtml(urlStr: string): Promise<string> {
+  return new Promise((resolve) => {
+    try {
+      const client = urlStr.startsWith('https') ? https : http;
+      const req = client.get(urlStr, { timeout: 3000 }, (res) => {
+        let data = '';
+        res.on('data', (chunk) => { data += chunk; });
+        res.on('end', () => { resolve(data); });
+      });
+      req.on('error', () => { resolve(''); });
+      req.on('timeout', () => { req.destroy(); resolve(''); });
+    } catch (e) {
+      resolve('');
+    }
+  });
+}
+
+// Helper to seed template flows and steps for newly registered projects (with smart HTML scanning)
 async function seedProjectData(projectId: string, projectName: string, websiteUrl?: string) {
   let targetPattern = '/';
-  if (websiteUrl) {
+  let html = '';
+  
+  if (websiteUrl && websiteUrl.trim()) {
     try {
-      const parsedUrl = new URL(websiteUrl.startsWith('http') ? websiteUrl : `http://${websiteUrl}`);
+      const targetUrl = websiteUrl.startsWith('http') ? websiteUrl : `https://${websiteUrl}`;
+      const parsedUrl = new URL(targetUrl);
       targetPattern = parsedUrl.pathname || '/';
+      html = await fetchHtml(targetUrl);
+      console.log(`[Database] Scanned website URL ${targetUrl}. Length: ${html.length} bytes.`);
     } catch (e) {
-      targetPattern = '/';
+      console.warn('[Database] Failed to parse/fetch website URL:', websiteUrl, e);
+    }
+  }
+
+  // Parse HTML tags using regex
+  let parsedLinks: Array<{ href: string; text: string }> = [];
+  let parsedButtons: string[] = [];
+  let hasInput = false;
+
+  if (html) {
+    try {
+      // Extract links
+      const linkMatches = [...html.matchAll(/<a\s+[^>]*href=["']([^"']+)["'][^>]*>(.*?)<\/a>/gi)];
+      parsedLinks = linkMatches
+        .map(m => ({
+          href: m[1],
+          text: m[2].replace(/<[^>]*>/g, '').trim()
+        }))
+        .filter(l => l.text.length > 2 && !l.href.startsWith('#') && !l.href.startsWith('javascript:'))
+        .slice(0, 5); // Take top 5 links
+
+      // Extract buttons
+      const buttonMatches = [...html.matchAll(/<button\s*[^>]*>(.*?)<\/button>/gi)];
+      parsedButtons = buttonMatches
+        .map(m => m[1].replace(/<[^>]*>/g, '').trim())
+        .filter(b => b.length > 2)
+        .slice(0, 5);
+
+      // Check for inputs
+      hasInput = html.includes('<input');
+    } catch (e) {
+      console.error('[Database] Error parsing HTML regex:', e);
     }
   }
 
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    
-    // 1. Create Onboarding Flow
+
+    // 1. CREATE ONBOARDING FLOW
     const flow1Result = await client.query(`
       INSERT INTO flows (project_id, name, description, status, version, url_rules, priority)
       VALUES ($1, $2, $3, $4, 1, $5, 10)
@@ -317,36 +373,39 @@ async function seedProjectData(projectId: string, projectName: string, websiteUr
     `, [
       projectId, 
       `Welcome to ${projectName}!`, 
-      `Interactive onboarding guide for ${projectName} pages.`, 
+      `Interactive onboarding guide dynamically built by scanning ${websiteUrl || 'your website'}.`, 
       'published', 
       JSON.stringify([{ type: 'contains', pattern: targetPattern }])
     ]);
     
     const flow1Id = flow1Result.rows[0].id;
-    
+    let orderIndex = 0;
+
     // Step 1: Welcome Overlay (Body Modal)
     await client.query(`
       INSERT INTO steps (flow_id, order_index, title, content, selector, placement, display_mode, buttons)
-      VALUES ($1, 0, $2, $3, $4, $5, $6, $7)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     `, [
       flow1Id,
+      orderIndex++,
       `Explore ${projectName}`,
-      `This quick tour will show you how to navigate our features. Click next to continue.`,
+      `Welcome! This interactive guide will take you through the core highlights of our application. Click Start to begin.`,
       JSON.stringify({ type: 'css', value: 'body' }),
       'center',
       'modal',
       JSON.stringify([{ text: 'Start Tour', action: 'next', style: 'primary' }])
     ]);
 
-    // Step 2: Header Navigation
+    // Step 2: Header Navigation / Logo
     await client.query(`
       INSERT INTO steps (flow_id, order_index, title, content, selector, placement, display_mode, buttons)
-      VALUES ($1, 1, $2, $3, $4, $5, $6, $7)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     `, [
       flow1Id,
-      'Main Header & Menus',
-      'Navigate to key workspaces, page categories, or dashboard statistics from here.',
-      JSON.stringify({ type: 'css', value: 'header, nav, .header, #header, .logo-container' }),
+      orderIndex++,
+      'Branding & Menu',
+      'Use this header section to check the website logo, access quick links, and toggle navigation menus.',
+      JSON.stringify({ type: 'css', value: 'header, nav, .header, #header, .logo-container, .logo' }),
       'bottom',
       'tooltip',
       JSON.stringify([
@@ -355,70 +414,160 @@ async function seedProjectData(projectId: string, projectName: string, websiteUr
       ])
     ]);
 
-    // Step 3: Main body elements
+    // Step 3 (Dynamic Link Onboarding): Add steps for scanned links if available
+    let linkStepCreated = false;
+    for (const link of parsedLinks) {
+      if (link.text.toLowerCase().includes('about') || 
+          link.text.toLowerCase().includes('service') || 
+          link.text.toLowerCase().includes('contact') || 
+          link.text.toLowerCase().includes('appoin') || 
+          link.text.toLowerCase().includes('dashboard') ||
+          link.text.toLowerCase().includes('doctor') ||
+          link.text.toLowerCase().includes('patient')) {
+        
+        await client.query(`
+          INSERT INTO steps (flow_id, order_index, title, content, selector, placement, display_mode, buttons)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        `, [
+          flow1Id,
+          orderIndex++,
+          link.text,
+          `Click this menu link to navigate directly to the ${link.text} section.`,
+          JSON.stringify({ type: 'css', value: `a[href*="${link.href}"], a` }),
+          'bottom',
+          'tooltip',
+          JSON.stringify([
+            { text: 'Back', action: 'prev', style: 'secondary' },
+            { text: 'Next', action: 'next', style: 'primary' }
+          ])
+        ]);
+        linkStepCreated = true;
+        break; // Seed at most 1 dynamic link step in the main tour
+      }
+    }
+
+    // Fallback if no specific link matched
+    if (!linkStepCreated) {
+      await client.query(`
+        INSERT INTO steps (flow_id, order_index, title, content, selector, placement, display_mode, buttons)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `, [
+        flow1Id,
+        orderIndex++,
+        'Navigation Controls',
+        'Use these main page links to explore different pages, profiles, and dashboard services.',
+        JSON.stringify({ type: 'css', value: 'a, nav a, .nav-item' }),
+        'bottom',
+        'tooltip',
+        JSON.stringify([
+          { text: 'Back', action: 'prev', style: 'secondary' },
+          { text: 'Next', action: 'next', style: 'primary' }
+        ])
+      ]);
+    }
+
+    // Step 4: Content Area / Actions
     await client.query(`
       INSERT INTO steps (flow_id, order_index, title, content, selector, placement, display_mode, buttons)
-      VALUES ($1, 2, $2, $3, $4, $5, $6, $7)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     `, [
       flow1Id,
-      'Main Content Area',
-      'This pane displays your dashboards, tables, configurations, and core features.',
+      orderIndex++,
+      'Work Area Overview',
+      'This main viewport houses all reports, forms, and tools. Check details and fill information here.',
       JSON.stringify({ type: 'css', value: 'main, .main, #main, .content, #kpi-grid, body' }),
-      'bottom',
+      'top',
       'tooltip',
       JSON.stringify([
         { text: 'Back', action: 'prev', style: 'secondary' },
-        { text: 'Finish', action: 'close', style: 'primary' }
+        { text: 'Finish Onboarding', action: 'close', style: 'primary' }
       ])
     ]);
 
-    // 2. Create second flow: Advanced Controls Guide
+    // 2. CREATE SECOND FLOW: INTERACTION GUIDE
     const flow2Result = await client.query(`
       INSERT INTO flows (project_id, name, description, status, version, url_rules, priority)
       VALUES ($1, $2, $3, $4, 1, $5, 5)
       RETURNING id
     `, [
       projectId,
-      'Advanced Interface Guide',
-      'Guides users through action forms, buttons, and settings panels.',
+      'Actions & Forms Guide',
+      `Walks users through buttons, inputs, and form controls found on ${projectName}.`,
       'published',
       JSON.stringify([{ type: 'contains', pattern: targetPattern }])
     ]);
 
     const flow2Id = flow2Result.rows[0].id;
+    let orderIndex2 = 0;
 
-    // Step 1: Buttons
+    // Step 1: Dynamic Buttons
+    let buttonSelector = 'button, .btn, a.btn, input[type="submit"]';
+    let buttonStepTitle = 'Buttons & Actions';
+    let buttonStepContent = 'Click buttons, submit inputs, or log details using these primary action controls.';
+    
+    if (parsedButtons.length > 0) {
+      const bestBtn = parsedButtons[0];
+      buttonStepTitle = `Action: ${bestBtn}`;
+      buttonStepContent = `Trigger events, submit fields, or proceed by clicking the "${bestBtn}" button.`;
+      buttonSelector = `button`; // Target standard button
+    }
+
     await client.query(`
       INSERT INTO steps (flow_id, order_index, title, content, selector, placement, display_mode, buttons)
-      VALUES ($1, 0, $2, $3, $4, $5, $6, $7)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     `, [
       flow2Id,
-      'Actions & Controls',
-      'Click buttons, submit inputs, or trigger search logs to perform primary operations.',
-      JSON.stringify({ type: 'css', value: 'button, .btn, a.btn, input[type="submit"], #add-lead-btn' }),
+      orderIndex2++,
+      buttonStepTitle,
+      buttonStepContent,
+      JSON.stringify({ type: 'css', value: buttonSelector }),
       'bottom',
       'tooltip',
       JSON.stringify([{ text: 'Got it', action: 'next', style: 'primary' }])
     ]);
 
-    // Step 2: Footer
+    // Step 2: Inputs if found
+    if (hasInput) {
+      await client.query(`
+        INSERT INTO steps (flow_id, order_index, title, content, selector, placement, display_mode, buttons)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `, [
+        flow2Id,
+        orderIndex2++,
+        'Form Fields & Input',
+        'Enter email address, search keywords, or patient details directly inside this text field.',
+        JSON.stringify({ type: 'css', value: 'input[type="text"], input[type="email"], input' }),
+        'bottom',
+        'tooltip',
+        JSON.stringify([
+          { text: 'Back', action: 'prev', style: 'secondary' },
+          { text: 'Next', action: 'next', style: 'primary' }
+        ])
+      ]);
+    }
+
+    // Step 3: Footer / Support info
     await client.query(`
       INSERT INTO steps (flow_id, order_index, title, content, selector, placement, display_mode, buttons)
-      VALUES ($1, 1, $2, $3, $4, $5, $6, $7)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     `, [
       flow2Id,
-      'Links & Info',
-      'Find supporting documentation, system settings, and copyright information here.',
-      JSON.stringify({ type: 'css', value: 'footer, .footer, #footer, #leads-table-container' }),
+      orderIndex2++,
+      'Footer & Documentation',
+      'Find support links, privacy policies, and copyright details at the bottom of the page.',
+      JSON.stringify({ type: 'css', value: 'footer, .footer, #footer' }),
       'top',
       'tooltip',
-      JSON.stringify([{ text: 'Finish Guide', action: 'close', style: 'primary' }])
+      JSON.stringify([
+        { text: 'Back', action: 'prev', style: 'secondary' },
+        { text: 'Finish Guide', action: 'close', style: 'primary' }
+      ])
     ]);
 
     await client.query('COMMIT');
   } catch (err) {
     await client.query('ROLLBACK');
-    console.error('[Database] Failed to seed new project data:', err);
+    console.error('[Database] Failed to seed project data:', err);
     throw err;
   } finally {
     client.release();
