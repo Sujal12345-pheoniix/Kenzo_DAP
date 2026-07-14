@@ -293,6 +293,128 @@ app.get('/api/v1/admin/projects', async (req: Request, res: Response) => {
   }
 });
 
+// Helper to seed template flows and steps for newly registered projects
+async function seedProjectData(projectId: string) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    
+    // 1. Create Onboarding Flow
+    const flow1Result = await client.query(`
+      INSERT INTO flows (project_id, name, description, status, version, url_rules, priority)
+      VALUES ($1, $2, $3, $4, 1, $5, 10)
+      RETURNING id
+    `, [
+      projectId, 
+      'Platform Overview Onboarding', 
+      'Quick guide to help users understand the main CRM dashboard layout.', 
+      'published', 
+      JSON.stringify([{ type: 'contains', pattern: '/' }])
+    ]);
+    
+    const flow1Id = flow1Result.rows[0].id;
+    
+    // Step 1: Welcome
+    await client.query(`
+      INSERT INTO steps (flow_id, order_index, title, content, selector, placement, display_mode, buttons)
+      VALUES ($1, 0, $2, $3, $4, $5, $6, $7)
+    `, [
+      flow1Id,
+      'Welcome to Kenzo CRM!',
+      'This interactive guide will show you how to navigate your customer relationship manager. Click next to continue.',
+      JSON.stringify({ type: 'css', value: '.logo-container' }),
+      'right',
+      'tooltip',
+      JSON.stringify([{ text: 'Next', action: 'next', style: 'primary' }])
+    ]);
+
+    // Step 2: KPI Grid
+    await client.query(`
+      INSERT INTO steps (flow_id, order_index, title, content, selector, placement, display_mode, buttons)
+      VALUES ($1, 1, $2, $3, $4, $5, $6, $7)
+    `, [
+      flow1Id,
+      'Overview Metrics',
+      'Track real-time leads, closed deals, and revenue directly from this summary grid.',
+      JSON.stringify({ type: 'css', value: '#kpi-grid' }),
+      'bottom',
+      'tooltip',
+      JSON.stringify([
+        { text: 'Back', action: 'prev', style: 'secondary' },
+        { text: 'Next', action: 'next', style: 'primary' }
+      ])
+    ]);
+
+    // Step 3: Leads navigation
+    await client.query(`
+      INSERT INTO steps (flow_id, order_index, title, content, selector, placement, display_mode, buttons)
+      VALUES ($1, 2, $2, $3, $4, $5, $6, $7)
+    `, [
+      flow1Id,
+      'Sales Pipeline Leads',
+      'Navigate to the Leads workspace to add prospects, manage contact status, and log closed deals.',
+      JSON.stringify({ type: 'css', value: '#crm-sidebar-leads' }),
+      'right',
+      'tooltip',
+      JSON.stringify([
+        { text: 'Back', action: 'prev', style: 'secondary' },
+        { text: 'Finish', action: 'close', style: 'primary' }
+      ])
+    ]);
+
+    // 2. Create second flow: Sales Lead Management
+    const flow2Result = await client.query(`
+      INSERT INTO flows (project_id, name, description, status, version, url_rules, priority)
+      VALUES ($1, $2, $3, $4, 1, $5, 5)
+      RETURNING id
+    `, [
+      projectId,
+      'Sales Lead Management',
+      'Walks through how to add new leads and convert them in the pipeline.',
+      'published',
+      JSON.stringify([{ type: 'contains', pattern: 'leads' }])
+    ]);
+
+    const flow2Id = flow2Result.rows[0].id;
+
+    // Step 1: Add Lead button
+    await client.query(`
+      INSERT INTO steps (flow_id, order_index, title, content, selector, placement, display_mode, buttons)
+      VALUES ($1, 0, $2, $3, $4, $5, $6, $7)
+    `, [
+      flow2Id,
+      'Adding Prospects',
+      'Click the "+ Add New Lead" button to log new customer contacts and pipeline value.',
+      JSON.stringify({ type: 'css', value: '#add-lead-btn' }),
+      'bottom',
+      'tooltip',
+      JSON.stringify([{ text: 'Got it', action: 'next', style: 'primary' }])
+    ]);
+
+    // Step 2: Leads Table
+    await client.query(`
+      INSERT INTO steps (flow_id, order_index, title, content, selector, placement, display_mode, buttons)
+      VALUES ($1, 1, $2, $3, $4, $5, $6, $7)
+    `, [
+      flow2Id,
+      'Interactive Sales Funnel',
+      'Double click any lead row to edit details, toggle status parameters, or delete contacts.',
+      JSON.stringify({ type: 'css', value: '#leads-table-container' }),
+      'top',
+      'tooltip',
+      JSON.stringify([{ text: 'Finish Guide', action: 'close', style: 'primary' }])
+    ]);
+
+    await client.query('COMMIT');
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('[Database] Failed to seed new project data:', err);
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
 // 0b. Create a project (website)
 app.post('/api/v1/admin/projects', async (req: Request, res: Response) => {
   const { name } = req.body;
@@ -306,9 +428,14 @@ app.post('/api/v1/admin/projects', async (req: Request, res: Response) => {
       'INSERT INTO projects (name, api_key) VALUES ($1, $2) RETURNING id, name, api_key as "apiKey", created_at as "createdAt"',
       [name, apiKey]
     );
-    res.json(result.rows[0]);
+    const newProject = result.rows[0];
+
+    // Seed default campaign flows and walkthrough steps automatically
+    await seedProjectData(newProject.id);
+
+    res.json(newProject);
   } catch (err: any) {
-    res.status(550).json({ message: 'Server error', error: err.message });
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 
