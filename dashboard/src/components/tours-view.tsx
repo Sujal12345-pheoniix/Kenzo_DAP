@@ -33,6 +33,7 @@ interface ToursViewProps {
   handleDeleteFlow: (flowId: string) => void;
   handleUpdateFlowStatus: (flow: Flow, status: 'draft' | 'published') => void;
   handleSaveFlowDetails: (e: React.FormEvent) => void;
+  apiKey: string;
 }
 
 export default function ToursView({
@@ -41,7 +42,8 @@ export default function ToursView({
   setEditingFlow,
   handleDeleteFlow,
   handleUpdateFlowStatus,
-  handleSaveFlowDetails
+  handleSaveFlowDetails,
+  apiKey
 }: ToursViewProps) {
 
   const aiSuggestions = [
@@ -61,7 +63,7 @@ export default function ToursView({
         </div>
         
         <a 
-          href="/sandbox.html?kenzo_builder=true" 
+          href={`/sandbox.html?kenzo_builder=true&api_key=${apiKey}`} 
           target="_blank" 
           rel="noreferrer" 
           className="flex items-center gap-2 bg-gradient-to-r from-violet-600 to-indigo-650 hover:from-violet-500 hover:to-indigo-550 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all duration-300 shadow-lg shadow-indigo-600/25 active:scale-95 cursor-pointer"
@@ -83,7 +85,7 @@ export default function ToursView({
               Launch the Sandbox Builder to visually select HTML elements, capture click events, and create step-by-step guides.
             </p>
             <a 
-              href="/sandbox.html?kenzo_builder=true" 
+              href={`/sandbox.html?kenzo_builder=true&api_key=${apiKey}`} 
               target="_blank"
               className="mt-6 flex items-center gap-2 bg-zinc-950 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow"
             >
@@ -181,7 +183,7 @@ export default function ToursView({
                 {/* Action Footer */}
                 <div className="flex items-center justify-between mt-5 pt-3 border-t border-zinc-850/50">
                   <a 
-                    href={`/sandbox.html?kenzo_flow=${flow.id}`}
+                    href={`/sandbox.html?kenzo_flow=${flow.id}&api_key=${apiKey}`}
                     target="_blank"
                     rel="noreferrer"
                     className="py-1.5 px-3 bg-zinc-950 border border-zinc-800 hover:border-zinc-700 hover:text-white rounded-lg text-zinc-400 flex items-center gap-1 text-[10px] transition-colors cursor-pointer font-bold"

@@ -283,6 +283,35 @@ app.post('/api/v1/progress/:flowId', authenticateSdk, async (req: AuthenticatedR
 
 // --- ADMIN API ROUTES ---
 
+// 0a. List all projects
+app.get('/api/v1/admin/projects', async (req: Request, res: Response) => {
+  try {
+    const result = await pool.query('SELECT id, name, api_key as "apiKey", created_at as "createdAt" FROM projects ORDER BY created_at DESC');
+    res.json(result.rows);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// 0b. Create a project (website)
+app.post('/api/v1/admin/projects', async (req: Request, res: Response) => {
+  const { name } = req.body;
+  if (!name) {
+    res.status(400).json({ message: 'Project name is required' });
+    return;
+  }
+  try {
+    const apiKey = `kenzo_project_${Date.now()}_key_${Math.random().toString(36).substring(2, 7)}`;
+    const result = await pool.query(
+      'INSERT INTO projects (name, api_key) VALUES ($1, $2) RETURNING id, name, api_key as "apiKey", created_at as "createdAt"',
+      [name, apiKey]
+    );
+    res.json(result.rows[0]);
+  } catch (err: any) {
+    res.status(550).json({ message: 'Server error', error: err.message });
+  }
+});
+
 // 1. List all flows (admin)
 app.get('/api/v1/admin/flows', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
   try {

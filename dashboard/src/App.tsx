@@ -37,6 +37,13 @@ interface AnalyticsSummary {
   }>;
 }
 
+interface Project {
+  id: string;
+  name: string;
+  apiKey: string;
+  createdAt: string;
+}
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'walkthroughs' | 'integration'>('dashboard');
   const [flows, setFlows] = useState<Flow[]>([]);
@@ -45,16 +52,40 @@ export default function App() {
   const [editingFlow, setEditingFlow] = useState<Flow | null>(null);
   const [apiBaseUrl, setApiBaseUrl] = useState('');
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  
+  // Multi-tenant project states
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [activeProjectId, setActiveProjectId] = useState<string>('');
 
   const fetchBaseUrl = () => {
     const url = window.location.origin;
     setApiBaseUrl(url);
   };
 
+  const loadProjects = async () => {
+    try {
+      const res = await fetch('/api/v1/admin/projects');
+      if (res.ok) {
+        const data = await res.json();
+        setProjects(data);
+        if (data.length > 0) {
+          const savedId = localStorage.getItem('kenzo_active_project_id');
+          const exists = data.some((p: any) => p.id === savedId);
+          const defaultId = exists && savedId ? savedId : data[0].id;
+          setActiveProjectId(defaultId);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch projects list:', err);
+    }
+  };
+
   const loadData = async () => {
+    if (!activeProjectId) return;
     setLoading(true);
     try {
-      const flowsRes = await fetch('/api/v1/admin/flows');
+      const headers = { 'x-project-id': activeProjectId };
+      const flowsRes = await fetch('/api/v1/admin/flows', { headers });
       if (flowsRes.ok) {
         const flowsData = await flowsRes.json();
         setFlows(Array.isArray(flowsData) ? flowsData : []);
@@ -63,7 +94,7 @@ export default function App() {
         setFlows([]);
       }
 
-      const analyticsRes = await fetch('/api/v1/admin/analytics/summary');
+      const analyticsRes = await fetch('/api/v1/admin/analytics/summary', { headers });
       if (analyticsRes.ok) {
         const analyticsData = await analyticsRes.json();
         setAnalytics(analyticsData);
@@ -74,16 +105,14 @@ export default function App() {
     } catch (err) {
       console.error('Error loading admin portal data:', err);
     } finally {
-      // Small simulated delay for premium transition flow
-      setTimeout(() => setLoading(false), 300);
+      setTimeout(() => setLoading(false), 200);
     }
   };
 
   useEffect(() => {
     fetchBaseUrl();
-    loadData();
+    loadProjects();
 
-    // Setup global Ctrl+K listener
     const handleGlobalKeydown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
@@ -94,11 +123,39 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleGlobalKeydown);
   }, []);
 
+  useEffect(() => {
+    if (activeProjectId) {
+      localStorage.setItem('kenzo_active_project_id', activeProjectId);
+      loadData();
+    }
+  }, [activeProjectId]);
+
+  const handleCreateProject = async (name: string) => {
+    try {
+      const res = await fetch('/api/v1/admin/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+      });
+      if (res.ok) {
+        const newProj = await res.json();
+        setProjects(prev => [newProj, ...prev]);
+        setActiveProjectId(newProj.id);
+      } else {
+        alert('Failed to register website: ' + res.statusText);
+      }
+    } catch (err) {
+      alert('Failed to register website: ' + err);
+    }
+  };
+
   const handleDeleteFlow = async (flowId: string) => {
     if (!confirm('Are you sure you want to delete this walkthrough tour?')) return;
     try {
+      const headers = activeProjectId ? { 'x-project-id': activeProjectId } : undefined;
       const res = await fetch(`/api/v1/admin/flows/${flowId}`, {
         method: 'DELETE',
+        headers
       });
       if (res.ok) {
         setFlows(flows.filter((f: Flow) => f.id !== flowId));
@@ -112,9 +169,13 @@ export default function App() {
 
   const handleUpdateFlowStatus = async (flow: Flow, status: 'draft' | 'published') => {
     try {
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(activeProjectId ? { 'x-project-id': activeProjectId } : {})
+      };
       const res = await fetch(`/api/v1/admin/flows/${flow.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           ...flow,
           status
@@ -133,9 +194,13 @@ export default function App() {
     if (!editingFlow) return;
 
     try {
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(activeProjectId ? { 'x-project-id': activeProjectId } : {})
+      };
       const res = await fetch(`/api/v1/admin/flows/${editingFlow.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(editingFlow)
       });
       if (res.ok) {
@@ -155,6 +220,7 @@ export default function App() {
     return `${((totalCompletions / totalStarts) * 100).toFixed(1)}%`;
   };
 
+  const activeProject = projects.find(p => p.id === activeProjectId);
   const activePublishedCount = flows.filter(f => f.status === 'published').length;
 
   return (
@@ -166,6 +232,10 @@ export default function App() {
         setActiveTab={setActiveTab} 
         loadData={loadData} 
         flowsCount={flows.length} 
+        projects={projects}
+        activeProjectId={activeProjectId}
+        setActiveProjectId={setActiveProjectId}
+        onCreateProject={handleCreateProject}
       />
 
       {/* Main Content Pane */}
@@ -203,7 +273,7 @@ export default function App() {
               <div className="h-44 bg-zinc-900 border border-zinc-850 rounded-xl"></div>
             </div>
           ) : (
-            <div className="fade-in transition-all duration-300">
+            <div className="fade-in transition-all duration-350">
               {activeTab === 'dashboard' && (
                 <AnalyticsView 
                   analytics={analytics} 
@@ -221,11 +291,15 @@ export default function App() {
                   handleDeleteFlow={handleDeleteFlow}
                   handleUpdateFlowStatus={handleUpdateFlowStatus}
                   handleSaveFlowDetails={handleSaveFlowDetails}
+                  apiKey={activeProject?.apiKey || ''}
                 />
               )}
 
               {activeTab === 'integration' && (
-                <IntegrationView apiBaseUrl={apiBaseUrl} />
+                <IntegrationView 
+                  apiBaseUrl={apiBaseUrl} 
+                  apiKey={activeProject?.apiKey || ''} 
+                />
               )}
             </div>
           )}

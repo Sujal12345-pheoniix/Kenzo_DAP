@@ -14,11 +14,22 @@ import {
 } from 'lucide-react';
 import KenzoLogo from './logo';
 
+interface Project {
+  id: string;
+  name: string;
+  apiKey: string;
+  createdAt: string;
+}
+
 interface SidebarProps {
   activeTab: 'dashboard' | 'walkthroughs' | 'integration';
   setActiveTab: (tab: 'dashboard' | 'walkthroughs' | 'integration') => void;
   loadData: () => void;
   flowsCount: number;
+  projects: Project[];
+  activeProjectId: string;
+  setActiveProjectId: (id: string) => void;
+  onCreateProject: (name: string) => Promise<void>;
 }
 
 interface NavItem {
@@ -28,7 +39,16 @@ interface NavItem {
   badge?: number;
 }
 
-export default function Sidebar({ activeTab, setActiveTab, loadData, flowsCount }: SidebarProps) {
+export default function Sidebar({ 
+  activeTab, 
+  setActiveTab, 
+  loadData, 
+  flowsCount,
+  projects,
+  activeProjectId,
+  setActiveProjectId,
+  onCreateProject
+}: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [workspaceMenuOpen, setWorkspaceMenuOpen] = useState(false);
 
@@ -83,7 +103,7 @@ export default function Sidebar({ activeTab, setActiveTab, loadData, flowsCount 
                   <Building size={12} />
                 </div>
                 <div className="text-xs font-semibold truncate max-w-[130px]">
-                  Kenzo HQ Workspace
+                  {projects.find(p => p.id === activeProjectId)?.name || 'Select Website'}
                 </div>
               </div>
               <ChevronDown size={14} className="text-zinc-500" />
@@ -98,12 +118,36 @@ export default function Sidebar({ activeTab, setActiveTab, loadData, flowsCount 
                   exit={{ opacity: 0, y: -5 }}
                   className="absolute left-4 right-4 mt-1 bg-zinc-950 border border-zinc-800 rounded-xl p-1 shadow-2xl z-50 text-xs text-zinc-400"
                 >
-                  <div className="px-2.5 py-1.5 text-[9px] font-bold tracking-wider text-zinc-500 uppercase">Select Workspace</div>
-                  <button onClick={() => setWorkspaceMenuOpen(false)} className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-zinc-900 hover:text-white flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Kenzo HQ Workspace (Active)
-                  </button>
-                  <button onClick={() => setWorkspaceMenuOpen(false)} className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-zinc-900 hover:text-white flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-zinc-650"></span> Development Sandbox
+                  <div className="px-2.5 py-1.5 text-[9px] font-bold tracking-wider text-zinc-500 uppercase">Registered Websites</div>
+                  <div className="max-h-[160px] overflow-y-auto flex flex-col gap-0.5">
+                    {projects.map(p => (
+                      <button 
+                        key={p.id}
+                        onClick={() => {
+                          setActiveProjectId(p.id);
+                          setWorkspaceMenuOpen(false);
+                        }}
+                        className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-zinc-900 hover:text-white flex items-center justify-between gap-2 cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className={`w-1.5 h-1.5 rounded-full ${p.id === activeProjectId ? 'bg-emerald-500' : 'bg-zinc-650'}`}></span>
+                          <span className="truncate max-w-[120px]">{p.name}</span>
+                        </div>
+                        {p.id === activeProjectId && <span className="text-[8px] bg-emerald-500/10 text-emerald-400 font-bold px-1.5 py-0.5 rounded">Active</span>}
+                      </button>
+                    ))}
+                  </div>
+                  <button 
+                    onClick={() => {
+                      const name = prompt('Enter Website Domain or Name (e.g. Acme Portal):');
+                      if (name && name.trim()) {
+                        onCreateProject(name.trim());
+                      }
+                      setWorkspaceMenuOpen(false);
+                    }}
+                    className="w-full text-center px-2.5 py-2 rounded-lg bg-indigo-600/15 hover:bg-indigo-600/25 text-indigo-455 hover:text-indigo-400 font-bold border border-dashed border-indigo-500/15 mt-1.5 text-[9px] cursor-pointer"
+                  >
+                    + Register New Website
                   </button>
                 </motion.div>
               )}

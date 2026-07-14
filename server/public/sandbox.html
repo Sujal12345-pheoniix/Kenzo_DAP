@@ -661,16 +661,18 @@
   <!-- Load Kenzo SDK -->
   <script src="/sdk.js"></script>
   <script>
-    // Initialize Kenzo SDK with Local Sandbox credentials
+    // Initialize Kenzo SDK with dynamically loaded credentials (multi-tenant support)
     document.addEventListener('DOMContentLoaded', async () => {
       if (typeof Kenzo !== 'undefined') {
+        const urlParams = new URLSearchParams(window.location.search);
+        const apiKey = urlParams.get('api_key') || 'kenzo_project_dev_api_key_2026';
         try {
           await Kenzo.init({
-            apiKey: 'kenzo_project_dev_api_key_2026',
+            apiKey: apiKey,
             apiBaseUrl: '/api/v1',
             debug: true
           });
-          console.log('[Sandbox] Kenzo SDK successfully initialized.');
+          console.log(`[Sandbox] Kenzo SDK successfully initialized with API Key: ${apiKey}`);
         } catch (e) {
           console.error('[Sandbox] Kenzo SDK failed to initialize:', e);
         }

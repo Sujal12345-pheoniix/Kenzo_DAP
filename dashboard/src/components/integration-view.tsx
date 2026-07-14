@@ -12,16 +12,18 @@ import {
 
 interface IntegrationViewProps {
   apiBaseUrl: string;
+  apiKey: string;
 }
 
 type Framework = 'html' | 'react' | 'nextjs' | 'vue' | 'angular';
 
-export default function IntegrationView({ apiBaseUrl }: IntegrationViewProps) {
+export default function IntegrationView({ apiBaseUrl, apiKey }: IntegrationViewProps) {
   const [activeTab, setActiveTab] = useState<Framework>('html');
   const [copied, setCopied] = useState(false);
   const [verificationState, setVerificationState] = useState<'idle' | 'checking' | 'success' | 'failed'>('idle');
 
   const formattedUrl = apiBaseUrl || 'https://kenzo-dap.onrender.com';
+  const displayApiKey = apiKey || 'kenzo_project_dev_api_key_2026';
 
   const snippets: Record<Framework, string> = {
     html: `<!-- Kenzo Digital Adoption Platform Snippet -->
@@ -30,7 +32,7 @@ export default function IntegrationView({ apiBaseUrl }: IntegrationViewProps) {
   document.addEventListener('DOMContentLoaded', function() {
     if (typeof Kenzo !== 'undefined') {
       Kenzo.init({
-        apiKey: "kenzo_project_dev_api_key_2026",
+        apiKey: "${displayApiKey}",
         apiBaseUrl: "${formattedUrl}/api/v1"
       });
     }
@@ -47,7 +49,7 @@ import { Kenzo } from '@kenzo/sdk';
 export default function App() {
   useEffect(() => {
     Kenzo.init({
-      apiKey: "kenzo_project_dev_api_key_2026",
+      apiKey: "${displayApiKey}",
       apiBaseUrl: "${formattedUrl}/api/v1"
     });
   }, []);
@@ -64,7 +66,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     import('@kenzo/sdk').then(({ Kenzo }) => {
       Kenzo.init({
-        apiKey: "kenzo_project_dev_api_key_2026",
+        apiKey: "${displayApiKey}",
         apiBaseUrl: "${formattedUrl}/api/v1"
       });
     });
@@ -85,7 +87,7 @@ import { Kenzo } from '@kenzo/sdk'
 const app = createApp(App)
 
 Kenzo.init({
-  apiKey: "kenzo_project_dev_api_key_2026",
+  apiKey: "${displayApiKey}",
   apiBaseUrl: "${formattedUrl}/api/v1"
 });
 
@@ -102,7 +104,7 @@ import { Kenzo } from '@kenzo/sdk';
 export class AppComponent implements OnInit {
   ngOnInit() {
     Kenzo.init({
-      apiKey: 'kenzo_project_dev_api_key_2026',
+      apiKey: '${displayApiKey}',
       apiBaseUrl: '${formattedUrl}/api/v1'
     });
   }
@@ -112,7 +114,7 @@ export class AppComponent implements OnInit {
   const handleCopy = () => {
     navigator.clipboard.writeText(snippets[activeTab]);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopied(false), 2050);
   };
 
   const verifyConnection = () => {
@@ -147,7 +149,7 @@ export class AppComponent implements OnInit {
               return <span key={pidx} className="text-emerald-400 font-medium">{part}</span>;
             }
             if (part === 'apiKey' || part === 'apiBaseUrl') {
-              return <span key={pidx} className="text-rose-450 font-bold">{part}</span>;
+              return <span key={pidx} className="text-rose-455 font-bold">{part}</span>;
             }
             return <span key={pidx}>{part}</span>;
           })}
@@ -157,67 +159,78 @@ export class AppComponent implements OnInit {
   };
 
   return (
-    <div className="space-y-12 select-none text-left">
+    <div className="space-y-6 select-none text-left">
       
       {/* Header */}
-      <div className="border-b border-zinc-800/40 pb-4">
-        <h2 className="text-2xl font-bold font-outfit text-white tracking-tight leading-tight">Snippet Installation</h2>
-        <p className="text-zinc-500 text-xs mt-1">Deploy this single-snippet script to initialize walkthroughs globally on your domains.</p>
+      <div>
+        <h2 className="text-2xl font-bold font-outfit text-white leading-tight">Snippet Installation</h2>
+        <p className="text-zinc-400 text-xs mt-1">Deploy this single-snippet script to initialize walkthroughs globally on your domains.</p>
       </div>
 
-      {/* Main Grid: Wizard Steps vs Code Console */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-4">
+      {/* Main Grid split: Installation Steps + Code display */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Wizard Steps (Elevated Blue Header Card) */}
-        <div className="relative bg-zinc-900 border border-zinc-800/50 rounded-2xl p-5 pt-8 shadow-xl flex flex-col justify-between mt-4 lg:col-span-1">
-          {/* Floating Blue Header */}
-          <div className="absolute -top-5 left-4 right-4 h-12 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl flex items-center px-4 shadow-lg shadow-blue-600/20 ring-1 ring-white/10">
-            <Cpu size={14} className="text-white mr-2" />
-            <h3 className="text-xs font-bold font-outfit text-white uppercase tracking-wider">Installation Steps</h3>
+        {/* Step-by-Step wizard */}
+        <div className="glass border border-zinc-800/80 rounded-xl p-5 custom-shadow flex flex-col gap-6 lg:col-span-1">
+          <div className="flex items-center gap-2 mb-2 pb-3 border-b border-zinc-900">
+            <Cpu size={16} className="text-indigo-400" />
+            <h3 className="text-xs font-bold tracking-wider text-zinc-300 uppercase">Installation Wizard</h3>
           </div>
 
-          <div className="flex flex-col gap-6 mt-8">
-            <div className="flex items-start gap-3.5 text-xs">
-              <span className="w-5.5 h-5.5 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center font-bold text-zinc-450 shrink-0">1</span>
+          <div className="flex flex-col gap-5">
+            {/* Step 1 */}
+            <div className="flex items-start gap-3 text-xs">
+              <span className="w-5 h-5 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center font-bold text-zinc-400 shrink-0">1</span>
               <div className="flex flex-col gap-1 mt-0.5">
-                <span className="font-bold text-zinc-200">Select Platform</span>
-                <span className="text-zinc-500 leading-normal">Choose your frontend framework tab on the right.</span>
+                <span className="font-semibold text-zinc-200">Select Platform</span>
+                <span className="text-zinc-500 leading-normal">Choose your frontend framework tab.</span>
               </div>
             </div>
 
-            <div className="flex items-start gap-3.5 text-xs">
-              <span className="w-5.5 h-5.5 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center font-bold text-zinc-450 shrink-0">2</span>
+            {/* Step 2 */}
+            <div className="flex items-start gap-3 text-xs">
+              <span className="w-5 h-5 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center font-bold text-zinc-400 shrink-0">2</span>
               <div className="flex flex-col gap-1 mt-0.5">
-                <span className="font-bold text-zinc-200">Copy JavaScript Snippet</span>
+                <span className="font-semibold text-zinc-200">Copy JavaScript snippet</span>
                 <span className="text-zinc-500 leading-normal">Place it globally in the root html file or main App layout.</span>
               </div>
             </div>
 
-            <div className="flex items-start gap-3.5 text-xs">
-              <span className="w-5.5 h-5.5 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center font-bold text-zinc-450 shrink-0">3</span>
+            {/* Step 3 */}
+            <div className="flex items-start gap-3 text-xs">
+              <span className="w-5 h-5 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center font-bold text-zinc-400 shrink-0">3</span>
               <div className="flex flex-col gap-1 mt-0.5">
-                <span className="font-bold text-zinc-200">Verify Network Connection</span>
+                <span className="font-semibold text-zinc-200">Verify client network connection</span>
                 <span className="text-zinc-500 leading-normal">Start the validation checker tool to poll status logs.</span>
               </div>
             </div>
           </div>
 
-          {/* Connection Checker */}
-          <div className="mt-8 pt-5 border-t border-zinc-850/50">
-            <div className="p-3 bg-zinc-950 border border-zinc-850 rounded-xl flex flex-col gap-3">
-              <div className="flex items-center justify-between text-[10px] font-bold tracking-wider">
-                <span className="text-zinc-450 uppercase">SDK Connection Status</span>
-                {verificationState === 'idle' && <span className="text-zinc-500">Idle</span>}
-                {verificationState === 'checking' && <span className="text-indigo-400 animate-pulse">Checking...</span>}
-                {verificationState === 'success' && <span className="text-emerald-400 flex items-center gap-0.5">Connected</span>}
+          {/* Connection Verification widget */}
+          <div className="mt-auto pt-5 border-t border-zinc-900">
+            <div className="p-3 bg-zinc-950/60 border border-zinc-850 rounded-lg flex flex-col gap-3">
+              <div className="flex items-center justify-between text-[10px]">
+                <span className="text-zinc-400 font-semibold uppercase tracking-wider">SDK Connection Checker</span>
+                
+                {/* Status indicator pills */}
+                {verificationState === 'idle' && (
+                  <span className="text-zinc-500 font-semibold">Idle</span>
+                )}
+                {verificationState === 'checking' && (
+                  <span className="text-indigo-400 font-semibold animate-pulse">Verifying...</span>
+                )}
+                {verificationState === 'success' && (
+                  <span className="text-emerald-400 font-semibold flex items-center gap-0.5">Connected</span>
+                )}
               </div>
 
+              {/* Verify actions */}
               <AnimatePresence mode="wait">
                 {verificationState !== 'success' ? (
                   <button 
                     onClick={verifyConnection}
                     disabled={verificationState === 'checking'}
-                    className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold shadow-sm transition-all focus:outline-none cursor-pointer ${
+                    className={`w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold shadow-sm transition-all focus:outline-none cursor-pointer ${
                       verificationState === 'checking' 
                         ? 'bg-zinc-900 border border-zinc-800 text-zinc-650' 
                         : 'bg-zinc-900 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800 text-zinc-300'
@@ -234,9 +247,9 @@ export class AppComponent implements OnInit {
                   <motion.div 
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] rounded-xl flex flex-col items-center justify-center gap-2 text-center"
+                    className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] rounded-lg flex flex-col items-center justify-center gap-1.5 text-center"
                   >
-                    <CheckCircle size={20} className="text-emerald-400" />
+                    <CheckCircle size={18} className="text-emerald-400" />
                     <div>
                       <span className="font-bold">Live connection verified!</span>
                       <p className="text-zinc-500 text-[9px] mt-0.5">Events stream is synced with Neon DB.</p>
@@ -248,21 +261,22 @@ export class AppComponent implements OnInit {
           </div>
         </div>
 
-        {/* Code Console Card (Elevated Violet Header Card) */}
-        <div className="relative bg-zinc-900 border border-zinc-800/50 rounded-2xl p-5 pt-8 shadow-xl lg:col-span-2 mt-4 flex flex-col">
-          {/* Floating purple Header */}
-          <div className="absolute -top-5 left-4 right-4 h-12 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-xl flex items-center justify-between px-5 shadow-lg shadow-violet-600/20 ring-1 ring-white/10">
+        {/* Code display console */}
+        <div className="glass border border-zinc-800/80 rounded-xl p-5 custom-shadow lg:col-span-2 flex flex-col">
+          {/* Tabs header */}
+          <div className="flex items-center justify-between border-b border-zinc-900 pb-3 mb-4">
             <div className="flex items-center gap-1.5">
-              <Terminal size={14} className="text-white" />
-              <h3 className="text-xs font-bold font-outfit text-white uppercase tracking-wider">Framework Snippets</h3>
+              <Terminal size={14} className="text-indigo-400" />
+              <span className="text-xs font-bold tracking-wider text-zinc-300 uppercase">Framework Snippets</span>
             </div>
             
+            {/* Copy button */}
             <button 
               onClick={handleCopy}
-              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg border text-[10px] font-bold transition-all cursor-pointer ${
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg border text-[10px] font-semibold transition-all cursor-pointer ${
                 copied 
                   ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400' 
-                  : 'bg-black/20 border-white/10 hover:bg-black/30 text-zinc-300 hover:text-white'
+                  : 'bg-zinc-900 border-zinc-850 hover:border-zinc-800 text-zinc-400 hover:text-white'
               }`}
             >
               {copied ? <Check size={11} /> : <Copy size={11} />}
@@ -271,7 +285,7 @@ export class AppComponent implements OnInit {
           </div>
 
           {/* Framework tabs selector */}
-          <div className="flex items-center gap-1.5 mt-8 mb-4 bg-zinc-950 p-1.5 rounded-xl border border-zinc-850 w-fit">
+          <div className="flex items-center gap-1.5 mb-4 bg-zinc-950 p-1.5 rounded-lg border border-zinc-900/80 w-fit">
             {(['html', 'react', 'nextjs', 'vue', 'angular'] as const).map(tab => (
               <button
                 key={tab}
@@ -279,9 +293,9 @@ export class AppComponent implements OnInit {
                   setActiveTab(tab);
                   setCopied(false);
                 }}
-                className={`text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all uppercase cursor-pointer ${
+                className={`text-[10px] font-bold px-3 py-1.5 rounded transition-all uppercase cursor-pointer ${
                   activeTab === tab 
-                    ? 'bg-zinc-900 text-white shadow shadow-black/40 border border-zinc-800' 
+                    ? 'bg-zinc-900 text-white shadow-sm border border-zinc-850' 
                     : 'text-zinc-500 hover:text-zinc-300'
                 }`}
               >
@@ -291,7 +305,7 @@ export class AppComponent implements OnInit {
           </div>
 
           {/* Code pre box */}
-          <div className="flex-1 bg-zinc-950 border border-zinc-850 rounded-xl p-5 overflow-auto text-xs leading-relaxed max-h-[360px] shadow-inner">
+          <div className="flex-1 bg-zinc-950 border border-zinc-900 rounded-lg p-5 overflow-auto text-xs leading-relaxed max-h-[360px] custom-shadow">
             <pre className="text-left font-mono">
               <code>
                 {renderHighlightedCode(snippets[activeTab])}
