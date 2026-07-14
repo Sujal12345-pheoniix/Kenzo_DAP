@@ -443,7 +443,19 @@ app.post('/api/v1/admin/projects', async (req: Request, res: Response) => {
     // Seed default campaign flows and walkthrough steps automatically
     await seedProjectData(newProject.id, name, url);
 
-    res.json(newProject);
+// 0c. Delete a project (website)
+app.delete('/api/v1/admin/projects/:id', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query(
+      'DELETE FROM projects WHERE id = $1 RETURNING id, name',
+      [id]
+    );
+    if (result.rows.length === 0) {
+      res.status(404).json({ message: 'Website project not found' });
+      return;
+    }
+    res.json({ success: true, deleted: result.rows[0] });
   } catch (err: any) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }

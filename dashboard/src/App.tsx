@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import Sidebar from './components/sidebar';
 import TopNav from './components/top-nav';
 import CommandPalette from './components/command-palette';
@@ -56,6 +57,11 @@ export default function App() {
   // Multi-tenant project states
   const [projects, setProjects] = useState<Project[]>([]);
   const [activeProjectId, setActiveProjectId] = useState<string>('');
+
+  // Project registration states
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+  const [newProjectName, setNewProjectName] = useState('');
+  const [newProjectUrl, setNewProjectUrl] = useState('');
 
   const fetchBaseUrl = () => {
     const url = window.location.origin;
@@ -149,6 +155,33 @@ export default function App() {
     }
   };
 
+  const handleDeleteProject = async (projectId: string, projectName: string) => {
+    if (projects.length <= 1) {
+      alert('You must keep at least one website workspace in the dashboard.');
+      return;
+    }
+    if (!confirm(`Are you sure you want to permanently delete the website "${projectName}"?\n\nThis will delete all its flows, steps, and analytics data.`)) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/v1/admin/projects/${projectId}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        const remaining = projects.filter(p => p.id !== projectId);
+        setProjects(remaining);
+        if (activeProjectId === projectId) {
+          setActiveProjectId(remaining[0].id);
+        }
+        alert(`Successfully deleted website: ${projectName}`);
+      } else {
+        alert('Failed to delete website.');
+      }
+    } catch (err) {
+      alert('Delete failed: ' + err);
+    }
+  };
+
   const handleDeleteFlow = async (flowId: string) => {
     if (!confirm('Are you sure you want to delete this walkthrough tour?')) return;
     try {
@@ -235,7 +268,8 @@ export default function App() {
         projects={projects}
         activeProjectId={activeProjectId}
         setActiveProjectId={setActiveProjectId}
-        onCreateProject={handleCreateProject}
+        onOpenRegisterModal={() => setIsRegisterModalOpen(true)}
+        onDeleteProject={handleDeleteProject}
       />
 
       {/* Main Content Pane */}
@@ -314,6 +348,76 @@ export default function App() {
         loadData={loadData}
         flows={flows}
       />
+
+      {/* Custom Register Website Modal */}
+      <AnimatePresence>
+        {isRegisterModalOpen && (
+          <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-2xl relative text-left"
+            >
+              <h3 className="text-base font-bold font-outfit text-white uppercase tracking-wider mb-2">Register New Website</h3>
+              <p className="text-zinc-500 text-xs mb-6 leading-normal">Create a separate workspace to isolate walkthrough campaigns and analytics for a domain.</p>
+
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                if (!newProjectName.trim()) return;
+                await handleCreateProject(newProjectName.trim(), newProjectUrl.trim());
+                setIsRegisterModalOpen(false);
+                setNewProjectName('');
+                setNewProjectUrl('');
+              }} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Website Name *</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. CrickBuddy"
+                    value={newProjectName}
+                    onChange={e => setNewProjectName(e.target.value)}
+                    className="w-full bg-zinc-950 border border-zinc-850 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-3 py-2.5 text-xs text-white outline-none transition-all"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Website URL (Optional)</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. https://crickbuddy.com"
+                    value={newProjectUrl}
+                    onChange={e => setNewProjectUrl(e.target.value)}
+                    className="w-full bg-zinc-950 border border-zinc-850 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-3 py-2.5 text-xs text-white outline-none transition-all"
+                  />
+                  <span className="text-[9px] text-zinc-500 leading-normal block mt-1">If provided, we'll auto-scope the Onboarding triggers directly to this domain route.</span>
+                </div>
+
+                <div className="flex items-center gap-3 pt-4">
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      setIsRegisterModalOpen(false);
+                      setNewProjectName('');
+                      setNewProjectUrl('');
+                    }}
+                    className="flex-1 bg-zinc-950 border border-zinc-850 hover:border-zinc-800 text-zinc-400 hover:text-white text-xs font-bold py-2.5 rounded-xl cursor-pointer transition-all focus:outline-none"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit" 
+                    className="flex-1 bg-gradient-to-r from-violet-600 to-indigo-650 hover:from-violet-500 hover:to-indigo-550 text-white text-xs font-bold py-2.5 rounded-xl cursor-pointer transition-all shadow-md shadow-indigo-600/10 focus:outline-none"
+                  >
+                    Register Workspace
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

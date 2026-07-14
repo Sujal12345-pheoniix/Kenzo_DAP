@@ -10,9 +10,10 @@ import {
   ChevronRight, 
   Settings, 
   Building,
-  ChevronDown
+  ChevronDown,
+  Trash2
 } from 'lucide-react';
-import KenzoLogo from './logo';
+import KenLogo from './logo';
 
 interface Project {
   id: string;
@@ -29,7 +30,8 @@ interface SidebarProps {
   projects: Project[];
   activeProjectId: string;
   setActiveProjectId: (id: string) => void;
-  onCreateProject: (name: string, url?: string) => Promise<void>;
+  onOpenRegisterModal: () => void;
+  onDeleteProject: (id: string, name: string) => Promise<void>;
 }
 
 interface NavItem {
@@ -47,7 +49,8 @@ export default function Sidebar({
   projects,
   activeProjectId,
   setActiveProjectId,
-  onCreateProject
+  onOpenRegisterModal,
+  onDeleteProject
 }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [workspaceMenuOpen, setWorkspaceMenuOpen] = useState(false);
@@ -76,7 +79,7 @@ export default function Sidebar({
         {/* Header / Logo */}
         <div className={`p-5 flex items-center gap-3 border-b border-zinc-800/40 ${isCollapsed ? 'justify-center' : ''}`}>
           <div className="shrink-0 flex items-center justify-center">
-            <KenzoLogo size={32} />
+            <KenLogo size={32} />
           </div>
           {!isCollapsed && (
             <motion.div 
@@ -121,29 +124,39 @@ export default function Sidebar({
                   <div className="px-2.5 py-1.5 text-[9px] font-bold tracking-wider text-zinc-500 uppercase">Registered Websites</div>
                   <div className="max-h-[160px] overflow-y-auto flex flex-col gap-0.5">
                     {projects.map(p => (
-                      <button 
+                      <div 
                         key={p.id}
                         onClick={() => {
                           setActiveProjectId(p.id);
                           setWorkspaceMenuOpen(false);
                         }}
-                        className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-zinc-900 hover:text-white flex items-center justify-between gap-2 cursor-pointer"
+                        className="group/item w-full flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-zinc-900 text-zinc-400 hover:text-white transition-colors cursor-pointer"
                       >
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
                           <span className={`w-1.5 h-1.5 rounded-full ${p.id === activeProjectId ? 'bg-emerald-500' : 'bg-zinc-650'}`}></span>
-                          <span className="truncate max-w-[120px]">{p.name}</span>
+                          <span className="truncate max-w-[110px] text-xs">{p.name}</span>
                         </div>
-                        {p.id === activeProjectId && <span className="text-[8px] bg-emerald-500/10 text-emerald-400 font-bold px-1.5 py-0.5 rounded">Active</span>}
-                      </button>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {p.id === activeProjectId && (
+                            <span className="text-[8px] bg-emerald-500/10 text-emerald-400 font-bold px-1.5 py-0.5 rounded">Active</span>
+                          )}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteProject(p.id, p.name);
+                            }}
+                            className="p-1 rounded text-zinc-600 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover/item:opacity-100 focus:opacity-100"
+                            title="Delete Website Workspace"
+                          >
+                            <Trash2 size={11} />
+                          </button>
+                        </div>
+                      </div>
                     ))}
                   </div>
                   <button 
                     onClick={() => {
-                      const name = prompt('Enter Website Name (e.g. CrickBuddy):');
-                      if (name && name.trim()) {
-                        const url = prompt('Enter Website URL (optional, e.g. https://crickbuddy.com):') || '';
-                        onCreateProject(name.trim(), url.trim());
-                      }
+                      onOpenRegisterModal();
                       setWorkspaceMenuOpen(false);
                     }}
                     className="w-full text-center px-2.5 py-2 rounded-lg bg-indigo-600/15 hover:bg-indigo-600/25 text-indigo-455 hover:text-indigo-400 font-bold border border-dashed border-indigo-500/15 mt-1.5 text-[9px] cursor-pointer"
