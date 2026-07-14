@@ -29,14 +29,17 @@ export default function IntegrationView({ apiBaseUrl, apiKey }: IntegrationViewP
     html: `<!-- Kenzo Digital Adoption Platform Snippet -->
 <script src="${formattedUrl}/sdk.js"></script>
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    if (typeof Kenzo !== 'undefined') {
-      Kenzo.init({
-        apiKey: "${displayApiKey}",
-        apiBaseUrl: "${formattedUrl}/api/v1"
-      });
-    }
-  });
+  (function() {
+    var checkKenzo = setInterval(function() {
+      if (typeof Kenzo !== 'undefined') {
+        clearInterval(checkKenzo);
+        Kenzo.init({
+          apiKey: "${displayApiKey}",
+          apiBaseUrl: "${formattedUrl}/api/v1"
+        });
+      }
+    }, 50);
+  })();
 </script>`,
 
     react: `// 1. Install standard dependency
