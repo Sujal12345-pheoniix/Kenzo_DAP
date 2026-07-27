@@ -7,3 +7,5 @@ coverage/
 *.log
 .env
 .env.*
+presentation.html
+*.presentation.html
