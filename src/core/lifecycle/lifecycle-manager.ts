@@ -65,11 +65,11 @@ export class LifecycleManager implements ILifecycleManager {
 
       await this.auth.authenticate(config.apiKey);
       const flows = await this.flowLoader.loadAll();
+      this.logger.info(`Loaded ${flows.length} published experience(s)`);
 
-      // Reset progress for all flows on startup to ensure walkthroughs run on every fresh page load
-      for (const flow of flows) {
-        this.progressManager.reset(flow.id);
-      }
+      // Progress is preserved per user/session based on targeting & frequency rules
+      // Register session heartbeat with server
+      this.sendHeartbeat();
 
       this.navigationWatcher.start();
 
@@ -89,12 +89,14 @@ export class LifecycleManager implements ILifecycleManager {
       // Render the floating "Start Guide" launcher widget ("ken")
       this.renderKenLauncher();
 
-      // Auto-trigger matching flow
+      // Auto-trigger matching flow & perform background DOM intelligence scan
       void this.triggerMatchingFlow();
+      void this.performPageScan();
 
-      // Listen for navigation changes to trigger matching flows
+      // Listen for navigation changes to trigger matching flows and page scans
       this.navigationUnsubscribe = this.navigationWatcher.onNavigate(() => {
         void this.triggerMatchingFlow();
+        void this.performPageScan();
       });
     } catch (error) {
       this.state = 'error';
@@ -279,4 +281,49 @@ export class LifecycleManager implements ILifecycleManager {
 
     document.body.appendChild(btn);
   }
+
+  private sendHeartbeat(): void {
+    if (typeof window === 'undefined') return;
+    const config = this.config.get();
+    const endpoint = `${config.apiBaseUrl}/sdk/heartbeat`;
+    const payload = {
+      apiKey: config.apiKey,
+      url: window.location.href,
+      domain: window.location.hostname,
+      userAgent: navigator.userAgent,
+      sdkVersion: '1.0.0',
+      environment: config.userTraits?.environment || 'production'
+    };
+
+    fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).catch(() => {
+      // Non-blocking heartbeat
+    });
+  }
+
+  private async performPageScan(): Promise<void> {
+    if (typeof window === 'undefined') return;
+    try {
+      const { PageAnalyzer } = await import('@/dom/page-analyzer');
+      const analyzer = new PageAnalyzer();
+      const pageModel = analyzer.analyze(window.location.href);
+
+      const config = this.config.get();
+      const endpoint = `${config.apiBaseUrl}/sdk/pages/scan`;
+
+      fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          apiKey: config.apiKey,
+          pageModel,
+        }),
+      }).catch(() => {});
+    } catch (_) {}
+  }
 }
+
+

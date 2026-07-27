@@ -52,9 +52,60 @@ const Kenzo: KenzoPublicAPI = {
   version: () => sdk.version(),
 };
 
+/**
+ * Automatic snippet bootstrapper.
+ * Inspects document.currentScript and DOM for <script data-kenzo-key="...">
+ */
+function autoBootstrap(): void {
+  if (typeof document === 'undefined' || typeof window === 'undefined') return;
+
+  const script = (document.currentScript as HTMLScriptElement | null) ||
+    document.querySelector<HTMLScriptElement>('script[data-kenzo-key]') ||
+    document.querySelector<HTMLScriptElement>('script[data-api-key]') ||
+    document.querySelector<HTMLScriptElement>('script[src*="sdk.js"]');
+
+  if (!script) return;
+
+  const apiKey = script.getAttribute('data-kenzo-key') ||
+    script.getAttribute('data-api-key') ||
+    script.getAttribute('data-key');
+
+  if (!apiKey) return;
+
+  const apiBaseUrl = script.getAttribute('data-api-base') ||
+    script.getAttribute('data-api-url') ||
+    '/api/v1';
+
+  const debug = script.getAttribute('data-debug') === 'true';
+  const environment = script.getAttribute('data-environment') || 'production';
+  const darkMode = script.getAttribute('data-dark-mode') !== 'false';
+
+  const run = () => {
+    sdk.init({
+      apiKey,
+      apiBaseUrl,
+      debug,
+      darkMode,
+      userTraits: { environment }
+    }).catch(err => {
+      if (debug) {
+        console.warn('[Kenzo SDK] Auto-bootstrap error:', err);
+      }
+    });
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', run, { once: true });
+  } else {
+    run();
+  }
+}
+
 if (typeof window !== 'undefined') {
   (window as unknown as Record<string, unknown>).Kenzo = Kenzo;
+  autoBootstrap();
 }
 
 export default Kenzo;
 export { Kenzo, KenzoSDK };
+

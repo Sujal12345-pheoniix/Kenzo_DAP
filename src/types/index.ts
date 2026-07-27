@@ -77,8 +77,8 @@ export interface UrlRule {
 
 /** Conditional display rule evaluated before showing a flow/step. */
 export interface DisplayCondition {
-  /** Field to evaluate (url, trait, custom). */
-  field: 'url' | 'trait' | 'custom';
+  /** Field to evaluate (url, trait, role, plan, device, user, custom). */
+  field: 'url' | 'trait' | 'role' | 'plan' | 'device' | 'user' | 'custom';
   /** Operator for comparison. */
   operator: 'equals' | 'not_equals' | 'contains' | 'regex' | 'exists' | 'not_exists';
   /** Value to compare against. */

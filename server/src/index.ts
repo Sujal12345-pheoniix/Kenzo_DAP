@@ -108,7 +108,7 @@ function authenticateAdmin(req: AuthenticatedRequest, res: Response, next: NextF
 
 // 1. Authenticate SDK
 app.post('/api/v1/auth/sdk', async (req: Request, res: Response) => {
-  const { apiKey } = req.body;
+  const { apiKey, origin, userAgent } = req.body;
   if (!apiKey) {
     res.status(400).json({ message: 'apiKey is required' });
     return;
@@ -128,6 +128,15 @@ app.post('/api/v1/auth/sdk', async (req: Request, res: Response) => {
       { expiresIn: '24h' }
     );
 
+    // Record session heartbeat
+    const domain = origin ? new URL(origin).hostname : 'localhost';
+    await pool.query(`
+      INSERT INTO sdk_sessions (project_id, domain, url, user_agent, last_seen)
+      VALUES ($1, $2, $3, $4, NOW())
+      ON CONFLICT (project_id, domain)
+      DO UPDATE SET last_seen = NOW(), url = EXCLUDED.url, user_agent = EXCLUDED.user_agent
+    `, [project.id, domain, origin || 'http://localhost', userAgent || '']);
+
     res.json({
       token,
       projectId: project.id,
@@ -139,7 +148,250 @@ app.post('/api/v1/auth/sdk', async (req: Request, res: Response) => {
   }
 });
 
-// 2. Fetch Published Flows for SDK
+// 1b. SDK Heartbeat
+app.post('/api/v1/sdk/heartbeat', async (req: Request, res: Response) => {
+  const { apiKey, url, domain, userAgent, sdkVersion, environment } = req.body;
+  if (!apiKey) {
+    res.status(400).json({ message: 'apiKey is required' });
+    return;
+  }
+  try {
+    const projectRes = await pool.query('SELECT id FROM projects WHERE api_key = $1', [apiKey]);
+    if (projectRes.rows.length === 0) {
+      res.status(401).json({ message: 'Invalid API Key' });
+      return;
+    }
+    const projectId = projectRes.rows[0].id;
+    const host = domain || (url ? new URL(url).hostname : 'localhost');
+
+    await pool.query(`
+      INSERT INTO sdk_sessions (project_id, domain, url, user_agent, sdk_version, environment, last_seen)
+      VALUES ($1, $2, $3, $4, $5, $6, NOW())
+      ON CONFLICT (project_id, domain)
+      DO UPDATE SET last_seen = NOW(), url = EXCLUDED.url, user_agent = EXCLUDED.user_agent, sdk_version = EXCLUDED.sdk_version, environment = EXCLUDED.environment
+    `, [projectId, host, url || 'http://localhost', userAgent || '', sdkVersion || '1.0.0', environment || 'production']);
+
+    res.json({ status: 'connected', timestamp: new Date().toISOString() });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// 1c. Admin SDK Connection Status
+app.get('/api/v1/admin/sdk-status', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const result = await pool.query(`
+      SELECT id, domain, url, user_agent as "userAgent", sdk_version as "sdkVersion", environment, last_seen as "lastSeen"
+      FROM sdk_sessions
+      WHERE project_id = $1
+      ORDER BY last_seen DESC LIMIT 5
+    `, [req.projectId]);
+
+    const isConnected = result.rows.length > 0 && (Date.now() - new Date(result.rows[0].lastSeen).getTime() < 5 * 60 * 1000);
+    res.json({
+      connected: isConnected,
+      sessions: result.rows,
+      lastSeen: result.rows[0]?.lastSeen || null
+    });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+
+// 1d. SDK Page Model Scan submission
+app.post('/api/v1/sdk/pages/scan', async (req: Request, res: Response) => {
+  const { apiKey, pageModel } = req.body;
+  if (!apiKey || !pageModel) {
+    res.status(400).json({ message: 'apiKey and pageModel are required' });
+    return;
+  }
+
+  try {
+    const projectRes = await pool.query('SELECT id FROM projects WHERE api_key = $1', [apiKey]);
+    if (projectRes.rows.length === 0) {
+      res.status(401).json({ message: 'Invalid API Key' });
+      return;
+    }
+    const projectId = projectRes.rows[0].id;
+    const pathname = pageModel.pathname || '/';
+    const title = pageModel.title || 'Untitled';
+
+    // Page Classifier
+    let classification = 'General Page';
+    const lower = (pathname + ' ' + title).toLowerCase();
+    if (lower.includes('login') || lower.includes('signin') || lower.includes('auth')) classification = 'Login';
+    else if (lower.includes('dashboard') || lower.includes('overview') || lower.includes('kpi')) classification = 'Dashboard';
+    else if (lower.includes('lead') || lower.includes('contact') || lower.includes('customer')) classification = 'Leads & Contacts';
+    else if (lower.includes('pipeline') || lower.includes('deal') || lower.includes('kanban')) classification = 'Pipeline';
+    else if (lower.includes('setting') || lower.includes('config') || lower.includes('preference')) classification = 'Settings';
+    else if (lower.includes('report') || lower.includes('analytic')) classification = 'Reports';
+    else if (lower.includes('project')) classification = 'Projects';
+    else if (lower.includes('employee') || lower.includes('staff')) classification = 'Employees';
+    else if (lower.includes('billing') || lower.includes('invoice')) classification = 'Billing';
+
+    // Upsert PageModel
+    await pool.query(`
+      INSERT INTO page_models (project_id, url, pathname, title, classification, fingerprint, sections, forms, elements, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+      ON CONFLICT (project_id, pathname)
+      DO UPDATE SET
+        url = EXCLUDED.url,
+        title = EXCLUDED.title,
+        classification = EXCLUDED.classification,
+        fingerprint = EXCLUDED.fingerprint,
+        sections = EXCLUDED.sections,
+        forms = EXCLUDED.forms,
+        elements = EXCLUDED.elements,
+        updated_at = NOW()
+    `, [projectId, pageModel.url, pathname, title, classification,
+        JSON.stringify(pageModel.fingerprint || {}),
+        JSON.stringify(pageModel.sections || []),
+        JSON.stringify(pageModel.forms || []),
+        JSON.stringify(pageModel.elements || [])]);
+
+    // Update Application Map graph nodes & edges
+    const mapRes = await pool.query('SELECT nodes, edges FROM application_maps WHERE project_id = $1', [projectId]);
+    let nodes = mapRes.rows[0]?.nodes || [];
+    let edges = mapRes.rows[0]?.edges || [];
+
+    const existingNodeIdx = nodes.findIndex((n: any) => n.id === pathname);
+    if (existingNodeIdx >= 0) {
+      nodes[existingNodeIdx] = { id: pathname, label: title, classification, elementCount: (pageModel.elements || []).length };
+    } else {
+      nodes.push({ id: pathname, label: title, classification, elementCount: (pageModel.elements || []).length });
+    }
+
+    // Add edges for internal navigation links found on page
+    (pageModel.elements || []).forEach((el: any) => {
+      if (el.tag === 'a' && el.href) {
+        try {
+          const hrefUrl = new URL(el.href, pageModel.url);
+          if (hrefUrl.hostname === new URL(pageModel.url).hostname) {
+            const targetPath = hrefUrl.pathname;
+            if (targetPath !== pathname && !edges.some((e: any) => e.source === pathname && e.target === targetPath)) {
+              edges.push({ source: pathname, target: targetPath, label: el.text || 'link' });
+            }
+          }
+        } catch (_) {}
+      }
+    });
+
+    await pool.query(`
+      INSERT INTO application_maps (project_id, nodes, edges, updated_at)
+      VALUES ($1, $2, $3, NOW())
+      ON CONFLICT (project_id)
+      DO UPDATE SET nodes = EXCLUDED.nodes, edges = EXCLUDED.edges, updated_at = NOW()
+    `, [projectId, JSON.stringify(nodes), JSON.stringify(edges)]);
+
+    res.json({ success: true, classification });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// 1e. Admin Application Map endpoint
+app.get('/api/v1/admin/application-map', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const mapRes = await pool.query('SELECT nodes, edges, updated_at as "updatedAt" FROM application_maps WHERE project_id = $1', [req.projectId]);
+    const pagesRes = await pool.query('SELECT id, pathname, title, classification, JSONB_ARRAY_LENGTH(elements) as "elementCount", updated_at as "updatedAt" FROM page_models WHERE project_id = $1 ORDER BY updated_at DESC', [req.projectId]);
+
+    res.json({
+      nodes: mapRes.rows[0]?.nodes || pagesRes.rows.map(p => ({ id: p.pathname, label: p.title, classification: p.classification, elementCount: p.elementCount })),
+      edges: mapRes.rows[0]?.edges || [],
+      pages: pagesRes.rows
+    });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// 1f. SDK Self-Healing Event Report
+app.post('/api/v1/sdk/self-heal', async (req: Request, res: Response) => {
+  const { apiKey, originalSelector, repairedSelector, confidence, strategy, url } = req.body;
+  if (!apiKey || !repairedSelector) {
+    res.status(400).json({ message: 'apiKey and repairedSelector are required' });
+    return;
+  }
+  try {
+    const projectRes = await pool.query('SELECT id FROM projects WHERE api_key = $1', [apiKey]);
+    if (projectRes.rows.length === 0) {
+      res.status(401).json({ message: 'Invalid API Key' });
+      return;
+    }
+    const projectId = projectRes.rows[0].id;
+    await pool.query(`
+      INSERT INTO selector_repairs (project_id, original_selector, repaired_selector, confidence, strategy, url)
+      VALUES ($1, $2, $3, $4, $5, $6)
+    `, [projectId, JSON.stringify(originalSelector || {}), repairedSelector, confidence || 0.8, strategy || 'unknown', url || '']);
+
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// 1g. AI Suggestions Endpoint
+app.get('/api/v1/admin/ai/suggestions', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const pagesRes = await pool.query('SELECT pathname, title, classification, sections, forms, elements FROM page_models WHERE project_id = $1', [req.projectId]);
+    const { FlowGenerationService } = require('./ai/flow-generation-service');
+    const aiService = new FlowGenerationService();
+    const suggestions = aiService.generateSuggestions(pagesRes.rows);
+
+    res.json({ suggestions });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// 1h. AI Goal-Based Flow Generation (Creates DRAFT requiring Admin approval)
+app.post('/api/v1/admin/ai/generate', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  const { goal } = req.body;
+  if (!goal) {
+    res.status(400).json({ message: 'goal string is required' });
+    return;
+  }
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const pagesRes = await client.query('SELECT pathname, title, classification, sections, forms, elements FROM page_models WHERE project_id = $1', [req.projectId]);
+
+    const { FlowGenerationService } = require('./ai/flow-generation-service');
+    const aiService = new FlowGenerationService();
+    const draftFlow = aiService.generateFlowFromGoal(goal, pagesRes.rows);
+
+    // Save as DRAFT (Section 18 requirement: DO NOT AUTO-PUBLISH BY DEFAULT)
+    const flowRes = await client.query(`
+      INSERT INTO flows (project_id, name, description, status, version, url_rules, priority)
+      VALUES ($1, $2, $3, 'draft', 1, $4, $5)
+      RETURNING id, name, description, status, version
+    `, [req.projectId, draftFlow.name, draftFlow.description, JSON.stringify(draftFlow.urlRules), draftFlow.priority]);
+
+    const flowId = flowRes.rows[0].id;
+    for (let i = 0; i < draftFlow.steps.length; i++) {
+      const s = draftFlow.steps[i];
+      await client.query(`
+        INSERT INTO steps (flow_id, order_index, title, content, selector, placement, display_mode, buttons)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `, [flowId, i, s.title, s.content, JSON.stringify(s.selector), s.placement, s.displayMode,
+          JSON.stringify(i < draftFlow.steps.length - 1 ? [{ text: 'Next', action: 'next', style: 'primary' }] : [{ text: 'Finish', action: 'finish', style: 'primary' }])]);
+    }
+
+    await client.query('COMMIT');
+    res.json({
+      success: true,
+      flow: { ...flowRes.rows[0], stepCount: draftFlow.steps.length },
+      explanation: draftFlow.explanation
+    });
+  } catch (err: any) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ message: 'Server error', error: err.message });
+  } finally {
+    client.release();
+  }
+});
+
 app.get('/api/v1/flows/published', authenticateSdk, async (req: AuthenticatedRequest, res: Response) => {
   try {
     // Load published flows

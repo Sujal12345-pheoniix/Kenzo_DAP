@@ -5,8 +5,10 @@
 export class BuilderOverlay {
   private active = false;
   private inspecting = false;
+  private recording = false;
   private hoverOverlay: HTMLElement | null = null;
   private builderContainer: HTMLElement | null = null;
+  private recordListener: ((e: MouseEvent) => void) | null = null;
   
   // State for the flow being edited
   private flowName = 'New Onboarding Tour';
@@ -327,6 +329,7 @@ export class BuilderOverlay {
 
       <div style="display: flex; flex-direction: column; gap: 8px;">
         <button class="k-btn" id="k-add-step-btn">+ Add Walkthrough Step</button>
+        <button class="k-btn k-btn--secondary" id="k-record-btn">🔴 Start Workflow Recording</button>
         <button class="k-btn k-btn--secondary" id="k-save-btn">Save & Publish Tour</button>
         <button class="k-btn k-btn--secondary k-btn--danger" id="k-clear-btn">Clear All</button>
       </div>
@@ -390,6 +393,9 @@ export class BuilderOverlay {
     const addStepBtn = document.getElementById('k-add-step-btn');
     addStepBtn?.addEventListener('click', () => this.startInspecting());
 
+    const recordBtn = document.getElementById('k-record-btn');
+    recordBtn?.addEventListener('click', () => this.toggleRecording());
+
     const saveBtn = document.getElementById('k-save-btn');
     saveBtn?.addEventListener('click', () => this.saveTourToDb());
 
@@ -398,6 +404,86 @@ export class BuilderOverlay {
       this.steps = [];
       this.renderStepsList();
     });
+  }
+
+  // --- Cross-Page Workflow Recorder ---
+
+  private toggleRecording(): void {
+    if (this.recording) {
+      this.stopRecording();
+    } else {
+      this.startRecording();
+    }
+  }
+
+  private startRecording(): void {
+    if (this.recording) return;
+    this.recording = true;
+    const recordBtn = document.getElementById('k-record-btn');
+    if (recordBtn) {
+      recordBtn.textContent = '⏹️ Stop Recording';
+      recordBtn.style.background = '#ef4444';
+      recordBtn.style.color = '#ffffff';
+    }
+
+    const banner = document.createElement('div');
+    banner.id = 'kenzo-builder-record-banner';
+    banner.className = 'k-inspecting-banner';
+    banner.style.background = '#ef4444';
+    banner.innerHTML = `
+      <span>🔴 Recording Workflow Actions... Click elements naturally</span>
+      <button style="background:transparent; border:1px solid #fff; color:#fff; border-radius:4px; padding:2px 8px; cursor:pointer;" id="k-stop-record">Stop</button>
+    `;
+    document.body.appendChild(banner);
+    document.getElementById('k-stop-record')?.addEventListener('click', () => this.stopRecording());
+
+    this.recordListener = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target) return;
+      if (target.closest('#kenzo-builder-root, #kenzo-builder-record-banner, [data-kenzo-overlay]')) return;
+
+      // Extract label and selector
+      const { PIIRedactor } = require('@/dom/pii-redactor');
+      const redactor = new PIIRedactor();
+      if (redactor.shouldIgnore(target)) return;
+
+      const rawLabel = target.textContent?.trim() || target.getAttribute('aria-label') || (target as HTMLInputElement).placeholder || target.tagName.toLowerCase();
+      const cleanLabel = redactor.sanitizeText(rawLabel, target);
+
+      const { StableSelectorGenerator } = require('@/dom/stable-selector-generator');
+      const gen = new StableSelectorGenerator();
+      const candidates = gen.generateCandidates(target);
+      const bestSelector = candidates[0]?.value || (target.id ? `#${target.id}` : target.tagName.toLowerCase());
+
+      this.steps.push({
+        title: `Click "${cleanLabel.substring(0, 30)}"`,
+        content: `Click the <strong>${cleanLabel}</strong> element to continue.`,
+        selector: { css: bestSelector },
+        placement: 'bottom',
+        displayMode: 'spotlight',
+      });
+
+      this.renderStepsList();
+    };
+
+    document.addEventListener('click', this.recordListener, true);
+  }
+
+  private stopRecording(): void {
+    if (!this.recording) return;
+    this.recording = false;
+    if (this.recordListener) {
+      document.removeEventListener('click', this.recordListener, true);
+      this.recordListener = null;
+    }
+
+    document.getElementById('kenzo-builder-record-banner')?.remove();
+    const recordBtn = document.getElementById('k-record-btn');
+    if (recordBtn) {
+      recordBtn.textContent = '🔴 Start Workflow Recording';
+      recordBtn.style.background = 'rgba(255, 255, 255, 0.1)';
+      recordBtn.style.color = '#ffffff';
+    }
   }
 
   // --- Point & Click Element Inspector ---

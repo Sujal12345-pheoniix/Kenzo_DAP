@@ -53,10 +53,29 @@ export class ConditionEvaluator implements IConditionEvaluator {
         const traitValue = config.userTraits[condition.traitKey];
         return this.compare(traitValue, condition.operator, condition.value);
       }
+      case 'role': {
+        if (!config) return false;
+        const role = config.userTraits['role'] || config.userTraits['userRole'];
+        return this.compare(role, condition.operator, condition.value);
+      }
+      case 'plan': {
+        if (!config) return false;
+        const plan = config.userTraits['plan'] || config.userTraits['accountPlan'];
+        return this.compare(plan, condition.operator, condition.value);
+      }
+      case 'device': {
+        const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
+        const device = isMobile ? 'mobile' : 'desktop';
+        return this.compare(device, condition.operator, condition.value);
+      }
+      case 'user': {
+        if (!config) return false;
+        return this.compare(config.userId, condition.operator, condition.value);
+      }
       case 'custom':
         return true;
       default:
-        return false;
+        return true;
     }
   }
 

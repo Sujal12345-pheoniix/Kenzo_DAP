@@ -110,6 +110,78 @@ export async function bootstrapDb(): Promise<void> {
       );
     `);
 
+    // 6. SDK Sessions / Heartbeat Table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS sdk_sessions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+        domain VARCHAR(255) NOT NULL,
+        url TEXT NOT NULL,
+        user_agent TEXT,
+        sdk_version VARCHAR(50) DEFAULT '1.0.0',
+        environment VARCHAR(50) DEFAULT 'production',
+        last_seen TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (project_id, domain)
+      );
+    `);
+
+    // 7. Page Models Table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS page_models (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+        url TEXT NOT NULL,
+        pathname TEXT NOT NULL,
+        title TEXT,
+        classification VARCHAR(100) DEFAULT 'Unknown',
+        fingerprint JSONB NOT NULL,
+        sections JSONB DEFAULT '[]'::jsonb,
+        forms JSONB DEFAULT '[]'::jsonb,
+        elements JSONB DEFAULT '[]'::jsonb,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (project_id, pathname)
+      );
+    `);
+
+    // 8. Application Maps Table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS application_maps (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+        nodes JSONB DEFAULT '[]'::jsonb,
+        edges JSONB DEFAULT '[]'::jsonb,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (project_id)
+      );
+    `);
+
+    // 9. Selector Repairs Table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS selector_repairs (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+        original_selector JSONB NOT NULL,
+        repaired_selector TEXT NOT NULL,
+        confidence NUMERIC(3,2) NOT NULL,
+        strategy VARCHAR(100),
+        url TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // 10. Workflow Recordings Table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS workflow_recordings (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+        name VARCHAR(255) NOT NULL,
+        actions JSONB DEFAULT '[]'::jsonb,
+        status VARCHAR(50) DEFAULT 'draft',
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
     console.log('[Database] Core tables verified.');
 
     // Seed default developer project if not exists

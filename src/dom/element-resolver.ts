@@ -25,9 +25,41 @@ export class ElementResolver implements IElementResolver {
 
   resolveSync(selector: ElementSelector): ResolvedElement | null {
     const element = this.selectorEngine.queryOne(selector);
-    if (!element) return null;
+    if (element) {
+      return this.buildResolved(element, selector);
+    }
 
-    return this.buildResolved(element, selector);
+    // Try Self-Healing Engine recovery if primary selector failed
+    const { SelfHealingEngine } = require('@/dom/self-healing-engine');
+    const healer = new SelfHealingEngine();
+    const recovery = healer.attemptRecovery(selector);
+
+    if (recovery.recoveredElement && recovery.confidence >= 0.7) {
+      this.logger.info(`[Kenzo Self-Healing] Recovered element using ${recovery.strategyUsed}`, {
+        original: selector,
+        repaired: recovery.repairedSelector,
+        confidence: recovery.confidence,
+      });
+
+      // Non-blocking repair event report to server
+      const config = this.config.get();
+      fetch(`${config.apiBaseUrl}/sdk/self-heal`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          apiKey: config.apiKey,
+          originalSelector: selector,
+          repairedSelector: recovery.repairedSelector,
+          confidence: recovery.confidence,
+          strategy: recovery.strategyUsed,
+          url: window.location.href,
+        }),
+      }).catch(() => {});
+
+      return this.buildResolved(recovery.recoveredElement, { css: recovery.repairedSelector! });
+    }
+
+    return null;
   }
 
   async resolve(

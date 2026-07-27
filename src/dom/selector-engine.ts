@@ -83,26 +83,28 @@ export class SelectorEngine implements ISelectorEngine {
 
     const unique = [...new Set(results)];
 
-    // Fallback to body element if nothing found (supports modal-type steps)
-    if (unique.length === 0) {
-      return [document.body];
-    }
-
+    // Return matches or empty if not found
     if (normalized.index !== undefined && normalized.index >= 0) {
       const el = unique[normalized.index];
-      return el ? [el] : [document.body];
+      return el ? [el] : [];
     }
 
     return unique;
   }
 
   queryOne(selector: ElementSelector): Element | null {
+    const normalized = this.normalize(selector);
+    // Explicit body target check
+    if (normalized.css === 'body' || (normalized as any).value === 'body') {
+      return document.body;
+    }
     const results = this.query(selector);
-    return results[0] ?? document.body;
+    return results[0] ?? null;
   }
 
-  isValid(_selector: ElementSelector): boolean {
-    return true; // Always valid — fallback to body if not found
+  isValid(selector: ElementSelector): boolean {
+    const normalized = this.normalize(selector);
+    return !!(normalized.css || normalized.xpath || normalized.text || normalized.ariaLabel || normalized.dataAttribute);
   }
 
   /**

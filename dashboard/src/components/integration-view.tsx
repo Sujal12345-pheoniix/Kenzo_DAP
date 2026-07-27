@@ -26,20 +26,12 @@ export default function IntegrationView({ apiBaseUrl, apiKey }: IntegrationViewP
   const displayApiKey = apiKey || 'kenzo_project_dev_api_key_2026';
 
   const snippets: Record<Framework, string> = {
-    html: `<!-- Kenzo Digital Adoption Platform Snippet -->
-<script src="${formattedUrl}/sdk.js"></script>
-<script>
-  (function() {
-    var checkKenzo = setInterval(function() {
-      if (typeof Kenzo !== 'undefined') {
-        clearInterval(checkKenzo);
-        Kenzo.init({
-          apiKey: "${displayApiKey}",
-          apiBaseUrl: "${formattedUrl}/api/v1"
-        });
-      }
-    }, 50);
-  })();
+    html: `<!-- Kenzo Digital Adoption Platform Snippet (One-line installation) -->
+<script
+  src="${formattedUrl}/sdk.js"
+  data-kenzo-key="${displayApiKey}"
+  data-api-base="${formattedUrl}/api/v1"
+  async>
 </script>`,
 
     react: `// 1. Install standard dependency
@@ -120,11 +112,19 @@ export class AppComponent implements OnInit {
     setTimeout(() => setCopied(false), 2050);
   };
 
-  const verifyConnection = () => {
+  const verifyConnection = async () => {
     setVerificationState('checking');
-    setTimeout(() => {
-      setVerificationState('success');
-    }, 2000);
+    try {
+      const res = await fetch('/api/v1/admin/sdk-status');
+      if (res.ok) {
+        const data = await res.json();
+        setVerificationState(data.connected || data.sessions?.length > 0 ? 'success' : 'failed');
+      } else {
+        setVerificationState('failed');
+      }
+    } catch {
+      setVerificationState('failed');
+    }
   };
 
   const renderHighlightedCode = (code: string) => {
