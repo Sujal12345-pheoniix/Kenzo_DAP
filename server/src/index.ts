@@ -39,9 +39,13 @@ app.use(express.json());
 
 // Serve the compiled SDK bundle (UMD version for classic script tags)
 app.get('/sdk.js', (req: Request, res: Response) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
   res.sendFile(path.resolve(__dirname, '../../dist/kenzo-sdk.umd.cjs'));
 });
 app.get('/sdk.js.map', (req: Request, res: Response) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
   res.sendFile(path.resolve(__dirname, '../../dist/kenzo-sdk.umd.cjs.map'));
 });
 

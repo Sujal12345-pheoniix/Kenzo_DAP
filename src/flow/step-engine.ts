@@ -160,7 +160,7 @@ export class StepEngine implements IStepEngine {
     let targetElement: Element = document.body;
     if (!isCenterMode) {
       const resolved = await this.elementResolver.resolve(step.selector);
-      if (resolved && resolved.element !== document.body) {
+      if (resolved && resolved.element && resolved.element !== document.body) {
         targetElement = resolved.element;
         if (step.autoScroll !== false) {
           targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -176,8 +176,17 @@ export class StepEngine implements IStepEngine {
           this.overlayManager.showHighlight(targetElement);
         }
       } else {
-        // Element not found — render as modal fallback
-        this.overlayManager.hide();
+        // Targeted element not found on page — skip safely to next step if available
+        this.logger.warn(`[Kenzo] Step element not found for step: "${step.title}". Skipping...`, { stepId: step.id, selector: step.selector });
+        const sorted = this.getSortedSteps();
+        if (this.currentIndex < sorted.length - 1) {
+          await this.goToStep(this.currentIndex + 1);
+          return;
+        } else {
+          // End of flow reached
+          this.onFlowEnd('finish');
+          return;
+        }
       }
     } else {
       this.overlayManager.hide();

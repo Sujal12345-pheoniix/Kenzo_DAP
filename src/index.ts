@@ -72,11 +72,19 @@ function autoBootstrap(): void {
 
   if (!apiKey) return;
 
+  let defaultApiBase = '/api/v1';
+  if (script.src) {
+    try {
+      const scriptUrl = new URL(script.src, window.location.href);
+      defaultApiBase = `${scriptUrl.origin}/api/v1`;
+    } catch (_) {}
+  }
+
   const apiBaseUrl = script.getAttribute('data-api-base') ||
     script.getAttribute('data-api-url') ||
-    '/api/v1';
+    defaultApiBase;
 
-  const debug = script.getAttribute('data-debug') === 'true';
+  const debug = script.getAttribute('data-debug') === 'true' || true; // enable debug logs for visibility
   const environment = script.getAttribute('data-environment') || 'production';
   const darkMode = script.getAttribute('data-dark-mode') !== 'false';
 

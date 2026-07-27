@@ -143,8 +143,27 @@ export class LifecycleManager implements ILifecycleManager {
 
     try {
       const flows = await this.flowLoader.loadAll();
+      if (flows.length === 0) {
+        this.logger.info('No published flows found for this project.');
+        return;
+      }
+
+      // Check for explicit flow ID parameter in URL (?kenzo_flow=<id>)
+      const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const targetFlowId = urlParams?.get('kenzo_flow');
+
+      if (targetFlowId) {
+        const explicitFlow = flows.find(f => f.id === targetFlowId);
+        if (explicitFlow) {
+          this.logger.info(`Starting explicit flow from URL param: ${explicitFlow.name}`);
+          this.progressManager.reset(explicitFlow.id);
+          await this.flowRunner.start(explicitFlow);
+          return;
+        }
+      }
+
+      let flowToStart = null;
       for (const flow of flows) {
-        // Exclude completed or dismissed flows so we don't spam the user every page load
         const progress = this.progressManager.getProgress(flow.id);
         const isForceRun = typeof window !== 'undefined' && 
           (window.location.search.includes('kenzo_force=true') || window.location.search.includes('kenzo_builder=true'));
@@ -157,15 +176,23 @@ export class LifecycleManager implements ILifecycleManager {
 
         const urlRules = flow.urlRules || [];
         const matchesUrl = urlRules.length === 0 || this.conditionEvaluator.evaluateUrlRules(urlRules);
-
         const conditions = flow.conditions || [];
         const matchesConditions = conditions.length === 0 || this.conditionEvaluator.evaluateConditions(conditions);
 
         if (matchesUrl && matchesConditions) {
-          this.logger.info(`Auto-starting matching flow: ${flow.name} (${flow.id})`);
-          await this.flowRunner.start(flow);
-          break; // Start only the first matching flow
+          flowToStart = flow;
+          break;
         }
+      }
+
+      // Fallback: If no flow matched strict URL pattern, start the top published flow
+      if (!flowToStart && flows.length > 0) {
+        flowToStart = flows[0];
+      }
+
+      if (flowToStart) {
+        this.logger.info(`Auto-starting flow: ${flowToStart.name} (${flowToStart.id})`);
+        await this.flowRunner.start(flowToStart);
       }
     } catch (error) {
       this.logger.error('Error during auto-triggering matching flow', error as Error);
