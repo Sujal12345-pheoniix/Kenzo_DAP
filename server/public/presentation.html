@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kenzo DAP — Client-Facing Executive Presentation Deck</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #09090e;
+      --card-bg: rgba(18, 18, 28, 0.75);
+      --card-border: rgba(255, 255, 255, 0.10);
+      --accent-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
+      --text-main: #f3f4f6;
+      --text-sub: #9ca3af;
+      --accent-indigo: #6366f1;
+      --accent-violet: #8b5cf6;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-cyan: #06b6d4;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .ambient-glow {
+      position: fixed;
+      top: -20%;
+      left: -10%;
+      width: 60vw;
+      height: 60vh;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.05) 50%, transparent 70%);
+      filter: blur(80px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .ambient-glow-2 {
+      position: fixed;
+      bottom: -20%;
+      right: -10%;
+      width: 60vw;
+      height: 60vh;
+      background: radial-gradient(circle, rgba(217, 70, 239, 0.12) 0%, rgba(99, 102, 241, 0.05) 50%, transparent 70%);
+      filter: blur(80px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    header {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 40px;
+      border-bottom: 1px solid var(--card-border);
+      background: rgba(9, 9, 14, 0.85);
+      backdrop-filter: blur(12px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: 20px;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: var(--accent-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    }
+
+    .brand-logo svg {
+      width: 18px;
+      height: 18px;
+      stroke: white;
+    }
+
+    .slide-counter {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: var(--text-sub);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      padding: 4px 14px;
+      border-radius: 999px;
+    }
+
+    .slides-wrapper {
+      position: relative;
+      z-index: 5;
+      flex: 1;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      padding: 40px 60px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      opacity: 0;
+      transform: translateX(40px) scale(0.98);
+      pointer-events: none;
+      transition: opacity 400ms cubic-bezier(0.16, 1, 0.3, 1), transform 400ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .slide.active {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+      pointer-events: auto;
+    }
+
+    .tagline {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent-indigo);
+      background: rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      padding: 6px 14px;
+      border-radius: 999px;
+      width: fit-content;
+      margin-bottom: 16px;
+    }
+
+    .slide-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 42px;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      margin-bottom: 14px;
+      background: linear-gradient(180deg, #ffffff 0%, #d1d5db 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .slide-subtitle {
+      font-size: 16px;
+      color: var(--text-sub);
+      max-width: 820px;
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+
+    .glass-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 24px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      transition: border-color 200ms ease, transform 200ms ease;
+    }
+
+    .glass-card:hover {
+      border-color: rgba(99, 102, 241, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .card-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      font-size: 20px;
+    }
+
+    .card-icon.indigo { background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); color: #818cf8; }
+    .card-icon.emerald { background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; }
+    .card-icon.violet { background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.3); color: #a78bfa; }
+    .card-icon.amber { background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); color: #fbbf24; }
+    .card-icon.cyan { background: rgba(6, 182, 212, 0.15); border: 1px solid rgba(6, 182, 212, 0.3); color: #22d3ee; }
+
+    .card-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #ffffff;
+    }
+
+    .card-desc {
+      font-size: 13.5px;
+      color: var(--text-sub);
+      line-height: 1.55;
+    }
+
+    .metric-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent-emerald);
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      padding: 4px 10px;
+      border-radius: 6px;
+      margin-top: 14px;
+    }
+
+    .industry-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .challenge-box {
+      background: rgba(239, 68, 68, 0.06);
+      border: 1px solid rgba(239, 68, 68, 0.20);
+      border-radius: 14px;
+      padding: 20px;
+    }
+
+    .challenge-box h4 {
+      color: #fca5a5;
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .solution-box {
+      background: rgba(16, 185, 129, 0.06);
+      border: 1px solid rgba(16, 185, 129, 0.20);
+      border-radius: 14px;
+      padding: 20px;
+    }
+
+    .solution-box h4 {
+      color: #6ee7b7;
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .bullet-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .bullet-list li {
+      font-size: 13px;
+      color: #d1d5db;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      line-height: 1.5;
+    }
+
+    .bullet-list li::before {
+      content: '•';
+      color: var(--accent-indigo);
+      font-weight: bold;
+    }
+
+    footer {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 40px;
+      border-top: 1px solid var(--card-border);
+      background: rgba(9, 9, 14, 0.85);
+      backdrop-filter: blur(12px);
+    }
+
+    .nav-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 150ms ease, transform 150ms ease;
+    }
+
+    .nav-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      transform: translateY(-1px);
+    }
+
+    .nav-btn.primary {
+      background: var(--accent-gradient);
+      border: none;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+    }
+
+    .dots {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      cursor: pointer;
+      transition: width 200ms ease, background 200ms ease, border-radius 200ms ease;
+    }
+
+    .dot.active {
+      width: 24px;
+      border-radius: 999px;
+      background: var(--accent-indigo);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="ambient-glow"></div>
+  <div class="ambient-glow-2"></div>
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-logo">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span>KENZO DAP</span>
+    </div>
+
+    <div class="slide-counter" id="slide-counter">Slide 1 of 10</div>
+  </header>
+
+  <!-- Main Slides -->
+  <div class="slides-wrapper">
+
+    <!-- SLIDE 1: Title & Vision -->
+    <div class="slide active" id="slide-1">
+      <div class="tagline">Enterprise Digital Adoption Platform</div>
+      <h1 class="slide-title" style="font-size: 52px; max-width: 900px;">Transform Complex Web Applications Into Zero-Training Experiences</h1>
+      <p class="slide-subtitle" style="font-size: 18px;">Kenzo DAP delivers automated in-app walkthroughs, intelligent tooltips, interactive checklists, and predictive selector repairs across any ERP, Banking, Healthcare, or Enterprise software.</p>
+      
+      <div class="grid-3" style="margin-top: 20px;">
+        <div class="glass-card">
+          <div class="card-icon indigo">⚡</div>
+          <div class="card-title">1-Line Snippet Integration</div>
+          <div class="card-desc">Embed on any HTML, React, Next.js, Vue, or Angular host application with zero code refactoring.</div>
+        </div>
+        <div class="glass-card">
+          <div class="card-icon violet">🤖</div>
+          <div class="card-title">Autonomous AI Generator</div>
+          <div class="card-desc">Scans application routes and automatically builds 5 published walkthrough tours in minutes.</div>
+        </div>
+        <div class="glass-card">
+          <div class="card-icon emerald">📈</div>
+          <div class="card-title">75% Support Ticket Drop</div>
+          <div class="card-desc">Dramatically eliminate user drop-off, human entry errors, and onboarding bottlenecks.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 2: The Enterprise Challenge -->
+    <div class="slide" id="slide-2">
+      <div class="tagline">The Digital Adoption Challenge</div>
+      <h2 class="slide-title">Software Complexity is Outpacing User Capability</h2>
+      <p class="slide-subtitle">Modern enterprises spend billions on digital transformation, but 70% of software ROI is lost due to poor user adoption, complex workflows, and continuous retraining overhead.</p>
+
+      <div class="grid-4">
+        <div class="glass-card">
+          <div class="card-icon amber">⚠️</div>
+          <div class="card-title">High Ticket Volume</div>
+          <div class="card-desc">IT and HR helpdesks flooded with repetitive "how-to" questions and manual data fixes.</div>
+        </div>
+        <div class="glass-card">
+          <div class="card-icon indigo">📉</div>
+          <div class="card-title">Slow Time-to-Value</div>
+          <div class="card-desc">New employees take weeks to achieve proficiency on custom ERP and CRM modules.</div>
+        </div>
+        <div class="glass-card">
+          <div class="card-icon violet">🔄</div>
+          <div class="card-title">Constant Change</div>
+          <div class="card-desc">Frequent UI updates and web app releases confuse non-technical operational teams.</div>
+        </div>
+        <div class="glass-card">
+          <div class="card-icon emerald">💰</div>
+          <div class="card-title">Wasted Training Costs</div>
+          <div class="card-desc">Costly classroom sessions and static PDF manuals fail to drive long-term knowledge retention.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 3: Kenzo DAP Solution Architecture -->
+    <div class="slide" id="slide-3">
+      <div class="tagline">Platform Architecture</div>
+      <h2 class="slide-title">How Kenzo DAP Powers Seamless In-App Guidance</h2>
+      <p class="slide-subtitle">A production-grade, multi-tenant Digital Adoption Platform engineered for high reliability, zero latency, and top z-index modal stacking above host app frameworks.</p>
+
+      <div class="grid-3">
+        <div class="glass-card">
+          <div class="card-icon indigo">🎯</div>
+          <div class="card-title">Dynamic Element Resolver</div>
+          <div class="card-desc">Exponential backoff hydration retries (up to 5s) resolve dynamic React / Next.js DOM elements effortlessly.</div>
+        </div>
+        <div class="glass-card">
+          <div class="card-icon violet">🌐</div>
+          <div class="card-title">SPA Navigation Engine</div>
+          <div class="card-desc">Intercepts pushState, replaceState, popstate, and title mutations for smooth client-side route transitions.</div>
+        </div>
+        <div class="glass-card">
+          <div class="card-icon emerald">🛡️</div>
+          <div class="card-title">Self-Healing DOM Selectors</div>
+          <div class="card-desc">Auto-repairs broken CSS selectors in real time when host app developers change HTML classnames.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 4: Field 1 — Enterprise Resource Planning (ERP) -->
+    <div class="slide" id="slide-4">
+      <div class="tagline">Industry Vertical 1</div>
+      <h2 class="slide-title">ERP Systems: Transforming Heavy Data Workflows</h2>
+      <p class="slide-subtitle">Custom ERPs (SAP, NetSuite, Kenzo OneERP) feature hundreds of form fields and complex operational sub-modules.</p>
+
+      <div class="industry-section">
+        <div class="challenge-box">
+          <h4>❌ Key Industry Pain Points</h4>
+          <ul class="bullet-list">
+            <li>Employees make frequent typos in Purchase Orders and Financial Invoices.</li>
+            <li>Cross-departmental handoffs fail due to skipped required form steps.</li>
+            <li>New sales reps take over 30 days to learn custom CRM lead pipelines.</li>
+          </ul>
+        </div>
+
+        <div class="solution-box">
+          <h4>✅ Kenzo DAP Solution & Impact</h4>
+          <ul class="bullet-list">
+            <li>Step-by-step form validation with click-to-advance interactive spotlights.</li>
+            <li>Contextual tooltips explaining complex ERP billing codes in real time.</li>
+            <li><strong>Impact:</strong> 75% drop in ERP support tickets & 99.4% data entry accuracy.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 5: Field 2 — Banking, Finance & Insurance (BFSI) -->
+    <div class="slide" id="slide-5">
+      <div class="tagline">Industry Vertical 2</div>
+      <h2 class="slide-title">Banking & Financial Services: Compliance & Security</h2>
+      <p class="slide-subtitle">Financial institutions require strict regulatory compliance, zero data loss, and seamless customer onboarding.</p>
+
+      <div class="industry-section">
+        <div class="challenge-box">
+          <h4>❌ Key Industry Pain Points</h4>
+          <ul class="bullet-list">
+            <li>Customers abandon high-value loan and mortgage applications midway.</li>
+            <li>Regulatory updates require immediate retraining of thousands of bank tellers.</li>
+            <li>Compliance violations due to improperly completed KYC data forms.</li>
+          </ul>
+        </div>
+
+        <div class="solution-box">
+          <h4>✅ Kenzo DAP Solution & Impact</h4>
+          <ul class="bullet-list">
+            <li>Privacy-first in-app guidance with zero exposure of sensitive PII data.</li>
+            <li>Contextual compliance popups highlighting mandatory legal disclaimers.</li>
+            <li><strong>Impact:</strong> 45% higher loan application completion rate & zero compliance fines.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 6: Field 3 — Learning, Training & Corporate Enablement -->
+    <div class="slide" id="slide-6">
+      <div class="tagline">Industry Vertical 3</div>
+      <h2 class="slide-title">Learning & Development: Learning in the Flow of Work</h2>
+      <p class="slide-subtitle">Modern L&D teams are abandoning static video courses in favor of interactive contextual guidance inside actual software.</p>
+
+      <div class="industry-section">
+        <div class="challenge-box">
+          <h4>❌ Key Industry Pain Points</h4>
+          <ul class="bullet-list">
+            <li>Employees forget 80% of classroom software training within 48 hours.</li>
+            <li>High cost of hiring dedicated external software trainers for every update.</li>
+            <li>Loss of employee productivity during multi-day onboarding workshops.</li>
+          </ul>
+        </div>
+
+        <div class="solution-box">
+          <h4>✅ Kenzo DAP Solution & Impact</h4>
+          <ul class="bullet-list">
+            <li>Just-in-time interactive onboarding that guides employees while performing real work.</li>
+            <li>Self-serve launcher widgets enabling instant answer search inside the app.</li>
+            <li><strong>Impact:</strong> 80% reduction in training costs & 3x faster employee time-to-productivity.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 7: Field 4 — Healthcare & Hospital Management Systems (HMS) -->
+    <div class="slide" id="slide-7">
+      <div class="tagline">Industry Vertical 4</div>
+      <h2 class="slide-title">Healthcare & HMS: Critical Accuracy & Patient Care</h2>
+      <p class="slide-subtitle">Doctors, nurses, and hospital administrators operate under high pressure with zero margin for software errors.</p>
+
+      <div class="industry-section">
+        <div class="challenge-box">
+          <h4>❌ Key Industry Pain Points</h4>
+          <ul class="bullet-list">
+            <li>Medical staff spend more time navigating complex HMS software than caring for patients.</li>
+            <li>Shift handovers suffer due to incomplete electronic health records (EHR).</li>
+            <li>High staff turnover requires continuous rapid training on hospital portals.</li>
+          </ul>
+        </div>
+
+        <div class="solution-box">
+          <h4>✅ Kenzo DAP Solution & Impact</h4>
+          <ul class="bullet-list">
+            <li>Instant patient admission walkthroughs guiding receptionists through intake.</li>
+            <li>Spotlight overlays emphasizing urgent clinical fields and prescription notes.</li>
+            <li><strong>Impact:</strong> 50% faster patient intake processing & 100% compliant medical records.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 8: Field 5 — SaaS, E-Commerce & Enterprise CRM -->
+    <div class="slide" id="slide-8">
+      <div class="tagline">Industry Vertical 5</div>
+      <h2 class="slide-title">SaaS & CRM: Maximizing Product-Led Growth & Retention</h2>
+      <p class="slide-subtitle">SaaS vendors and B2B platforms rely on immediate user activation, feature discovery, and retention.</p>
+
+      <div class="grid-3">
+        <div class="glass-card">
+          <div class="card-icon indigo">🚀</div>
+          <div class="card-title">User Activation</div>
+          <div class="card-desc">Guide trial users to their "Aha!" moment in the first 3 minutes of signing up.</div>
+          <div class="metric-badge">+35% Trial Conversion</div>
+        </div>
+        <div class="glass-card">
+          <div class="card-icon violet">💡</div>
+          <div class="card-title">Feature Discovery</div>
+          <div class="card-desc">Promote newly released features with targeted in-app spotlight announcements.</div>
+          <div class="metric-badge">4x Feature Adoption</div>
+        </div>
+        <div class="glass-card">
+          <div class="card-icon emerald">🛡️</div>
+          <div class="card-title">Churn Reduction</div>
+          <div class="card-desc">Intercept confused users with proactive smart tips before they abandon account setups.</div>
+          <div class="metric-badge">50% Churn Reduction</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 9: AI Capabilities & Studio Builder -->
+    <div class="slide" id="slide-9">
+      <div class="tagline">No-Code Studio</div>
+      <h2 class="slide-title">Autonomous AI Generator & No-Code Studio Wizard</h2>
+      <p class="slide-subtitle">Build, edit, and publish enterprise walkthroughs in minutes with our drag-and-drop Visual Builder or 1-click Autonomous AI Generation.</p>
+
+      <div class="grid-3">
+        <div class="glass-card">
+          <div class="card-icon indigo">⚡</div>
+          <div class="card-title">1-Click AI Generation</div>
+          <div class="card-desc">Scans website routes and instantly generates 5 published, high-quality walkthrough tours.</div>
+        </div>
+        <div class="glass-card">
+          <div class="card-icon violet">🎨</div>
+          <div class="card-title">Visual Sandbox Builder</div>
+          <div class="card-desc">Click any element on your real web application to create anchored tooltips and spotlights.</div>
+        </div>
+        <div class="glass-card">
+          <div class="card-icon emerald">📊</div>
+          <div class="card-title">Analytics & Drop-Off Maps</div>
+          <div class="card-desc">Track step completion rates, user friction points, and session completion metrics.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 10: Summary & Next Steps -->
+    <div class="slide" id="slide-10">
+      <div class="tagline">Summary & Call to Action</div>
+      <h2 class="slide-title">Ready to Elevate Your Digital Adoption Strategy?</h2>
+      <p class="slide-subtitle">Kenzo DAP turns your complex software into an intuitive, self-guiding experience for every user.</p>
+
+      <div class="grid-3" style="margin-bottom: 30px;">
+        <div class="glass-card" style="text-align: center;">
+          <div style="font-size: 36px; font-weight: 800; color: #818cf8; font-family: 'Outfit'; mb: 6px;">75%</div>
+          <div class="card-title">Ticket Reduction</div>
+          <div class="card-desc">Fewer repetitive IT helpdesk support tickets.</div>
+        </div>
+        <div class="glass-card" style="text-align: center;">
+          <div style="font-size: 36px; font-weight: 800; color: #34d399; font-family: 'Outfit'; mb: 6px;">3x</div>
+          <div class="card-title">Faster Onboarding</div>
+          <div class="card-desc">Accelerate employee & customer proficiency.</div>
+        </div>
+        <div class="glass-card" style="text-align: center;">
+          <div style="font-size: 36px; font-weight: 800; color: #c084fc; font-family: 'Outfit'; mb: 6px;">5 Mins</div>
+          <div class="card-title">Snippet Deployment</div>
+          <div class="card-desc">Embed script and auto-generate live tours.</div>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 16px; justify-content: center;">
+        <a href="/dashboard/" class="nav-btn primary" style="font-size: 15px; padding: 12px 28px;">🚀 Open Kenzo DAP Admin Portal</a>
+        <a href="/sandbox.html?kenzo_builder=true" target="_blank" class="nav-btn" style="font-size: 15px; padding: 12px 28px;">✨ Test Interactive Sandbox</a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer Navigation -->
+  <footer>
+    <button class="nav-btn" id="prev-btn">← Previous Slide</button>
+
+    <div class="dots" id="dots-container"></div>
+
+    <button class="nav-btn primary" id="next-btn">Next Slide →</button>
+  </footer>
+
+  <script>
+    let currentSlide = 0;
+    const totalSlides = 10;
+
+    const slides = document.querySelectorAll('.slide');
+    const dotsContainer = document.getElementById('dots-container');
+    const slideCounter = document.getElementById('slide-counter');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+
+    for (let i = 0; i < totalSlides; i++) {
+      const dot = document.createElement('div');
+      dot.className = `dot ${i === 0 ? 'active' : ''}`;
+      dot.addEventListener('click', () => goToSlide(i));
+      dotsContainer.appendChild(dot);
+    }
+
+    const dots = document.querySelectorAll('.dot');
+
+    function updateSlide() {
+      slides.forEach((s, idx) => {
+        if (idx === currentSlide) {
+          s.classList.add('active');
+        } else {
+          s.classList.remove('active');
+        }
+      });
+
+      dots.forEach((d, idx) => {
+        if (idx === currentSlide) {
+          d.classList.add('active');
+        } else {
+          d.classList.remove('active');
+        }
+      });
+
+      slideCounter.textContent = `Slide ${currentSlide + 1} of ${totalSlides}`;
+
+      prevBtn.style.opacity = currentSlide === 0 ? '0.5' : '1';
+      prevBtn.style.pointerEvents = currentSlide === 0 ? 'none' : 'auto';
+      nextBtn.textContent = currentSlide === totalSlides - 1 ? 'Finish Presentation 🎉' : 'Next Slide →';
+    }
+
+    function goToSlide(index) {
+      if (index >= 0 && index < totalSlides) {
+        currentSlide = index;
+        updateSlide();
+      }
+    }
+
+    prevBtn.addEventListener('click', () => goToSlide(currentSlide - 1));
+    nextBtn.addEventListener('click', () => {
+      if (currentSlide < totalSlides - 1) {
+        goToSlide(currentSlide + 1);
+      } else {
+        goToSlide(0);
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === 'Space') {
+        goToSlide(currentSlide + 1);
+      } else if (e.key === 'ArrowLeft') {
+        goToSlide(currentSlide - 1);
+      }
+    });
+
+    updateSlide();
+  </script>
+</body>
+</html>
