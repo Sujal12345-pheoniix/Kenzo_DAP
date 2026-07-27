@@ -506,6 +506,307 @@ function StepEditor({
   );
 }
 
+function CreateTourModal({
+  apiKey,
+  activeProjectId,
+  onClose,
+  onSuccess
+}: {
+  apiKey: string;
+  activeProjectId: string;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [name, setName] = useState('New Enterprise Walkthrough Tour');
+  const [description, setDescription] = useState('Interactive guided walkthrough for feature onboarding & user adoption.');
+  const [urlPattern, setUrlPattern] = useState('/dashboard');
+  const [priority, setPriority] = useState(10);
+  const [status, setStatus] = useState<'published' | 'draft'>('published');
+  
+  // First Step details
+  const [stepTitle, setStepTitle] = useState('Welcome to Kenzo OneERP 💎');
+  const [stepContent, setStepContent] = useState('This interactive guide will walk you through the key features and workflows of this page.');
+  const [stepSelector, setStepSelector] = useState('body');
+  const [displayMode, setDisplayMode] = useState('modal');
+  const [placement, setPlacement] = useState('center');
+  
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      const authData = localStorage.getItem('kenzo_admin_auth');
+      const token = authData ? JSON.parse(authData).token : apiKey;
+      headers['Authorization'] = `Bearer ${token}`;
+      if (activeProjectId) {
+        headers['x-project-id'] = activeProjectId;
+      }
+
+      // 1. Create the Flow
+      const flowRes = await fetch('/api/v1/admin/flows', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          name,
+          description,
+          urlRules: [{ type: 'contains', pattern: urlPattern }],
+          priority,
+          status
+        })
+      });
+
+      if (!flowRes.ok) {
+        throw new Error('Failed to create walkthrough tour');
+      }
+
+      const flow = await flowRes.json();
+
+      // 2. Create Initial Step
+      const selectorObj = { type: 'css', value: stepSelector };
+      const stepRes = await fetch(`/api/v1/admin/flows/${flow.id}/steps`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          title: stepTitle,
+          content: stepContent,
+          selector: selectorObj,
+          displayMode,
+          placement,
+          buttons: [
+            { text: 'Start Tour', action: 'next', style: 'primary' },
+            { text: 'Skip', action: 'close', style: 'secondary' }
+          ]
+        })
+      });
+
+      if (!stepRes.ok) {
+        console.warn('Flow created, but initial step failed');
+      }
+
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      setError(err.message || 'Failed to publish walkthrough');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4 cursor-default">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 15 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 15 }}
+        className="w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl relative max-h-[92vh] flex flex-col"
+      >
+        {/* Modal Header */}
+        <div className="h-14 bg-gradient-to-r from-violet-600 to-indigo-600 flex items-center justify-between px-6 shadow-md shadow-indigo-600/25 ring-1 ring-white/10 flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <Sparkles size={18} className="text-white animate-pulse" />
+            <h3 className="text-sm font-bold font-outfit text-white uppercase tracking-wider">Create & Publish Walkthrough Tour</h3>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-xs bg-black/20 hover:bg-black/30 text-white px-3 py-1.5 rounded-lg transition-colors cursor-pointer font-bold"
+          >
+            Cancel
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-5 text-left flex-1">
+          {error && (
+            <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-300 text-xs flex items-center gap-2">
+              <AlertCircle size={14} />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Section 1: Tour Info */}
+          <div className="space-y-4 bg-zinc-950/60 p-4 border border-zinc-800/80 rounded-xl">
+            <h4 className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+              <Compass size={12} /> 1. Tour Target & General Info
+            </h4>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider">Tour Name *</label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  placeholder="e.g. CRM Sales Pipeline Tour"
+                  className="w-full bg-zinc-900 border border-zinc-800 focus:border-indigo-500 rounded-xl px-3 py-2 text-xs text-white outline-none"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider">Target ERP Route / Path *</label>
+                <input
+                  type="text"
+                  value={urlPattern}
+                  onChange={e => setUrlPattern(e.target.value)}
+                  placeholder="e.g. /dashboard/crm"
+                  className="w-full bg-zinc-900 border border-zinc-800 focus:border-indigo-500 rounded-xl px-3 py-2 text-xs text-indigo-300 font-mono outline-none"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Presets */}
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              <span className="text-[9px] text-zinc-500 font-bold self-center mr-1">Presets:</span>
+              {[
+                { label: 'All Pages (*)', val: '/' },
+                { label: 'Admin Dashboard', val: '/dashboard' },
+                { label: 'CRM Pipeline', val: '/dashboard/crm' },
+                { label: 'HRMS Guide', val: '/dashboard/hrms' },
+                { label: 'Finance Center', val: '/dashboard/finance' },
+              ].map(p => (
+                <button
+                  key={p.val}
+                  type="button"
+                  onClick={() => setUrlPattern(p.val)}
+                  className={`text-[9px] font-semibold px-2 py-1 rounded-md border transition-all cursor-pointer ${
+                    urlPattern === p.val
+                      ? 'bg-indigo-600/30 border-indigo-500 text-indigo-200'
+                      : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider">Description</label>
+              <textarea
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+                rows={2}
+                placeholder="Summary of what users learn in this tour..."
+                className="w-full bg-zinc-900 border border-zinc-800 focus:border-indigo-500 rounded-xl px-3 py-2 text-xs text-white outline-none resize-none"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider">Initial Publishing Status</label>
+                <select
+                  value={status}
+                  onChange={e => setStatus(e.target.value as any)}
+                  className="w-full bg-zinc-900 border border-zinc-800 focus:border-indigo-500 rounded-xl px-3 py-2 text-xs text-white outline-none cursor-pointer"
+                >
+                  <option value="published">🚀 Published (LIVE on website)</option>
+                  <option value="draft">📝 Draft (Internal only)</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider">Priority Weight</label>
+                <input
+                  type="number"
+                  value={priority}
+                  onChange={e => setPriority(parseInt(e.target.value) || 1)}
+                  className="w-full bg-zinc-900 border border-zinc-800 focus:border-indigo-500 rounded-xl px-3 py-2 text-xs text-white outline-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2: Initial Step Builder */}
+          <div className="space-y-4 bg-zinc-950/60 p-4 border border-zinc-800/80 rounded-xl">
+            <h4 className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+              <Layers size={12} /> 2. Configure First Step / Tooltip
+            </h4>
+
+            <div className="space-y-1">
+              <label className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider">Step Title *</label>
+              <input
+                type="text"
+                value={stepTitle}
+                onChange={e => setStepTitle(e.target.value)}
+                placeholder="e.g. Welcome to Kenzo OneERP 💎"
+                className="w-full bg-zinc-900 border border-zinc-800 focus:border-indigo-500 rounded-xl px-3 py-2 text-xs text-white outline-none"
+                required
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider">Step Content (HTML supported) *</label>
+              <textarea
+                value={stepContent}
+                onChange={e => setStepContent(e.target.value)}
+                rows={2}
+                placeholder="Instructions displayed inside the popup/tooltip..."
+                className="w-full bg-zinc-900 border border-zinc-800 focus:border-indigo-500 rounded-xl px-3 py-2 text-xs text-white outline-none resize-none"
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider">Element Selector *</label>
+                <input
+                  type="text"
+                  value={stepSelector}
+                  onChange={e => setStepSelector(e.target.value)}
+                  placeholder="body, aside, table, #id"
+                  className="w-full bg-zinc-900 border border-zinc-800 focus:border-indigo-500 rounded-xl px-3 py-2 text-xs text-indigo-300 font-mono outline-none"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider">Display Mode</label>
+                <select
+                  value={displayMode}
+                  onChange={e => setDisplayMode(e.target.value)}
+                  className="w-full bg-zinc-900 border border-zinc-800 focus:border-indigo-500 rounded-xl px-3 py-2 text-xs text-white outline-none cursor-pointer"
+                >
+                  <option value="modal">🪟 Center Modal (Popup)</option>
+                  <option value="spotlight">🔦 Spotlight Cutout</option>
+                  <option value="tooltip">💬 Positioned Tooltip</option>
+                  <option value="highlight">✨ Pulse Highlight</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider">Placement</label>
+                <select
+                  value={placement}
+                  onChange={e => setPlacement(e.target.value)}
+                  className="w-full bg-zinc-900 border border-zinc-800 focus:border-indigo-500 rounded-xl px-3 py-2 text-xs text-white outline-none cursor-pointer"
+                >
+                  {PLACEMENTS.map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-650 hover:from-violet-500 hover:to-indigo-550 text-white text-xs font-bold py-3.5 rounded-xl cursor-pointer transition-all shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            <Sparkles size={14} />
+            <span>{submitting ? 'Publishing Walkthrough Live...' : '🚀 Publish Walkthrough Live'}</span>
+          </button>
+        </form>
+      </motion.div>
+    </div>
+  );
+}
+
 export default function ToursView({
   flows,
   editingFlow,
@@ -516,6 +817,9 @@ export default function ToursView({
   apiKey
 }: ToursViewProps) {
   const [stepEditorFlow, setStepEditorFlow] = useState<Flow | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
+  const activeProjectId = typeof window !== 'undefined' ? localStorage.getItem('kenzo_active_project_id') || '' : '';
 
   const aiSuggestions = [
     { title: "Standard User Onboarding Flow", steps: 4, desc: "Guide new signups through the main analytics layout." },
@@ -533,15 +837,25 @@ export default function ToursView({
           <p className="text-zinc-500 text-xs mt-1">Deploy, monitor, and configure active user onboarding flows.</p>
         </div>
 
-        <a
-          href={`/sandbox.html?kenzo_builder=true&api_key=${apiKey}`}
-          target="_blank"
-          rel="noreferrer"
-          className="flex items-center gap-2 bg-gradient-to-r from-violet-600 to-indigo-650 hover:from-violet-500 hover:to-indigo-550 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all duration-300 shadow-lg shadow-indigo-600/25 active:scale-95 cursor-pointer"
-        >
-          <span>Create Tour Visually</span>
-          <Sparkles size={13} className="text-indigo-200 animate-pulse" />
-        </a>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-2 bg-gradient-to-r from-violet-600 to-indigo-650 hover:from-violet-500 hover:to-indigo-550 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all duration-300 shadow-lg shadow-indigo-600/25 active:scale-95 cursor-pointer"
+          >
+            <Plus size={14} />
+            <span>Create Walkthrough Tour</span>
+          </button>
+
+          <a
+            href={`/sandbox.html?kenzo_builder=true&api_key=${apiKey}`}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-2 bg-zinc-950 border border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all active:scale-95 cursor-pointer"
+          >
+            <Sparkles size={13} className="text-indigo-400" />
+            <span>Open Visual Builder</span>
+          </a>
+        </div>
       </div>
 
       {/* Empty State */}
@@ -704,6 +1018,22 @@ export default function ToursView({
         </div>
       )}
 
+      {/* Create Walkthrough Tour Modal */}
+      <AnimatePresence>
+        {showCreateModal && (
+          <CreateTourModal
+            apiKey={apiKey}
+            activeProjectId={activeProjectId}
+            onClose={() => setShowCreateModal(false)}
+            onSuccess={() => {
+              if (typeof window !== 'undefined') {
+                window.location.reload();
+              }
+            }}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Step Editor Modal */}
       <AnimatePresence>
         {stepEditorFlow && (
@@ -781,22 +1111,29 @@ export default function ToursView({
                       className="w-full bg-zinc-950 border border-zinc-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-3 py-2.5 text-xs text-zinc-300 outline-none transition-all cursor-pointer font-semibold"
                     >
                       <option value="draft">Draft Mode</option>
-                      <option value="published">Published</option>
+                      <option value="published">Published (LIVE)</option>
                       <option value="archived">Archived</option>
                     </select>
                   </div>
                 </div>
 
-                <div className="p-3 bg-zinc-950 border border-zinc-850 rounded-xl text-[10px] text-left">
-                  <div className="flex items-center gap-1.5 text-zinc-400 font-semibold mb-1">
+                <div className="p-3 bg-zinc-950 border border-zinc-850 rounded-xl text-[10px] text-left space-y-2">
+                  <div className="flex items-center gap-1.5 text-zinc-400 font-semibold">
                     <Compass size={11} className="text-indigo-400" />
-                    <span>Target Route Pattern</span>
+                    <span>Target ERP Route Pattern</span>
                   </div>
-                  <code className="text-indigo-300 text-[10px] font-mono break-all bg-zinc-900 px-2 py-1 rounded border border-zinc-850 block w-full mt-1.5">
-                    {editingFlow.urlRules?.[0]?.pattern || 'Any route (matches globally)'}
-                  </code>
-                  <p className="text-[9px] text-zinc-500 mt-2 leading-relaxed font-semibold">
-                    * Use the Steps Editor (grid icon) to configure individual step selectors and content.
+                  <input
+                    type="text"
+                    value={editingFlow.urlRules?.[0]?.pattern || '/'}
+                    onChange={(e) => setEditingFlow({
+                      ...editingFlow,
+                      urlRules: [{ type: 'contains', pattern: e.target.value }]
+                    })}
+                    className="w-full bg-zinc-900 border border-zinc-800 focus:border-indigo-500 rounded-lg px-3 py-2 text-xs text-indigo-300 font-mono outline-none"
+                    placeholder="e.g. /dashboard/crm"
+                  />
+                  <p className="text-[9px] text-zinc-500 leading-relaxed font-semibold">
+                    * Set route pattern to target specific ERP sub-paths (e.g. <code>/dashboard/crm</code>) or <code>/</code> for global.
                   </p>
                 </div>
 
@@ -804,7 +1141,7 @@ export default function ToursView({
                   type="submit"
                   className="w-full bg-gradient-to-r from-violet-600 to-indigo-650 hover:from-violet-500 hover:to-indigo-550 text-white text-xs font-bold py-3 rounded-xl cursor-pointer transition-all shadow-md shadow-indigo-600/10 active:scale-[0.99] focus:outline-none"
                 >
-                  Save Walkthrough Settings
+                  🚀 Save & Push Changes Live
                 </button>
               </form>
             </motion.div>
