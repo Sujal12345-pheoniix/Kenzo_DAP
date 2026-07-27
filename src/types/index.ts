@@ -130,6 +130,8 @@ export interface FlowStep {
   cssClass?: string;
   /** Whether backdrop blocks interaction with page. */
   blockInteraction?: boolean;
+  /** Whether clicking target element advances to next step automatically. */
+  autoAdvanceOnClick?: boolean;
   /** Padding around spotlight cutout (px). */
   spotlightPadding?: number;
 }

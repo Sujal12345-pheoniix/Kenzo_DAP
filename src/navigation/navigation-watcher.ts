@@ -40,6 +40,18 @@ export class NavigationWatcher implements INavigationWatcher {
     window.addEventListener('popstate', this.boundPopState);
     window.addEventListener('hashchange', this.boundHashChange);
 
+    // Next.js App Router & SPA route change observer (watching document title / location changes)
+    if (typeof MutationObserver !== 'undefined' && document.querySelector('head title')) {
+      const observer = new MutationObserver(() => this.onUrlChange());
+      const titleEl = document.querySelector('head title');
+      if (titleEl) {
+        observer.observe(titleEl, { childList: true, characterData: true, subtree: true });
+      }
+    }
+
+    // Safety polling for Next.js soft navigation (every 300ms)
+    setInterval(() => this.onUrlChange(), 300);
+
     this.started = true;
   }
 

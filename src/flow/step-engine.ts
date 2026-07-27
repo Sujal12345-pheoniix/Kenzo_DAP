@@ -175,6 +175,16 @@ export class StepEngine implements IStepEngine {
         } else if (displayMode === 'highlight') {
           this.overlayManager.showHighlight(targetElement);
         }
+
+        // Click-to-Advance: Support autoAdvanceOnClick so clicking targeted ERP element advances flow
+        const autoAdvance = step.autoAdvanceOnClick ?? true;
+        if (autoAdvance) {
+          const clickHandler = () => {
+            targetElement.removeEventListener('click', clickHandler);
+            void this.handleAction('next');
+          };
+          targetElement.addEventListener('click', clickHandler, { once: true });
+        }
       } else {
         // Targeted element not found on page — skip safely to next step if available
         this.logger.warn(`[Kenzo] Step element not found for step: "${step.title}". Skipping...`, { stepId: step.id, selector: step.selector });

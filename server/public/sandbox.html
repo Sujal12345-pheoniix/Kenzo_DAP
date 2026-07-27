@@ -1101,9 +1101,102 @@
       window.location.href = url.toString();
     });
 
-    // ─── Run Walkthrough Button ───────────────────────────────
-    document.getElementById('k-trigger-flow-btn').addEventListener('click', () => {
-      triggerFirstFlow();
+    // ─── Run Walkthrough Button (Interactive Modal Launcher) ──
+    document.getElementById('k-trigger-flow-btn').addEventListener('click', async () => {
+      // Remove any existing modal
+      document.getElementById('kenzo-flow-selector-modal')?.remove();
+
+      const modal = document.createElement('div');
+      modal.id = 'kenzo-flow-selector-modal';
+      modal.className = 'modal-overlay';
+      modal.style.display = 'flex';
+      modal.style.zIndex = '999998';
+
+      modal.innerHTML = `
+        <div class="modal-box" style="max-width: 520px; border: 1px solid rgba(99,102,241,0.3); background: rgba(15, 17, 26, 0.95); backdrop-filter: blur(20px); box-shadow: 0 20px 60px rgba(0,0,0,0.8);">
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:12px; margin-bottom:16px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:18px;">💎</span>
+              <h3 style="margin:0; font-size:15px; font-weight:700; color:#fff; font-family:'Outfit',sans-serif;">Kenzo DAP — Integrated Walkthrough Tours</h3>
+            </div>
+            <button id="k-close-selector-btn" style="background:transparent; border:none; color:#888; font-size:20px; cursor:pointer;">&times;</button>
+          </div>
+          
+          <p style="font-size:12px; color:#aaa; margin-bottom:16px;">Select any published walkthrough tour below to run it live on this page, or click <strong>+ Add Walkthrough Step</strong> to visually record new steps.</p>
+
+          <div id="k-flows-list-container" style="display:flex; flex-direction:column; gap:10px; max-height:280px; overflow-y:auto; margin-bottom:20px;">
+            <div style="color:#888; font-size:12px; text-align:center; padding:20px;">Loading published tours...</div>
+          </div>
+
+          <div style="display:flex; gap:10px; justify-content:space-between; border-top:1px solid rgba(255,255,255,0.1); padding-top:14px;">
+            <button id="k-launch-builder-from-modal" style="background:linear-gradient(135deg,#6366f1,#4f46e5); color:#fff; border:none; border-radius:8px; padding:10px 16px; font-size:12px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;">
+              <span>➕</span> Add Walkthrough (Visual Builder)
+            </button>
+            <button id="k-dismiss-selector-btn" class="btn btn-secondary" style="font-size:12px;">Close</button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+
+      document.getElementById('k-close-selector-btn')?.addEventListener('click', () => modal.remove());
+      document.getElementById('k-dismiss-selector-btn')?.addEventListener('click', () => modal.remove());
+      document.getElementById('k-launch-builder-from-modal')?.addEventListener('click', () => {
+        modal.remove();
+        const url = new URL(window.location.href);
+        url.searchParams.set('kenzo_builder', 'true');
+        window.location.href = url.toString();
+      });
+
+      // Fetch published flows
+      try {
+        const apiKey = 'kenzo_project_dev_api_key_2026';
+        const res = await fetch('/api/v1/auth/sdk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ apiKey })
+        });
+        const authData = await res.json();
+        
+        const flowsRes = await fetch('/api/v1/flows/published', {
+          headers: { 'Authorization': `Bearer ${authData.token}` }
+        });
+        const data = await flowsRes.json();
+        const flows = data.flows || [];
+
+        const listContainer = document.getElementById('k-flows-list-container');
+        if (!listContainer) return;
+
+        if (flows.length === 0) {
+          listContainer.innerHTML = '<div style="color:#aaa; font-size:12px; text-align:center; padding:20px;">No published flows yet. Click below to add one!</div>';
+          return;
+        }
+
+        listContainer.innerHTML = flows.map((f: any) => `
+          <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:12px; display:flex; justify-content:space-between; align-items:center; transition:all 0.2s;">
+            <div style="display:flex; flex-direction:column; gap:2px; text-align:left;">
+              <span style="font-size:13px; font-weight:700; color:#fff;">${f.name}</span>
+              <span style="font-size:11px; color:#888;">${f.description || 'Interactive tour'} • ${f.steps?.length || 0} steps</span>
+            </div>
+            <button data-run-flow-id="${f.id}" class="k-run-tour-btn" style="background:#6366f1; color:#fff; border:none; border-radius:6px; padding:6px 14px; font-size:11px; font-weight:600; cursor:pointer;">
+              ▶ Play Tour
+            </button>
+          </div>
+        `).join('');
+
+        listContainer.querySelectorAll('.k-run-tour-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const flowId = (e.currentTarget as HTMLElement).getAttribute('data-run-flow-id');
+            modal.remove();
+            if (flowId && typeof Kenzo !== 'undefined') {
+              Kenzo.startFlow(flowId);
+            }
+          });
+        });
+
+      } catch (err) {
+        console.error('Error fetching published flows:', err);
+      }
     });
   </script>
 </body>

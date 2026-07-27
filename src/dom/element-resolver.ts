@@ -64,25 +64,24 @@ export class ElementResolver implements IElementResolver {
 
   async resolve(
     selector: ElementSelector,
-    options?: { retries?: number; interval?: number },
+    options?: { retries?: number; interval?: number; maxTimeoutMs?: number },
   ): Promise<ResolvedElement | null> {
-    const config = this.config.get();
-    const retries = options?.retries ?? config.elementWaitRetries;
-    const interval = options?.interval ?? config.elementWaitInterval;
+    const maxTimeoutMs = options?.maxTimeoutMs ?? (options?.retries && options?.interval ? options.retries * options.interval : 5000);
+    const startTime = Date.now();
+    let currentDelay = options?.interval ?? 100;
 
-    for (let attempt = 0; attempt <= retries; attempt++) {
+    while (Date.now() - startTime < maxTimeoutMs) {
       const resolved = this.resolveSync(selector);
       if (resolved?.visible) {
         this.eventBus.emit('dom:element:found', { selector, element: resolved.element });
         return resolved;
       }
 
-      if (attempt < retries) {
-        await sleep(interval);
-      }
+      await sleep(currentDelay);
+      currentDelay = Math.min(currentDelay * 1.5, 1000);
     }
 
-    this.logger.warn('Element not found', { selector });
+    this.logger.warn('Element not found after exponential backoff', { selector, elapsedMs: Date.now() - startTime });
     this.eventBus.emit('dom:element:not_found', { selector });
     return null;
   }
@@ -90,12 +89,9 @@ export class ElementResolver implements IElementResolver {
   async waitForElement(selector: ElementSelector, timeout?: number): Promise<ResolvedElement> {
     const config = this.config.get();
     const maxWait = timeout ?? config.elementWaitRetries * config.elementWaitInterval;
-    const interval = config.elementWaitInterval;
-    const maxAttempts = Math.ceil(maxWait / interval);
 
     const resolved = await this.resolve(selector, {
-      retries: maxAttempts,
-      interval,
+      maxTimeoutMs: maxWait,
     });
 
     if (!resolved) {
