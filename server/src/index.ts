@@ -809,66 +809,62 @@ async function seedOneERPFlows(projectId: string, client: any) {
     [flowId, idx, s.title, s.content, JSON.stringify(s.selector || { type: 'css', value: 'body' }), s.placement || 'center', s.display_mode || s.displayMode || 'modal', JSON.stringify(s.buttons || [{ text: 'Next', action: 'next', style: 'primary' }])]
   );
 
-  // Flow 1: Admin Control Hub Welcome Tour
+  // Flow 1: Admin Control Hub Overview (Admin Role, Target: /dashboard)
   const f1 = await client.query(`INSERT INTO flows (project_id, name, description, status, version, url_rules, priority) VALUES ($1,$2,$3,'published',1,$4,10) RETURNING id`, [
     projectId,
-    'Admin Control Hub Welcome Tour',
-    'Comprehensive walkthrough of the main administrative dashboard',
+    'Admin Control Hub Overview (Admin Role)',
+    'Comprehensive executive overview for Admins, Managers, and System Executives.',
     JSON.stringify([{ type: 'contains', pattern: '/dashboard' }])
   ]);
   const steps1 = [
-    { title: 'Welcome to Kenzo OneERP 💎', content: 'This is your central executive control hub. Monitor metrics, team performance, and AI insights.', selector: { type: 'css', value: 'body' }, placement: 'center', display_mode: 'modal', buttons: [{ text: 'Start Tour', action: 'next', style: 'primary' }, { text: 'Skip', action: 'close', style: 'secondary' }] },
+    { title: 'Welcome to Kenzo OneERP 💎', content: 'This is your central executive command center. Track company KPIs, department health, and AI insights.', selector: { type: 'css', value: 'body' }, placement: 'center', display_mode: 'modal', buttons: [{ text: 'Start Overview', action: 'next', style: 'primary' }, { text: 'Skip', action: 'close', style: 'secondary' }] },
     { title: 'Role-Based Navigation Sidebar', content: 'Access CRM, HRMS, Finance, Projects, and AI Copilot directly from this sidebar.', selector: { type: 'css', value: 'aside, nav, #crm-sidebar, .sidebar' }, placement: 'right', display_mode: 'spotlight', buttons: [{ text: 'Back', action: 'previous', style: 'secondary' }, { text: 'Next', action: 'next', style: 'primary' }] },
     { title: 'Live Business Analytics & Stats', content: 'Monitor company performance, active leads, revenue charts, and operational KPIs in real time.', selector: { type: 'css', value: '.stats-grid, #crm-kpi-grid, .grid' }, placement: 'bottom', display_mode: 'spotlight', buttons: [{ text: 'Back', action: 'previous', style: 'secondary' }, { text: 'Next', action: 'next', style: 'primary' }] },
-    { title: 'CRM & Pipeline Workspace', content: 'Click here anytime to manage sales pipeline deals, client contacts, and conversion rates.', selector: { type: 'css', value: "[href*='crm'], [href*='/crm'], #crm-deals-panel" }, placement: 'right', display_mode: 'tooltip', buttons: [{ text: 'Back', action: 'previous', style: 'secondary' }, { text: 'Next', action: 'next', style: 'primary' }] },
     { title: 'AI Copilot Integration', content: 'Click here anytime to ask AI Copilot for automated financial analysis or HR summaries.', selector: { type: 'css', value: "[href*='copilot'], [href*='/copilot'], #crm-search-input" }, placement: 'right', display_mode: 'tooltip', buttons: [{ text: 'Back', action: 'previous', style: 'secondary' }, { text: '🎉 Finish Tour', action: 'finish', style: 'primary' }] }
   ];
   for (let i = 0; i < steps1.length; i++) await insertStep(f1.rows[0].id, i, steps1[i]);
 
-  // Flow 2: CRM & Pipeline Walkthrough
+  // Flow 2: CRM & Sales Pipeline Management (Sales Role, Target: /dashboard/crm)
   const f2 = await client.query(`INSERT INTO flows (project_id, name, description, status, version, url_rules, priority) VALUES ($1,$2,$3,'published',1,$4,9) RETURNING id`, [
     projectId,
-    'CRM & Pipeline Walkthrough',
-    'Guided walkthrough for managing clients and sales pipeline',
+    'CRM & Sales Pipeline Management (Sales Role)',
+    'Targeted walkthrough for Sales Representatives and Account Executives to manage leads, deals, and conversion pipelines.',
     JSON.stringify([{ type: 'contains', pattern: '/dashboard/crm' }])
   ]);
   const steps2 = [
-    { title: 'CRM & Client Pipeline Overview 📈', content: 'Track deals, manage client leads, and monitor sales conversion metrics.', selector: { type: 'css', value: 'body' }, placement: 'center', display_mode: 'modal', buttons: [{ text: 'Show Pipeline', action: 'next', style: 'primary' }] },
-    { title: 'Lead Management Table', content: 'View lead statuses, deal values, and assigned sales representatives.', selector: { type: 'css', value: "table, .grid, [data-testid='crm-table'], #crm-deals-panel" }, placement: 'bottom', display_mode: 'spotlight', buttons: [{ text: 'Back', action: 'previous', style: 'secondary' }, { text: 'Done!', action: 'finish', style: 'primary' }] }
+    { title: 'CRM & Client Pipeline Workspace 📈', content: 'Track sales deals, manage customer leads, and monitor sales conversion metrics.', selector: { type: 'css', value: 'body' }, placement: 'center', display_mode: 'modal', buttons: [{ text: 'Show Pipeline', action: 'next', style: 'primary' }] },
+    { title: 'Lead Management Table', content: 'View lead statuses, deal values, and assigned sales representatives.', selector: { type: 'css', value: "table, .grid, [data-testid='crm-table'], #crm-deals-panel" }, placement: 'bottom', display_mode: 'spotlight', buttons: [{ text: 'Back', action: 'previous', style: 'secondary' }, { text: 'Next', action: 'next', style: 'primary' }] },
+    { title: 'Add New Sales Deal', content: 'Click the "+ Add Deal" button to register a new lead in your sales pipeline.', selector: { type: 'css', value: '#crm-add-deal-btn, .btn-add' }, placement: 'left', display_mode: 'tooltip', buttons: [{ text: 'Back', action: 'previous', style: 'secondary' }, { text: '✅ Done!', action: 'finish', style: 'primary' }] }
   ];
   for (let i = 0; i < steps2.length; i++) await insertStep(f2.rows[0].id, i, steps2[i]);
 
-  // Flow 3: HRMS & Employee Management Guide
+  // Flow 3: HRMS & Employee Operations (HR Role, Target: /dashboard/hrms)
   const f3 = await client.query(`INSERT INTO flows (project_id, name, description, status, version, url_rules, priority) VALUES ($1,$2,$3,'published',1,$4,8) RETURNING id`, [
     projectId,
-    'HRMS & Employee Management Guide',
-    'Guide for HR managers to handle attendance and leave requests',
+    'HRMS & Employee Operations (HR Role)',
+    'Targeted walkthrough for HR Managers to handle attendance, leave approvals, payroll, and employee directories.',
     JSON.stringify([{ type: 'contains', pattern: '/dashboard/hrms' }])
   ]);
-  await insertStep(f3.rows[0].id, 0, {
-    title: 'HR & People Operations 👥',
-    content: 'Manage employee directories, leave approvals, and payroll data in one view.',
-    selector: { type: 'css', value: 'body' },
-    placement: 'center',
-    display_mode: 'modal',
-    buttons: [{ text: 'Got it!', action: 'finish', style: 'primary' }]
-  });
+  const steps3 = [
+    { title: 'HR & People Operations Center 👥', content: 'Manage employee directories, leave approvals, and payroll data in one unified view.', selector: { type: 'css', value: 'body' }, placement: 'center', display_mode: 'modal', buttons: [{ text: 'Explore HR Portal', action: 'next', style: 'primary' }] },
+    { title: 'Employee Directory & Attendance Logs', content: 'Review staff attendance, department assignments, and active employee profiles.', selector: { type: 'css', value: 'table, .grid, #hrms-employees-panel' }, placement: 'bottom', display_mode: 'spotlight', buttons: [{ text: 'Back', action: 'previous', style: 'secondary' }, { text: 'Next', action: 'next', style: 'primary' }] },
+    { title: 'Approve Leave & Process Payroll', content: 'Review and approve pending employee leave requests or process monthly payroll.', selector: { type: 'css', value: '#hrms-approve-btn, button.btn-primary' }, placement: 'top', display_mode: 'tooltip', buttons: [{ text: 'Back', action: 'previous', style: 'secondary' }, { text: '👍 Complete', action: 'finish', style: 'primary' }] }
+  ];
+  for (let i = 0; i < steps3.length; i++) await insertStep(f3.rows[0].id, i, steps3[i]);
 
-  // Flow 4: Finance & Analytics Guide
+  // Flow 4: Financial Ledger & Billing (CFO / Accounting Role, Target: /dashboard/finance)
   const f4 = await client.query(`INSERT INTO flows (project_id, name, description, status, version, url_rules, priority) VALUES ($1,$2,$3,'published',1,$4,7) RETURNING id`, [
     projectId,
-    'Finance & Analytics Guide',
-    'Financial reports and expense tracking walkthrough',
+    'Financial Ledger & Billing (CFO / Accounting Role)',
+    'Targeted walkthrough for Accountants and Financial Controllers to monitor cash flow, expenses, and invoices.',
     JSON.stringify([{ type: 'contains', pattern: '/dashboard/finance' }])
   ]);
-  await insertStep(f4.rows[0].id, 0, {
-    title: 'Financial Command Center 💰',
-    content: 'Monitor cash flow, monthly expenses, revenue charts, and financial forecasts.',
-    selector: { type: 'css', value: 'body' },
-    placement: 'center',
-    display_mode: 'modal',
-    buttons: [{ text: 'Explore Analytics', action: 'finish', style: 'primary' }]
-  });
+  const steps4 = [
+    { title: 'Financial Command Center 💰', content: 'Monitor company cash flow, monthly expenses, revenue charts, and financial forecasts.', selector: { type: 'css', value: 'body' }, placement: 'center', display_mode: 'modal', buttons: [{ text: 'Explore Financials', action: 'next', style: 'primary' }] },
+    { title: 'Revenue & Expense Analytics Cards', content: 'View live revenue totals, monthly expenditure summaries, and profit margin metrics.', selector: { type: 'css', value: '.stats-grid, #crm-kpi-grid, .grid' }, placement: 'bottom', display_mode: 'spotlight', buttons: [{ text: 'Back', action: 'previous', style: 'secondary' }, { text: 'Next', action: 'next', style: 'primary' }] },
+    { title: 'Export Financial Reports', content: 'Click here anytime to generate or export monthly financial ledgers and P&L statements.', selector: { type: 'css', value: "button, [href*='report']" }, placement: 'right', display_mode: 'tooltip', buttons: [{ text: 'Back', action: 'previous', style: 'secondary' }, { text: '🎉 Finished!', action: 'finish', style: 'primary' }] }
+  ];
+  for (let i = 0; i < steps4.length; i++) await insertStep(f4.rows[0].id, i, steps4[i]);
 }
 
 // ─── Autonomous AI Flow Generator Helper ─────────────────────────────────

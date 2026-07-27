@@ -12,11 +12,35 @@ export class ProgressManager implements IProgressManager {
   constructor(private readonly storage: IStorageService) {}
 
   getProgress(flowId: string): FlowProgress | null {
-    return this.storage.get<FlowProgress>(PROGRESS_PREFIX + flowId);
+    const p = this.storage.get<FlowProgress>(PROGRESS_PREFIX + flowId);
+    
+    // Check fallback local/session storage indicators
+    if (typeof window !== 'undefined') {
+      const isDone = window.localStorage?.getItem(`kenzo_flow_done_${flowId}`) === 'true' ||
+                     window.sessionStorage?.getItem(`kenzo_flow_done_${flowId}`) === 'true';
+      if (isDone) {
+        const progress = p ?? this.createInitial(flowId);
+        progress.completed = true;
+        progress.dismissed = true;
+        return progress;
+      }
+    }
+
+    return p;
   }
 
   saveProgress(progress: FlowProgress): void {
     this.storage.set(PROGRESS_PREFIX + progress.flowId, progress);
+    if (progress.completed || progress.dismissed) {
+      if (typeof window !== 'undefined') {
+        try {
+          window.localStorage?.setItem(`kenzo_flow_done_${progress.flowId}`, 'true');
+          window.sessionStorage?.setItem(`kenzo_flow_done_${progress.flowId}`, 'true');
+        } catch {
+          // ignore
+        }
+      }
+    }
   }
 
   markStepCompleted(flowId: string, stepId: string): void {
@@ -44,6 +68,14 @@ export class ProgressManager implements IProgressManager {
 
   reset(flowId: string): void {
     this.storage.remove(PROGRESS_PREFIX + flowId);
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage?.removeItem(`kenzo_flow_done_${flowId}`);
+        window.sessionStorage?.removeItem(`kenzo_flow_done_${flowId}`);
+      } catch {
+        // ignore
+      }
+    }
   }
 
   private createInitial(flowId: string): FlowProgress {
