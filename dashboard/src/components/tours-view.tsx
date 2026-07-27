@@ -818,8 +818,32 @@ export default function ToursView({
 }: ToursViewProps) {
   const [stepEditorFlow, setStepEditorFlow] = useState<Flow | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
   const activeProjectId = typeof window !== 'undefined' ? localStorage.getItem('kenzo_active_project_id') || '' : '';
+
+  const handleAutoGenerateAI = async () => {
+    setIsGeneratingAI(true);
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (apiKey) headers['x-api-key'] = apiKey;
+      if (activeProjectId) headers['x-project-id'] = activeProjectId;
+
+      const res = await fetch('/api/v1/admin/ai/auto-generate', {
+        method: 'POST',
+        headers,
+      });
+      if (res.ok) {
+        window.location.reload();
+      } else {
+        alert('Failed to generate AI walkthroughs.');
+      }
+    } catch {
+      alert('Error generating AI walkthroughs.');
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
 
   const aiSuggestions = [
     { title: "Standard User Onboarding Flow", steps: 4, desc: "Guide new signups through the main analytics layout." },
@@ -838,6 +862,15 @@ export default function ToursView({
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleAutoGenerateAI}
+            disabled={isGeneratingAI}
+            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all duration-300 shadow-lg shadow-emerald-600/25 active:scale-95 cursor-pointer disabled:opacity-50"
+          >
+            <Zap size={14} className={isGeneratingAI ? 'animate-spin' : ''} />
+            <span>{isGeneratingAI ? 'Generating 5 AI Tours...' : '⚡ Auto-Generate 5 AI Walkthroughs'}</span>
+          </button>
+
           <button
             onClick={() => setShowCreateModal(true)}
             className="flex items-center gap-2 bg-gradient-to-r from-violet-600 to-indigo-650 hover:from-violet-500 hover:to-indigo-550 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all duration-300 shadow-lg shadow-indigo-600/25 active:scale-95 cursor-pointer"

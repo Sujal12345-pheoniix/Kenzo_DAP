@@ -396,6 +396,26 @@ app.post('/api/v1/admin/ai/generate', authenticateAdmin, async (req: Authenticat
   }
 });
 
+// 1i. 1-Click Autonomous AI Walkthrough Generator (Generates & publishes 5 walkthroughs tailored to project)
+app.post('/api/v1/admin/ai/auto-generate', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const count = await autoGenerateProjectWalkthroughs(req.projectId!, client);
+    await client.query('COMMIT');
+    res.json({
+      success: true,
+      count,
+      message: `Successfully generated and published ${count} AI walkthroughs for this website!`
+    });
+  } catch (err: any) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ message: 'Failed to auto-generate AI walkthroughs', error: err.message });
+  } finally {
+    client.release();
+  }
+});
+
 app.get('/api/v1/flows/published', authenticateSdk, async (req: AuthenticatedRequest, res: Response) => {
   try {
     // Load published flows
@@ -851,6 +871,85 @@ async function seedOneERPFlows(projectId: string, client: any) {
   });
 }
 
+// ─── Autonomous AI Flow Generator Helper ─────────────────────────────────
+async function autoGenerateProjectWalkthroughs(projectId: string, client: any): Promise<number> {
+  const insertStep = (flowId: string, idx: number, s: any) => client.query(
+    `INSERT INTO steps (flow_id, order_index, title, content, selector, placement, display_mode, buttons) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+    [flowId, idx, s.title, s.content, JSON.stringify(s.selector || { type: 'css', value: 'body' }), s.placement || 'center', s.display_mode || s.displayMode || 'modal', JSON.stringify(s.buttons || [{ text: 'Next', action: 'next', style: 'primary' }])]
+  );
+
+  // 1. Welcome & Onboarding Overview Tour
+  const f1 = await client.query(`
+    INSERT INTO flows (project_id, name, description, status, version, url_rules, priority)
+    VALUES ($1, 'Welcome & Onboarding Overview Tour', 'Guided orientation covering main dashboard layout, navigation sidebar, and search actions.', 'published', 1, $2, 10)
+    RETURNING id
+  `, [projectId, JSON.stringify([{ type: 'contains', pattern: '/dashboard' }])]);
+
+  const steps1 = [
+    { title: 'Welcome to the Application! 💎', content: '<p>This interactive walkthrough will introduce you to all key features and workspaces of this application.</p>', selector: { type: 'css', value: 'body' }, placement: 'center', display_mode: 'modal', buttons: [{ text: 'Start Tour', action: 'next', style: 'primary' }, { text: 'Skip', action: 'close', style: 'secondary' }] },
+    { title: 'Navigation Sidebar', content: '<p>Use this sidebar menu to switch seamlessly between Dashboard, CRM, HRMS, Finance, and Settings modules.</p>', selector: { type: 'css', value: 'aside, nav, #crm-sidebar, .sidebar' }, placement: 'right', display_mode: 'spotlight', buttons: [{ text: 'Back', action: 'previous', style: 'secondary' }, { text: 'Next', action: 'next', style: 'primary' }] },
+    { title: 'Global Search & Quick Actions', content: '<p>Type here anytime to search contacts, records, transactions, or trigger quick system actions.</p>', selector: { type: 'css', value: 'input[type="search"], #crm-search-input, .search-wrap' }, placement: 'bottom', display_mode: 'tooltip', buttons: [{ text: 'Back', action: 'previous', style: 'secondary' }, { text: '🎉 Done!', action: 'finish', style: 'primary' }] }
+  ];
+  for (let i = 0; i < steps1.length; i++) await insertStep(f1.rows[0].id, i, steps1[i]);
+
+  // 2. Authentication & Account Access Guide
+  const f2 = await client.query(`
+    INSERT INTO flows (project_id, name, description, status, version, url_rules, priority)
+    VALUES ($1, 'Authentication & Account Access Guide', 'Step-by-step security walkthrough for login, signup, and user role management.', 'published', 1, $2, 9)
+    RETURNING id
+  `, [projectId, JSON.stringify([{ type: 'contains', pattern: '/auth' }])]);
+
+  const steps2 = [
+    { title: 'Account Security & Access 🔐', content: '<p>Learn how to safely log in, manage multi-factor authentication, and configure user permissions.</p>', selector: { type: 'css', value: 'body' }, placement: 'center', display_mode: 'modal', buttons: [{ text: 'Begin', action: 'next', style: 'primary' }] },
+    { title: 'Credential Input Form', content: '<p>Enter your account email and password credentials here to log in or create a new user profile.</p>', selector: { type: 'css', value: 'form, input[type="email"], #login-form' }, placement: 'bottom', display_mode: 'spotlight', buttons: [{ text: 'Back', action: 'previous', style: 'secondary' }, { text: 'Next', action: 'next', style: 'primary' }] },
+    { title: 'Secure Sign-In Action', content: '<p>Click <strong>Sign In</strong> to authenticate and land directly on your assigned dashboard workspace.</p>', selector: { type: 'css', value: 'button[type="submit"], .btn-primary' }, placement: 'top', display_mode: 'tooltip', buttons: [{ text: 'Back', action: 'previous', style: 'secondary' }, { text: '✅ Got it!', action: 'finish', style: 'primary' }] }
+  ];
+  for (let i = 0; i < steps2.length; i++) await insertStep(f2.rows[0].id, i, steps2[i]);
+
+  // 3. CRM & Sales Pipeline Workspace
+  const f3 = await client.query(`
+    INSERT INTO flows (project_id, name, description, status, version, url_rules, priority)
+    VALUES ($1, 'CRM & Sales Pipeline Workspace', 'Comprehensive guide for tracking client leads, deal stages, and conversion metrics.', 'published', 1, $2, 8)
+    RETURNING id
+  `, [projectId, JSON.stringify([{ type: 'contains', pattern: '/dashboard/crm' }])]);
+
+  const steps3 = [
+    { title: 'CRM & Client Pipeline Overview 📈', content: '<p>Track deals, manage client leads, and monitor sales conversion metrics in real time.</p>', selector: { type: 'css', value: 'body' }, placement: 'center', display_mode: 'modal', buttons: [{ text: 'Explore Pipeline', action: 'next', style: 'primary' }] },
+    { title: 'Deals & Leads Table', content: '<p>View active deals, deal values, contact representatives, and current pipeline stages.</p>', selector: { type: 'css', value: 'table, .grid, [data-testid="crm-table"], #crm-deals-panel' }, placement: 'bottom', display_mode: 'spotlight', buttons: [{ text: 'Back', action: 'previous', style: 'secondary' }, { text: 'Next', action: 'next', style: 'primary' }] },
+    { title: 'Adding New Opportunities', content: '<p>Click the <strong>"+ Add Deal"</strong> button to register a new lead in your sales pipeline.</p>', selector: { type: 'css', value: '#crm-add-deal-btn, .btn-add' }, placement: 'left', display_mode: 'tooltip', buttons: [{ text: 'Back', action: 'previous', style: 'secondary' }, { text: '🚀 Complete!', action: 'finish', style: 'primary' }] }
+  ];
+  for (let i = 0; i < steps3.length; i++) await insertStep(f3.rows[0].id, i, steps3[i]);
+
+  // 4. Primary Form Completion & Action Guide
+  const f4 = await client.query(`
+    INSERT INTO flows (project_id, name, description, status, version, url_rules, priority)
+    VALUES ($1, 'Primary Form Completion & Action Guide', 'Assists users with filling out required inputs and submitting forms accurately.', 'published', 1, $2, 7)
+    RETURNING id
+  `, [projectId, JSON.stringify([{ type: 'contains', pattern: '/dashboard' }])]);
+
+  const steps4 = [
+    { title: 'Form Input & Data Entry 📝', content: '<p>This guide will walk you through completing form fields accurately before submitting.</p>', selector: { type: 'css', value: 'body' }, placement: 'center', display_mode: 'modal', buttons: [{ text: 'Start Form Guide', action: 'next', style: 'primary' }] },
+    { title: 'Required Fields', content: '<p>Ensure all starred fields (name, email, value) are populated before saving.</p>', selector: { type: 'css', value: 'form, input, select' }, placement: 'right', display_mode: 'spotlight', buttons: [{ text: 'Back', action: 'previous', style: 'secondary' }, { text: 'Next', action: 'next', style: 'primary' }] },
+    { title: 'Submit & Save Action', content: '<p>Click <strong>Save</strong> to submit your entries. Records update in real-time across your workspace.</p>', selector: { type: 'css', value: '#deal-save-btn, button[type="submit"]' }, placement: 'top', display_mode: 'tooltip', buttons: [{ text: 'Back', action: 'previous', style: 'secondary' }, { text: 'Finished!', action: 'finish', style: 'primary' }] }
+  ];
+  for (let i = 0; i < steps4.length; i++) await insertStep(f4.rows[0].id, i, steps4[i]);
+
+  // 5. Executive Finance & Analytics Center
+  const f5 = await client.query(`
+    INSERT INTO flows (project_id, name, description, status, version, url_rules, priority)
+    VALUES ($1, 'Executive Finance & Analytics Center', 'Walkthrough for financial performance charts, revenue metrics, and expense reports.', 'published', 1, $2, 6)
+    RETURNING id
+  `, [projectId, JSON.stringify([{ type: 'contains', pattern: '/dashboard/finance' }])]);
+
+  const steps5 = [
+    { title: 'Financial Command Center 💰', content: '<p>Monitor company cash flow, monthly expenses, revenue charts, and financial forecasts.</p>', selector: { type: 'css', value: 'body' }, placement: 'center', display_mode: 'modal', buttons: [{ text: 'Explore Financials', action: 'next', style: 'primary' }] },
+    { title: 'Key Performance Metric Cards', content: '<p>View live revenue totals, active subscriptions, and monthly expenditure summaries.</p>', selector: { type: 'css', value: '.stats-grid, #crm-kpi-grid, .grid' }, placement: 'bottom', display_mode: 'spotlight', buttons: [{ text: 'Back', action: 'previous', style: 'secondary' }, { text: 'Finish', action: 'finish', style: 'primary' }] }
+  ];
+  for (let i = 0; i < steps5.length; i++) await insertStep(f5.rows[0].id, i, steps5[i]);
+
+  return 5;
+}
+
 // Helper to seed template flows and steps for newly registered projects (with smart HTML scanning)
 async function seedProjectData(projectId: string, projectName: string, websiteUrl?: string) {
   let targetPattern = '/';
@@ -880,6 +979,7 @@ async function seedProjectData(projectId: string, projectName: string, websiteUr
     } else {
       await seedOneERPFlows(projectId, client);
       await seedCRMFlows(projectId, projectName, client);
+      await autoGenerateProjectWalkthroughs(projectId, client);
     }
 
     await client.query('COMMIT');
