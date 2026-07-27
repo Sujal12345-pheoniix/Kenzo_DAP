@@ -23,6 +23,7 @@ export class LifecycleManager implements ILifecycleManager {
   private state: SdkState = 'uninitialized';
   private initOptions: KenzoInitOptions | null = null;
   private navigationUnsubscribe: (() => void) | null = null;
+  private sessionFlowEnded = false;
 
   constructor(
     private readonly config: IConfigService,
@@ -36,7 +37,10 @@ export class LifecycleManager implements ILifecycleManager {
     private readonly logger: ILogger,
     private readonly conditionEvaluator: IConditionEvaluator,
     private readonly progressManager: IProgressManager,
-  ) {}
+  ) {
+    this.eventBus.on('flow:completed', () => { this.sessionFlowEnded = true; });
+    this.eventBus.on('flow:dismissed', () => { this.sessionFlowEnded = true; });
+  }
 
   getState(): SdkState {
     return this.state;
@@ -95,6 +99,7 @@ export class LifecycleManager implements ILifecycleManager {
 
       // Listen for navigation changes to trigger matching flows and page scans
       this.navigationUnsubscribe = this.navigationWatcher.onNavigate(() => {
+        this.sessionFlowEnded = false;
         void this.triggerMatchingFlow();
         void this.performPageScan();
       });
@@ -141,16 +146,21 @@ export class LifecycleManager implements ILifecycleManager {
       return;
     }
 
+    const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const targetFlowId = urlParams?.get('kenzo_flow');
+    const isForceRun = typeof window !== 'undefined' && 
+      (window.location.search.includes('kenzo_force=true') || window.location.search.includes('kenzo_builder=true'));
+
+    if (this.sessionFlowEnded && !targetFlowId && !isForceRun) {
+      return;
+    }
+
     try {
       const flows = await this.flowLoader.loadAll();
       if (flows.length === 0) {
         this.logger.info('No published flows found for this project.');
         return;
       }
-
-      // Check for explicit flow ID parameter in URL (?kenzo_flow=<id>)
-      const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-      const targetFlowId = urlParams?.get('kenzo_flow');
 
       if (targetFlowId) {
         const explicitFlow = flows.find(f => f.id === targetFlowId);
