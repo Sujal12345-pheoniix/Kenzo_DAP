@@ -23,7 +23,10 @@ export class LifecycleManager implements ILifecycleManager {
   private state: SdkState = 'uninitialized';
   private initOptions: KenzoInitOptions | null = null;
   private navigationUnsubscribe: (() => void) | null = null;
-  private sessionFlowEnded = false;
+  // Track the URL where a flow was last auto-triggered so we trigger once per unique page
+  private lastAutoTriggeredPath: string = '';
+  // Delay timer for auto-trigger after navigation (lets the new page DOM settle)
+  private autoTriggerTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     private readonly config: IConfigService,
@@ -38,8 +41,7 @@ export class LifecycleManager implements ILifecycleManager {
     private readonly conditionEvaluator: IConditionEvaluator,
     private readonly progressManager: IProgressManager,
   ) {
-    this.eventBus.on('flow:completed', () => { this.sessionFlowEnded = true; });
-    this.eventBus.on('flow:dismissed', () => { this.sessionFlowEnded = true; });
+    // No sessionFlowEnded blocking — walkthroughs auto-trigger per page visit
   }
 
   getState(): SdkState {
@@ -97,11 +99,22 @@ export class LifecycleManager implements ILifecycleManager {
       void this.triggerMatchingFlow();
       void this.performPageScan();
 
-      // Listen for navigation changes to trigger matching flows and page scans
-      this.navigationUnsubscribe = this.navigationWatcher.onNavigate(() => {
-        this.sessionFlowEnded = false;
-        void this.triggerMatchingFlow();
+      // Listen for navigation changes — auto-trigger the best page-specific flow
+      this.navigationUnsubscribe = this.navigationWatcher.onNavigate((url) => {
         void this.performPageScan();
+        // Reset path tracking so the new page always gets its walkthrough
+        this.lastAutoTriggeredPath = '';
+        // Stop any currently running flow immediately (before debounce)
+        if (this.flowRunner.isRunning()) {
+          this.flowRunner.stop();
+        }
+        // Debounce: wait 700ms for Next.js page DOM to settle before triggering
+        if (this.autoTriggerTimer) clearTimeout(this.autoTriggerTimer);
+        this.autoTriggerTimer = setTimeout(() => {
+          this.autoTriggerTimer = null;
+          void this.triggerMatchingFlow();
+        }, 700);
+        void url; // consumed by watcher
       });
     } catch (error) {
       this.state = 'error';
@@ -141,17 +154,70 @@ export class LifecycleManager implements ILifecycleManager {
     }
   }
 
+  private selectBestMatchingFlow(flows: any[], ignoreProgress = false): any | null {
+    if (!flows || flows.length === 0) return null;
+    const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/';
+    const isForceRun = typeof window !== 'undefined' && 
+      (window.location.search.includes('kenzo_force=true') || window.location.search.includes('kenzo_builder=true'));
+
+    let bestFlow: any | null = null;
+    let highestScore = -1;
+
+    for (const flow of flows) {
+      if (!ignoreProgress) {
+        const progress = this.progressManager.getProgress(flow.id);
+        if ((progress?.completed || progress?.dismissed) && !isForceRun) {
+          continue;
+        }
+      }
+
+      const urlRules = flow.urlRules || [];
+      const matchesUrl = urlRules.length === 0 || this.conditionEvaluator.evaluateUrlRules(urlRules);
+      const conditions = flow.conditions || [];
+      const matchesConditions = conditions.length === 0 || this.conditionEvaluator.evaluateConditions(conditions);
+
+      if (matchesUrl && matchesConditions) {
+        let score = 1; // Default score for universal match ('/' or '*')
+        if (urlRules.length > 0) {
+          for (const rule of urlRules) {
+            const pat = (rule.pattern || '').trim();
+            if (pat && pat !== '/' && pat !== '*') {
+              if (rule.type === 'exact' && currentPath === pat) {
+                score = Math.max(score, 1000 + pat.length);
+              } else if (currentPath === pat) {
+                score = Math.max(score, 500 + pat.length);
+              } else if (currentPath.startsWith(pat) || currentPath.includes(pat)) {
+                score = Math.max(score, 100 + pat.length);
+              }
+            }
+          }
+        }
+        score += (flow.priority || 0) * 2;
+
+        if (score > highestScore) {
+          highestScore = score;
+          bestFlow = flow;
+        }
+      }
+    }
+
+    return bestFlow;
+  }
+
   private async triggerMatchingFlow(): Promise<void> {
+    // Don't interrupt a flow that is already running
     if (this.flowRunner.isRunning()) {
       return;
     }
 
     const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
     const targetFlowId = urlParams?.get('kenzo_flow');
-    const isForceRun = typeof window !== 'undefined' && 
+    const isForceRun = typeof window !== 'undefined' &&
       (window.location.search.includes('kenzo_force=true') || window.location.search.includes('kenzo_builder=true'));
+    const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/';
 
-    if (this.sessionFlowEnded && !targetFlowId && !isForceRun) {
+    // Skip if we've already auto-triggered for this exact URL (unless forced)
+    if (!targetFlowId && !isForceRun && currentPath === this.lastAutoTriggeredPath) {
       return;
     }
 
@@ -172,30 +238,12 @@ export class LifecycleManager implements ILifecycleManager {
         }
       }
 
-      let flowToStart = null;
-      for (const flow of flows) {
-        const progress = this.progressManager.getProgress(flow.id);
-        const isForceRun = typeof window !== 'undefined' && 
-          (window.location.search.includes('kenzo_force=true') || window.location.search.includes('kenzo_builder=true'));
-
-        if (progress?.completed || progress?.dismissed) {
-          if (!isForceRun) {
-            continue;
-          }
-        }
-
-        const urlRules = flow.urlRules || [];
-        const matchesUrl = urlRules.length === 0 || this.conditionEvaluator.evaluateUrlRules(urlRules);
-        const conditions = flow.conditions || [];
-        const matchesConditions = conditions.length === 0 || this.conditionEvaluator.evaluateConditions(conditions);
-
-        if (matchesUrl && matchesConditions) {
-          flowToStart = flow;
-          break;
-        }
-      }
+      // ignoreProgress = true: auto-trigger walkthroughs even if user previously
+      // dismissed/completed them — each new page navigation shows its tour fresh.
+      const flowToStart = this.selectBestMatchingFlow(flows, true);
 
       if (flowToStart) {
+        this.lastAutoTriggeredPath = currentPath; // mark so we don't retrigger on same page
         this.logger.info(`Auto-starting matching flow: ${flowToStart.name} (${flowToStart.id})`);
         await this.flowRunner.start(flowToStart);
       }
@@ -278,22 +326,11 @@ export class LifecycleManager implements ILifecycleManager {
       Start Guide
     `;
 
-    // Click handler to run matching flow
+    // Click handler to run best matching flow
     btn.addEventListener('click', async () => {
       try {
         const flows = await this.flowLoader.loadAll();
-        let matchedFlow = null;
-        for (const flow of flows) {
-          const urlRules = flow.urlRules || [];
-          const matchesUrl = urlRules.length === 0 || this.conditionEvaluator.evaluateUrlRules(urlRules);
-          const conditions = flow.conditions || [];
-          const matchesConditions = conditions.length === 0 || this.conditionEvaluator.evaluateConditions(conditions);
-
-          if (matchesUrl && matchesConditions) {
-            matchedFlow = flow;
-            break;
-          }
-        }
+        const matchedFlow = this.selectBestMatchingFlow(flows, true);
 
         if (matchedFlow) {
           // If a flow is already running, stop it first

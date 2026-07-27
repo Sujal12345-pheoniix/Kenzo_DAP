@@ -605,9 +605,23 @@ export class TooltipRenderer implements ITooltipRenderer {
       ? rawButtons.map(normalizeButton).filter((b): b is NormalizedButton => b !== null)
       : null;
 
-    const buttons = normalized && normalized.length > 0
+    let buttons = normalized && normalized.length > 0
       ? normalized
       : this.defaultButtons(options);
+
+    const isLastStep = options.stepIndex >= options.totalSteps - 1;
+    if (isLastStep) {
+      buttons = buttons.map((btn) => {
+        if (btn.action === 'next') {
+          return {
+            ...btn,
+            action: 'finish' as StepAction,
+            label: btn.label === 'Next' || btn.label.toLowerCase().includes('next') ? '🎉 Finish Tour' : btn.label,
+          };
+        }
+        return btn;
+      });
+    }
 
     for (const btn of buttons) {
       const el = document.createElement('button');

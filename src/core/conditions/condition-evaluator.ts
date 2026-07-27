@@ -24,12 +24,16 @@ export class ConditionEvaluator implements IConditionEvaluator {
   private matchUrlRule(rule: UrlRule): boolean {
     const target = rule.matchFullUrl ? window.location.href : window.location.pathname;
 
-    // Wildcard pattern matches any route
-    if (rule.pattern === '*' || rule.pattern === 'all') return true;
+    // Wildcard or empty pattern matches any route
+    if (rule.pattern === '*' || rule.pattern === 'all' || !rule.pattern) return true;
 
-    // Root path '/' matching — should only match root path (/ or /index.html or /sandbox.html), not sub-routes like /dashboard/crm
-    if (rule.pattern === '/' || rule.pattern === '') {
-      return target === '/' || target === '/index.html' || target === '/sandbox.html' || target.endsWith('/');
+    // Root path '/' matching
+    if (rule.pattern === '/') {
+      if (rule.type === 'exact') {
+        return target === '/' || target === '/index.html' || target === '/sandbox.html' || target === '';
+      }
+      // In 'contains', 'startsWith' or default mode, '/' acts as universal/global fallback (matches all paths starting with '/')
+      return target.startsWith('/');
     }
 
     switch (rule.type) {
@@ -46,7 +50,7 @@ export class ConditionEvaluator implements IConditionEvaluator {
           return false;
         }
       default:
-        return false;
+        return target.includes(rule.pattern);
     }
   }
 

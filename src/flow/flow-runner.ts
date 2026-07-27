@@ -58,7 +58,12 @@ export class FlowRunner implements IFlowRunner {
     this.stepEngine.init(flow, startIndex);
 
     this.navigationUnsubscribe = this.navigationWatcher.onNavigate(() => {
-      void this.onNavigation();
+      // Stop this flow when user navigates to a new page.
+      // The lifecycle manager will trigger the correct walkthrough for the new page.
+      if (this.activeFlow) {
+        this.logger.debug('Stopping flow on navigation', { flowId: this.activeFlow.id });
+        this.stop();
+      }
     });
 
     this.eventBus.emit('flow:started', { flowId: flow.id });
@@ -138,10 +143,4 @@ export class FlowRunner implements IFlowRunner {
     this.stop();
   }
 
-  private async onNavigation(): Promise<void> {
-    if (!this.activeFlow || !this.stepEngine) return;
-
-    this.logger.debug('Re-rendering step after navigation');
-    await this.stepEngine.refreshCurrentStep();
-  }
 }
