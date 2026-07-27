@@ -475,6 +475,57 @@ async function seedHospitalFlows(projectId: string, projectName: string, targetP
   ]);
 }
 
+// ─── CRM Sandbox flows seeder ─────────────────────────────────────────────
+async function seedCRMFlows(projectId: string, projectName: string, client: any) {
+  const insertStep = (flowId: string, idx: number, s: any) => client.query(
+    `INSERT INTO steps (flow_id, order_index, title, content, selector, placement, display_mode, buttons) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+    [flowId, idx, s.title, s.content, JSON.stringify(s.selector), s.placement, s.display_mode, JSON.stringify(s.buttons)]
+  );
+
+  // FLOW 1: Welcome Onboarding Tour
+  const f1 = await client.query(`INSERT INTO flows (project_id, name, description, status, version, url_rules, priority) VALUES ($1,$2,$3,'published',1,$4,10) RETURNING id`, [
+    projectId, `Welcome to ${projectName}!`, `Full guided onboarding — dashboard, KPI cards, navigation, and key actions.`,
+    JSON.stringify([{ type: 'contains', pattern: '/' }])
+  ]);
+  const steps1 = [
+    { title: `\uD83D\uDC4B Welcome to ${projectName}!`, content: `<p>This <strong>interactive walkthrough</strong> will guide you through all the key features of ${projectName}.</p><p>You'll learn how to navigate, manage deals, track your pipeline, and more.</p>`, selector: { type: 'css', value: 'body' }, placement: 'center', display_mode: 'modal', buttons: [{ text: 'Start Tour', action: 'next', style: 'primary' }, { text: 'Skip', action: 'close', style: 'secondary' }] },
+    { title: '\uD83C\uDFE2 Brand & Navigation', content: `<p>This is the <strong>${projectName} sidebar</strong>. Use these navigation links to switch between Dashboard, Leads, Pipeline, and Settings.</p>`, selector: { type: 'css', value: '#crm-sidebar, .sidebar' }, placement: 'right', display_mode: 'spotlight', buttons: [{ text: 'Back', action: 'previous', style: 'secondary' }, { text: 'Next', action: 'next', style: 'primary' }] },
+    { title: '\uD83D\uDCCA KPI Dashboard Cards', content: '<p>These <strong>3 KPI cards</strong> give you a real-time business overview — Total Leads, Open Deals Pipeline value, and Conversion Rate.</p>', selector: { type: 'css', value: '#crm-kpi-grid, .stats-grid' }, placement: 'bottom', display_mode: 'spotlight', buttons: [{ text: 'Back', action: 'previous', style: 'secondary' }, { text: 'Next', action: 'next', style: 'primary' }] },
+    { title: '\uD83D\uDCCB Recent Deals Panel', content: '<p>The <strong>Recent Deals</strong> table shows all active deals with contact, company, value, and status badge. Track every opportunity at a glance.</p>', selector: { type: 'css', value: '#crm-deals-panel, .panel' }, placement: 'top', display_mode: 'tooltip', buttons: [{ text: 'Back', action: 'previous', style: 'secondary' }, { text: 'Next', action: 'next', style: 'primary' }] },
+    { title: '\u2795 Adding a New Deal', content: '<p>Click the <strong>"+ Add New Deal"</strong> button to open the deal creation form. Enter contact, company, deal value, stage, and status.</p>', selector: { type: 'css', value: '#crm-add-deal-btn' }, placement: 'bottom', display_mode: 'spotlight', buttons: [{ text: 'Back', action: 'previous', style: 'secondary' }, { text: 'Next', action: 'next', style: 'primary' }] },
+    { title: '\uD83D\uDD0D Search & Quick Access', content: '<p>Use the <strong>search bar</strong> to instantly find contacts, companies, and deals. It searches across all data in real time.</p>', selector: { type: 'css', value: '#crm-search-input, .search-wrap' }, placement: 'bottom', display_mode: 'tooltip', buttons: [{ text: 'Back', action: 'previous', style: 'secondary' }, { text: 'Next', action: 'next', style: 'primary' }] },
+    { title: '\u2705 You\'re All Set!', content: `<p>You've completed the ${projectName} onboarding tour! \uD83C\uDF89</p><p>You now know how to navigate, view deals, add contacts, and search. Happy selling!</p>`, selector: { type: 'css', value: 'body' }, placement: 'center', display_mode: 'modal', buttons: [{ text: '\uD83C\uDF89 Get Started!', action: 'finish', style: 'primary' }] }
+  ];
+  for (let i = 0; i < steps1.length; i++) await insertStep(f1.rows[0].id, i, steps1[i]);
+
+  // FLOW 2: Add New Deal Workflow
+  const f2 = await client.query(`INSERT INTO flows (project_id, name, description, status, version, url_rules, priority) VALUES ($1,$2,$3,'published',1,$4,8) RETURNING id`, [
+    projectId, 'How to Add a New Deal', 'Step-by-step guide to creating a new deal in your CRM pipeline.',
+    JSON.stringify([{ type: 'contains', pattern: '/' }])
+  ]);
+  const steps2 = [
+    { title: '\uD83D\uDCBC Adding a New Deal', content: '<p>This guide will walk you through <strong>creating a new deal</strong>. We\'ll cover clicking the button, filling the form, and saving your deal.</p>', selector: { type: 'css', value: 'body' }, placement: 'center', display_mode: 'modal', buttons: [{ text: 'Show Me', action: 'next', style: 'primary' }] },
+    { title: '1\uFE0F\u20E3 Click Add New Deal', content: '<p>Start by clicking the <strong>"+ Add New Deal"</strong> button in the Deals panel. This opens the deal creation form.</p>', selector: { type: 'css', value: '#crm-add-deal-btn' }, placement: 'left', display_mode: 'spotlight', buttons: [{ text: 'Back', action: 'previous', style: 'secondary' }, { text: 'Next', action: 'next', style: 'primary' }] },
+    { title: '2\uFE0F\u20E3 Fill in Deal Details', content: '<p>Enter the <strong>Contact Name</strong>, <strong>Company</strong>, <strong>Deal Value</strong>, <strong>Stage</strong>, and <strong>Status</strong>. All starred fields are required.</p>', selector: { type: 'css', value: 'body' }, placement: 'center', display_mode: 'modal', buttons: [{ text: 'Back', action: 'previous', style: 'secondary' }, { text: 'Next', action: 'next', style: 'primary' }] },
+    { title: '3\uFE0F\u20E3 Select Deal Stage', content: '<p>Choose the appropriate <strong>pipeline stage</strong> — Qualification, Proposal, Negotiation, or Closed. This tracks where each deal is.</p>', selector: { type: 'css', value: '#deal-stage, select' }, placement: 'right', display_mode: 'tooltip', buttons: [{ text: 'Back', action: 'previous', style: 'secondary' }, { text: 'Next', action: 'next', style: 'primary' }] },
+    { title: '\u2705 Save the Deal', content: '<p>Click <strong>"Add Deal"</strong> to save. The new deal appears at the top of the Deals table and pipeline metrics update automatically.</p>', selector: { type: 'css', value: '#deal-save-btn' }, placement: 'top', display_mode: 'spotlight', buttons: [{ text: 'Back', action: 'previous', style: 'secondary' }, { text: '\u2705 Done!', action: 'finish', style: 'primary' }] }
+  ];
+  for (let i = 0; i < steps2.length; i++) await insertStep(f2.rows[0].id, i, steps2[i]);
+
+  // FLOW 3: Pipeline Management
+  const f3 = await client.query(`INSERT INTO flows (project_id, name, description, status, version, url_rules, priority) VALUES ($1,$2,$3,'published',1,$4,6) RETURNING id`, [
+    projectId, 'Pipeline Management Guide', 'Learn how to track and manage your sales pipeline stages.',
+    JSON.stringify([{ type: 'contains', pattern: '/' }])
+  ]);
+  const steps3 = [
+    { title: '\uD83D\uDD2E Managing Your Pipeline', content: '<p>The <strong>Sales Pipeline</strong> view shows all deals organized by stage — from New Leads to Closed Won. Let\'s explore it.</p>', selector: { type: 'css', value: 'body' }, placement: 'center', display_mode: 'modal', buttons: [{ text: "Let's Go", action: 'next', style: 'primary' }] },
+    { title: '\uD83D\uDCCD Pipeline Navigation', content: '<p>Click <strong>"Pipeline"</strong> in the left sidebar to open the pipeline board. Deals are displayed as cards in 4 kanban columns.</p>', selector: { type: 'css', value: '#crm-nav-pipeline' }, placement: 'right', display_mode: 'spotlight', buttons: [{ text: 'Back', action: 'previous', style: 'secondary' }, { text: 'Next', action: 'next', style: 'primary' }] },
+    { title: '\uD83C\uDFC3 Deal Cards', content: '<p>Each <strong>deal card</strong> shows the contact name and value. Cards can be moved between stages to track progress through your sales process.</p>', selector: { type: 'css', value: '.pipeline-card, .pipeline-grid' }, placement: 'right', display_mode: 'tooltip', buttons: [{ text: 'Back', action: 'previous', style: 'secondary' }, { text: 'Next', action: 'next', style: 'primary' }] },
+    { title: '\uD83D\uDCCA Live KPI Overview', content: '<p>Your <strong>KPI cards</strong> always reflect live pipeline numbers. Total Leads, Pipeline value, and Conversion Rate update as you add or close deals.</p>', selector: { type: 'css', value: '#crm-kpi-grid, .stats-grid' }, placement: 'bottom', display_mode: 'spotlight', buttons: [{ text: 'Back', action: 'previous', style: 'secondary' }, { text: '\uD83C\uDF89 Got it!', action: 'finish', style: 'primary' }] }
+  ];
+  for (let i = 0; i < steps3.length; i++) await insertStep(f3.rows[0].id, i, steps3[i]);
+}
+
 // Helper to seed template flows and steps for newly registered projects (with smart HTML scanning)
 async function seedProjectData(projectId: string, projectName: string, websiteUrl?: string) {
   let targetPattern = '/';
@@ -528,15 +579,19 @@ async function seedProjectData(projectId: string, projectName: string, websiteUr
     await client.query('BEGIN');
 
     // ─── Hospital-specific walkthroughs (Rajkiran or any hospital project) ─
-    const isHospital = projectName.toLowerCase().includes('rajkiran') ||
-                       projectName.toLowerCase().includes('hospital') ||
-                       projectName.toLowerCase().includes('hms') ||
-                       projectName.toLowerCase().includes('clinic');
+    const name = projectName.toLowerCase();
+    const isHospital = name.includes('rajkiran') || name.includes('hospital') ||
+                       name.includes('hms') || name.includes('clinic');
+    const isCRM = !websiteUrl || name.includes('crm') || name.includes('kenzo') ||
+                  name.includes('sales') || name.includes('sandbox');
 
     if (isHospital) {
       await seedHospitalFlows(projectId, projectName, targetPattern, client);
+    } else if (isCRM) {
+      // Use rich CRM sandbox seeder with exact element IDs
+      await seedCRMFlows(projectId, projectName, client);
     } else {
-      // ─── Generic CRM / SaaS onboarding flows ─────────────────────────────
+
 
       // 1. CREATE ONBOARDING FLOW
       const flow1Result = await client.query(`
@@ -946,7 +1001,121 @@ app.delete('/api/v1/admin/flows/:flowId', authenticateAdmin, async (req: Authent
   }
 });
 
-// 6. Save all steps at once (admin/builder helper - replaces steps list)
+// ─── STEP CRUD ENDPOINTS ─────────────────────────────────────────────────
+
+// 6a. GET all steps for a flow
+app.get('/api/v1/admin/flows/:flowId/steps', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  const { flowId } = req.params;
+  try {
+    const flowCheck = await pool.query('SELECT id FROM flows WHERE id = $1 AND project_id = $2', [flowId, req.projectId]);
+    if (flowCheck.rows.length === 0) { res.status(404).json({ message: 'Flow not found' }); return; }
+
+    const result = await pool.query(
+      'SELECT id, order_index as "order", title, content, selector, placement, display_mode as "displayMode", buttons, auto_advance_delay as "autoAdvanceDelay", created_at as "createdAt" FROM steps WHERE flow_id = $1 ORDER BY order_index ASC',
+      [flowId]
+    );
+    res.json({ steps: result.rows });
+  } catch (err: any) { res.status(500).json({ message: 'Server error', error: err.message }); }
+});
+
+// 6b. POST create a new step
+app.post('/api/v1/admin/flows/:flowId/steps', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  const { flowId } = req.params;
+  const { title, content, selector, placement, displayMode, buttons, autoAdvanceDelay, order } = req.body;
+
+  if (!title || !content || !selector) {
+    res.status(400).json({ message: 'title, content, and selector are required' }); return;
+  }
+
+  try {
+    const flowCheck = await pool.query('SELECT id FROM flows WHERE id = $1 AND project_id = $2', [flowId, req.projectId]);
+    if (flowCheck.rows.length === 0) { res.status(404).json({ message: 'Flow not found' }); return; }
+
+    // Auto-assign next order index if not provided
+    let orderIndex = order;
+    if (orderIndex === undefined || orderIndex === null) {
+      const maxOrder = await pool.query('SELECT COALESCE(MAX(order_index), -1) as max FROM steps WHERE flow_id = $1', [flowId]);
+      orderIndex = maxOrder.rows[0].max + 1;
+    }
+
+    const result = await pool.query(
+      `INSERT INTO steps (flow_id, order_index, title, content, selector, placement, display_mode, buttons, auto_advance_delay)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       RETURNING id, order_index as "order", title, content, selector, placement, display_mode as "displayMode", buttons`,
+      [flowId, orderIndex, title, content, JSON.stringify(selector), placement || 'bottom', displayMode || 'tooltip',
+       JSON.stringify(buttons || []), autoAdvanceDelay || 0]
+    );
+    res.status(201).json({ step: result.rows[0] });
+  } catch (err: any) { res.status(500).json({ message: 'Server error', error: err.message }); }
+});
+
+// 6c. PUT update a step
+app.put('/api/v1/admin/steps/:stepId', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  const { stepId } = req.params;
+  const { title, content, selector, placement, displayMode, buttons, autoAdvanceDelay, order } = req.body;
+  try {
+    // Verify step belongs to project via flow
+    const check = await pool.query(
+      'SELECT s.id FROM steps s JOIN flows f ON s.flow_id = f.id WHERE s.id = $1 AND f.project_id = $2',
+      [stepId, req.projectId]
+    );
+    if (check.rows.length === 0) { res.status(404).json({ message: 'Step not found' }); return; }
+
+    const result = await pool.query(
+      `UPDATE steps SET
+        title = COALESCE($1, title),
+        content = COALESCE($2, content),
+        selector = COALESCE($3, selector),
+        placement = COALESCE($4, placement),
+        display_mode = COALESCE($5, display_mode),
+        buttons = COALESCE($6, buttons),
+        auto_advance_delay = COALESCE($7, auto_advance_delay),
+        order_index = COALESCE($8, order_index),
+        updated_at = NOW()
+       WHERE id = $9
+       RETURNING id, order_index as "order", title, content, selector, placement, display_mode as "displayMode", buttons`,
+      [title, content, selector ? JSON.stringify(selector) : null, placement, displayMode,
+       buttons ? JSON.stringify(buttons) : null, autoAdvanceDelay, order, stepId]
+    );
+    res.json({ step: result.rows[0] });
+  } catch (err: any) { res.status(500).json({ message: 'Server error', error: err.message }); }
+});
+
+// 6d. DELETE a step
+app.delete('/api/v1/admin/steps/:stepId', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  const { stepId } = req.params;
+  try {
+    const check = await pool.query(
+      'SELECT s.id FROM steps s JOIN flows f ON s.flow_id = f.id WHERE s.id = $1 AND f.project_id = $2',
+      [stepId, req.projectId]
+    );
+    if (check.rows.length === 0) { res.status(404).json({ message: 'Step not found' }); return; }
+    await pool.query('DELETE FROM steps WHERE id = $1', [stepId]);
+    res.json({ success: true, deletedStepId: stepId });
+  } catch (err: any) { res.status(500).json({ message: 'Server error', error: err.message }); }
+});
+
+// 6e. PATCH reorder steps (accepts [{id, order}])
+app.patch('/api/v1/admin/flows/:flowId/steps/reorder', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  const { flowId } = req.params;
+  const { order } = req.body; // Array of { id: string, order: number }
+  if (!Array.isArray(order)) { res.status(400).json({ message: 'order array is required' }); return; }
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    for (const item of order) {
+      await client.query('UPDATE steps SET order_index = $1 WHERE id = $2 AND flow_id = $3', [item.order, item.id, flowId]);
+    }
+    await client.query('COMMIT');
+    res.json({ success: true });
+  } catch (err: any) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ message: 'Server error', error: err.message });
+  } finally { client.release(); }
+});
+
+// 7. Save all steps at once (admin/builder helper - replaces steps list)
+
 app.post('/api/v1/admin/flows/:flowId/steps/sync', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
   const { flowId } = req.params;
   const { steps } = req.body; // Array of steps

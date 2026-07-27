@@ -38,12 +38,14 @@ export class FlowRunner implements IFlowRunner {
       this.stop();
     }
 
-    if (flow.urlRules && !this.conditionEvaluator.evaluateUrlRules(flow.urlRules)) {
-      throw new Error(`[Kenzo] Flow "${flow.id}" URL rules do not match current page`);
+    // Only warn on URL rule mismatch — don't throw, to allow manual preview triggers
+    if (flow.urlRules && flow.urlRules.length > 0 && !this.conditionEvaluator.evaluateUrlRules(flow.urlRules)) {
+      this.logger.warn(`[Kenzo] Flow "${flow.id}" URL rules do not match current page — running anyway (manual trigger)`, { flowId: flow.id });
     }
 
-    if (flow.conditions && !this.conditionEvaluator.evaluateConditions(flow.conditions)) {
-      throw new Error(`[Kenzo] Flow "${flow.id}" display conditions not met`);
+    // Evaluate display conditions but only warn
+    if (flow.conditions && flow.conditions.length > 0 && !this.conditionEvaluator.evaluateConditions(flow.conditions)) {
+      this.logger.warn(`[Kenzo] Flow "${flow.id}" display conditions not met — running anyway`, { flowId: flow.id });
     }
 
     const existingProgress = this.progressManager.getProgress(flow.id);

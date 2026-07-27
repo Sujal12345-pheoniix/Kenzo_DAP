@@ -3,494 +3,645 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kenzo CRM - Sandbox Demo</title>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <title>Kenzo CRM — Live Sandbox</title>
+  <meta name="description" content="Interactive Kenzo CRM sandbox for DAP walkthrough testing and visual tour building.">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #09090b;
-      --card-bg: #18181b;
-      --border: rgba(255, 255, 255, 0.08);
+      --surface: #111113;
+      --card: #18181b;
+      --border: rgba(255,255,255,0.08);
+      --border-hover: rgba(255,255,255,0.14);
       --primary: #6366f1;
       --primary-hover: #4f46e5;
+      --primary-glow: rgba(99,102,241,0.25);
+      --violet: #7c3aed;
       --text: #f4f4f5;
       --text-muted: #a1a1aa;
+      --text-dim: #71717a;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --radius-xs: 6px;
     }
 
+    *, *::before, *::after { box-sizing: border-box; }
+
     body {
-      margin: 0;
-      padding: 0;
+      margin: 0; padding: 0;
       background: var(--bg);
       color: var(--text);
       font-family: 'Plus Jakarta Sans', sans-serif;
       display: flex;
       height: 100vh;
       overflow: hidden;
+      font-size: 14px;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* Sidebar */
+    /* ── Sidebar ────────────────────────────────── */
     .sidebar {
-      width: 260px;
-      background: #0c0c0e;
+      width: 256px;
+      min-width: 256px;
+      background: var(--surface);
       border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
-      padding: 24px;
-      box-sizing: border-box;
+      padding: 0;
+      overflow: hidden;
     }
 
-    .logo-container {
+    .sidebar-brand {
       display: flex;
       align-items: center;
       gap: 12px;
-      margin-bottom: 32px;
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid var(--border);
     }
 
-    .logo-icon {
-      width: 32px;
-      height: 32px;
-      background: linear-gradient(135deg, #a5b4fc, #6366f1);
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      color: #fff;
-    }
-
-    .logo-text {
+    .brand-icon {
+      width: 34px; height: 34px;
+      background: linear-gradient(135deg, #818cf8, #6366f1);
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
       font-family: 'Outfit', sans-serif;
-      font-size: 1.25rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
+      font-weight: 800; font-size: 14px; color: #fff;
+      box-shadow: 0 4px 12px rgba(99,102,241,0.4);
+      flex-shrink: 0;
     }
 
-    .nav-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+    .brand-name {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.1rem; font-weight: 700;
+      letter-spacing: -0.03em; color: var(--text);
+    }
+
+    .sidebar-nav {
+      padding: 12px 10px;
+      flex: 1;
     }
 
     .nav-item {
       display: flex;
       align-items: center;
-      gap: 12px;
-      padding: 12px 16px;
-      border-radius: 8px;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
       color: var(--text-muted);
-      text-decoration: none;
-      font-size: 0.95rem;
+      font-size: 0.875rem;
       font-weight: 500;
-      transition: all 0.2s;
       cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 2px;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
     }
 
-    .nav-item:hover, .nav-item.active {
-      color: #fff;
-      background: rgba(255, 255, 255, 0.05);
+    .nav-item:hover {
+      color: var(--text);
+      background: rgba(255,255,255,0.05);
     }
 
     .nav-item.active {
-      border-left: 3px solid var(--primary);
+      color: #fff;
+      background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(124,58,237,0.1));
+      border: 1px solid rgba(99,102,241,0.25);
     }
 
-    /* Main Content */
+    .nav-icon {
+      width: 18px; height: 18px;
+      opacity: 0.8;
+      flex-shrink: 0;
+    }
+
+    .sidebar-footer {
+      padding: 12px 10px;
+      border-top: 1px solid var(--border);
+    }
+
+    .user-chip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+    }
+
+    .user-avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #818cf8, #6366f1);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 12px; color: #fff;
+      flex-shrink: 0;
+    }
+
+    .user-info { line-height: 1.3; min-width: 0; }
+    .user-name { font-size: 12px; font-weight: 600; color: var(--text); }
+    .user-email { font-size: 10px; color: var(--text-dim); }
+
+    /* ── Main Area ────────────────────────────────── */
     .main-container {
       flex: 1;
       display: flex;
       flex-direction: column;
-      overflow-y: auto;
+      min-width: 0;
+      overflow: hidden;
     }
 
-    /* Top Nav */
+    /* ── Top Nav ────────────────────────────────── */
     .topnav {
-      height: 70px;
+      height: 60px;
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 40px;
+      padding: 0 28px;
+      background: rgba(9,9,11,0.8);
+      backdrop-filter: blur(12px);
+      flex-shrink: 0;
+    }
+
+    .search-wrap {
+      position: relative;
+      width: 280px;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 12px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-dim);
+      pointer-events: none;
     }
 
     .search-bar {
-      background: rgba(255, 255, 255, 0.05);
+      width: 100%;
+      background: rgba(255,255,255,0.05);
       border: 1px solid var(--border);
-      padding: 8px 16px;
-      border-radius: 9999px;
-      width: 300px;
-      color: #fff;
+      padding: 8px 12px 8px 36px;
+      border-radius: 999px;
+      color: var(--text);
+      font-size: 13px;
       outline: none;
+      font-family: inherit;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
 
-    .action-group {
-      display: flex;
-      align-items: center;
-      gap: 16px;
+    .search-bar::placeholder { color: var(--text-dim); }
+    .search-bar:focus {
+      border-color: rgba(99,102,241,0.5);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+    }
+
+    .topnav-actions {
+      display: flex; align-items: center; gap: 10px;
     }
 
     .btn {
-      background: var(--primary);
-      color: #fff;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 0.9rem;
-      cursor: pointer;
-      transition: all 0.2s;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      text-decoration: none;
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 600;
+      cursor: pointer; border: none;
+      transition: all 0.2s; text-decoration: none;
+      font-family: inherit;
+      white-space: nowrap;
     }
 
-    .btn:hover {
-      background: var(--primary-hover);
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--violet));
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(99,102,241,0.3);
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 4px 14px rgba(99,102,241,0.45);
+      transform: translateY(-1px);
     }
 
     .btn-secondary {
-      background: rgba(255, 255, 255, 0.08);
+      background: rgba(255,255,255,0.06);
       border: 1px solid var(--border);
+      color: var(--text-muted);
     }
 
     .btn-secondary:hover {
-      background: rgba(255, 255, 255, 0.12);
+      background: rgba(255,255,255,0.1);
+      color: var(--text);
+      border-color: var(--border-hover);
     }
 
-    /* Content Area */
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid rgba(99,102,241,0.3);
+      color: #818cf8;
+    }
+
+    .btn-ghost:hover {
+      background: rgba(99,102,241,0.1);
+      border-color: rgba(99,102,241,0.5);
+      color: #a5b4fc;
+    }
+
+    /* ── Content Area ────────────────────────────────── */
     .content-area {
-      padding: 40px;
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px;
     }
 
-    .welcome-header {
-      margin-bottom: 32px;
+    /* ── Helper Bar ────────────────────────────────── */
+    #crm-helper-box {
+      background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(124,58,237,0.05));
+      border: 1px solid rgba(99,102,241,0.2);
+      border-radius: var(--radius);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      gap: 16px;
     }
 
+    #crm-helper-box h4 {
+      margin: 0 0 3px 0; font-size: 13px; font-weight: 700;
+      color: #fff; font-family: 'Outfit', sans-serif;
+    }
+
+    #crm-helper-box p {
+      margin: 0; font-size: 12px; color: var(--text-muted); line-height: 1.5;
+    }
+
+    kbd {
+      background: rgba(255,255,255,0.1);
+      padding: 2px 6px; border-radius: 4px;
+      font-family: 'Outfit', monospace; font-size: 11px;
+    }
+
+    /* ── Welcome Header ────────────────────────────────── */
+    .welcome-header { margin-bottom: 24px; }
     .welcome-header h1 {
-      font-size: 2.2rem;
-      margin: 0 0 8px 0;
+      font-size: 1.85rem;
       font-family: 'Outfit', sans-serif;
+      font-weight: 700; margin: 0 0 4px;
+      letter-spacing: -0.03em;
     }
+    .welcome-header p { margin: 0; font-size: 13px; color: var(--text-muted); }
 
+    /* ── Stats Grid ────────────────────────────────── */
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 24px;
-      margin-bottom: 40px;
+      gap: 16px;
+      margin-bottom: 24px;
     }
 
     .stat-card {
-      background: var(--card-bg);
+      background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 24px;
+      border-radius: var(--radius);
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
 
-    .stat-card-title {
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      letter-spacing: 0.05em;
-      margin-bottom: 8px;
+    .stat-card:hover {
+      border-color: var(--border-hover);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.3);
     }
 
-    .stat-card-value {
-      font-size: 2rem;
-      font-weight: 700;
-      margin-bottom: 6px;
+    .stat-card-accent {
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 2px;
     }
 
-    .stat-card-desc {
-      font-size: 0.8rem;
-      color: #10b981;
+    .stat-title {
+      font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--text-dim); margin-bottom: 10px;
     }
 
-    /* Table */
-    .table-container {
-      background: var(--card-bg);
+    .stat-value {
+      font-size: 1.85rem; font-weight: 700; font-family: 'Outfit', sans-serif;
+      letter-spacing: -0.04em; margin-bottom: 6px; line-height: 1;
+    }
+
+    .stat-desc { font-size: 11px; color: var(--success); font-weight: 600; }
+    .stat-desc.blue { color: #818cf8; }
+    .stat-desc.amber { color: var(--warning); }
+
+    /* ── Table Section ────────────────────────────────── */
+    .panel {
+      background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 24px;
-    }
-
-    .table-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      border-radius: var(--radius);
+      overflow: hidden;
       margin-bottom: 20px;
     }
 
-    .table-header h2 {
-      margin: 0;
-      font-size: 1.25rem;
-      font-family: 'Outfit', sans-serif;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      text-align: left;
-    }
-
-    th, td {
-      padding: 16px;
+    .panel-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px 20px;
       border-bottom: 1px solid var(--border);
     }
 
-    th {
-      color: var(--text-muted);
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      font-weight: 600;
+    .panel-title {
+      font-size: 13px; font-weight: 700;
+      font-family: 'Outfit', sans-serif; color: var(--text);
     }
 
-    td {
-      font-size: 0.95rem;
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      padding: 10px 16px;
+      text-align: left; font-size: 10px;
+      font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.07em; color: var(--text-dim);
+      border-bottom: 1px solid var(--border);
+      background: rgba(0,0,0,0.2);
     }
+    td {
+      padding: 12px 16px;
+      font-size: 13px; color: var(--text);
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
 
     .badge {
-      padding: 4px 8px;
-      border-radius: 9999px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      background: rgba(16, 179, 129, 0.1);
-      color: #10b981;
+      display: inline-flex; align-items: center;
+      padding: 3px 10px; border-radius: 999px;
+      font-size: 11px; font-weight: 700;
     }
 
-    .badge-progress {
-      background: rgba(99, 102, 241, 0.1);
-      color: #6366f1;
-    }
+    .badge-success { background: rgba(16,185,129,0.12); color: #10b981; }
+    .badge-progress { background: rgba(99,102,241,0.12); color: #818cf8; }
+    .badge-warning { background: rgba(245,158,11,0.12); color: #f59e0b; }
+    .badge-danger { background: rgba(239,68,68,0.12); color: #ef4444; }
 
-    .badge-lost {
-      background: rgba(239, 68, 68, 0.1);
-      color: #ef4444;
-    }
-
-    /* Helper Bar */
-    .helper-bar {
-      background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(165, 180, 252, 0.05));
-      border: 1px solid rgba(99, 102, 241, 0.2);
-      border-radius: 12px;
-      padding: 16px 24px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 30px;
-    }
-
-    /* Modal Styling */
-    .modal-overlay {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      background: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(8px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 10000;
-    }
-
-    .modal-content {
-      background: #15171a;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 28px;
-      width: 400px;
-      box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.5);
-      font-family: 'Plus Jakarta Sans', sans-serif;
-    }
-
-    .modal-content h3 {
-      margin-top: 0;
-      color: #fff;
-      font-family: 'Outfit', sans-serif;
+    /* ── Pipeline View ────────────────────────────────── */
+    .pipeline-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
       margin-bottom: 20px;
     }
 
-    .k-field {
-      margin-bottom: 15px;
+    .pipeline-column {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
     }
 
-    .k-field label {
-      display: block;
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      margin-bottom: 6px;
-      letter-spacing: 0.05em;
+    .pipeline-col-header {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+
+    .pipeline-col-body { padding: 10px; }
+
+    .pipeline-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-size: 12px;
+    }
+
+    .pipeline-card:hover {
+      border-color: rgba(99,102,241,0.3);
+      background: rgba(99,102,241,0.05);
+    }
+
+    .pipeline-card-name { font-weight: 600; color: var(--text); margin-bottom: 4px; }
+    .pipeline-card-value { color: var(--text-dim); font-size: 11px; }
+
+    /* ── Settings ────────────────────────────────── */
+    .settings-group {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .settings-group-header {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px; font-weight: 700;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .toggle-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .toggle-row:last-child { border-bottom: none; }
+    .toggle-label { font-size: 13px; font-weight: 500; color: var(--text); }
+    .toggle-desc { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+    .switch {
+      position: relative; width: 44px; height: 24px; flex-shrink: 0;
+    }
+
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #3f3f46; border-radius: 24px;
+      transition: 0.3s;
+    }
+    .slider:before {
+      position: absolute; content: "";
+      height: 16px; width: 16px; left: 4px; bottom: 4px;
+      background: white; border-radius: 50%; transition: 0.3s;
+    }
+    input:checked + .slider { background: var(--primary); }
+    input:checked + .slider:before { transform: translateX(20px); }
+
+    /* ── Modal ────────────────────────────────── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(10px);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9000; padding: 20px;
+    }
+
+    .modal-box {
+      background: #16171c;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 28px;
+      width: 100%; max-width: 460px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    .modal-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.1rem; font-weight: 700;
+      color: var(--text); margin: 0 0 18px;
+    }
+
+    .k-field { margin-bottom: 14px; }
+    .k-label {
+      display: block; font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--text-dim); margin-bottom: 6px;
     }
 
     .k-input {
       width: 100%;
-      background: rgba(255, 255, 255, 0.05);
+      background: rgba(255,255,255,0.05);
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       padding: 10px 14px;
-      color: #fff;
-      box-sizing: border-box;
-      font-size: 0.9rem;
-      outline: none;
-      transition: border-color 0.2s;
+      color: var(--text); font-size: 13px;
+      outline: none; font-family: inherit;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
 
     .k-input:focus {
-      border-color: var(--primary);
+      border-color: rgba(99,102,241,0.5);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
     }
 
-    /* Settings view styling */
-    .settings-group {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 24px;
-      margin-bottom: 24px;
+    select.k-input { cursor: pointer; }
+
+    .modal-actions {
+      display: flex; gap: 10px;
+      justify-content: flex-end; margin-top: 20px;
     }
 
-    .settings-group h3 {
-      margin-top: 0;
-      font-family: 'Outfit', sans-serif;
-      font-size: 1.15rem;
+    /* ── Animations ────────────────────────────────── */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
-    .toggle-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 0;
-      border-bottom: 1px solid var(--border);
-    }
+    .fade-in { animation: fadeIn 0.3s ease forwards; }
 
-    .toggle-row:last-child {
-      border-bottom: none;
-    }
-
-    /* Simple toggle switch */
-    .switch {
-      position: relative;
-      display: inline-block;
-      width: 44px;
-      height: 24px;
-    }
-
-    .switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-color: #3f3f46;
-      transition: .3s;
-      border-radius: 24px;
-    }
-
-    .slider:before {
-      position: absolute;
-      content: "";
-      height: 16px;
-      width: 16px;
-      left: 4px;
-      bottom: 4px;
-      background-color: white;
-      transition: .3s;
-      border-radius: 50%;
-    }
-
-    input:checked + .slider {
-      background-color: var(--primary);
-    }
-
-    input:checked + .slider:before {
-      transform: translateX(20px);
-    }
+    /* ── Scrollbar ────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
   </style>
 </head>
 <body>
 
-  <!-- Sidebar -->
-  <div class="sidebar">
-    <div class="logo-container" id="crm-logo-area">
-      <div class="logo-icon">K</div>
-      <div class="logo-text">Kenzo CRM</div>
+  <!-- ── Sidebar ─────────────────────────────────── -->
+  <div class="sidebar" id="crm-sidebar">
+    <div class="sidebar-brand" id="crm-logo-area">
+      <div class="brand-icon">K</div>
+      <div class="brand-name">Kenzo CRM</div>
     </div>
-    <ul class="nav-list">
-      <li class="nav-item active" id="crm-sidebar-dashboard">
-        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+
+    <nav class="sidebar-nav" id="crm-sidebar-nav">
+      <button class="nav-item active" id="crm-nav-dashboard" data-view="crm-dashboard-view">
+        <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
         Dashboard
-      </li>
-      <li class="nav-item" id="crm-sidebar-leads">
-        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-        Leads
-      </li>
-      <li class="nav-item" id="crm-sidebar-settings">
-        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+      </button>
+      <button class="nav-item" id="crm-nav-leads" data-view="crm-leads-view">
+        <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        Leads &amp; Contacts
+      </button>
+      <button class="nav-item" id="crm-nav-pipeline" data-view="crm-pipeline-view">
+        <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/></svg>
+        Pipeline
+      </button>
+      <button class="nav-item" id="crm-nav-settings" data-view="crm-settings-view">
+        <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
         Settings
-      </li>
-    </ul>
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-chip" id="crm-user-profile">
+        <div class="user-avatar">S</div>
+        <div class="user-info">
+          <div class="user-name">Sujal K.</div>
+          <div class="user-email">sujal@kenzo.io</div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <!-- Main Container -->
+  <!-- ── Main Container ─────────────────────────────────── -->
   <div class="main-container">
-    <!-- Topnav -->
+
+    <!-- Top Nav -->
     <div class="topnav" id="crm-topnav-bar">
-      <input type="text" class="search-bar" id="crm-search-input" placeholder="Search contacts, pipeline...">
-      <div class="action-group">
+      <div class="search-wrap">
+        <svg class="search-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" class="search-bar" id="crm-search-input" placeholder="Search contacts, pipeline...">
+      </div>
+      <div class="topnav-actions">
         <a href="/dashboard" class="btn btn-secondary" id="crm-admin-portal-btn">Admin Dashboard</a>
         <button class="btn btn-secondary" id="k-toggle-builder-btn">🛠️ Toggle Builder</button>
-        <div style="width: 36px; height: 36px; border-radius: 50%; background: #4f46e5; display:flex; align-items:center; justify-content:center; font-weight:600;" id="crm-user-profile">S</div>
+        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#818cf8,#6366f1);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff;" id="crm-topnav-avatar">S</div>
       </div>
     </div>
 
-    <!-- Dashboard View -->
-    <div class="content-area" id="crm-dashboard-view">
-      
+    <!-- ── Dashboard View ─────────────────────────────────── -->
+    <div class="content-area fade-in" id="crm-dashboard-view">
+
       <!-- Helper Bar -->
-      <div class="helper-bar" id="crm-helper-box">
+      <div id="crm-helper-box">
         <div>
-          <h4 style="margin: 0 0 4px 0; font-size: 1rem; color: #fff;">Interactive Sandbox Mode</h4>
-          <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted);">
-            Test and visually build walkthrough tours. Try pressing <kbd style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; font-family: monospace;">Ctrl+Shift+K</kbd> to inspect page elements.
-          </p>
+          <h4>⚡ Interactive Sandbox Mode</h4>
+          <p>Test and visually build walkthrough tours. Press <kbd>Ctrl+Shift+K</kbd> to inspect elements, or click <strong>Run Walkthrough</strong> to play a tour.</p>
         </div>
-        <button class="btn btn-secondary" id="k-trigger-flow-btn">⚡ Run Walkthrough</button>
+        <button class="btn btn-ghost" id="k-trigger-flow-btn">⚡ Run Walkthrough</button>
       </div>
 
-      <div class="welcome-header">
-        <h1 id="crm-welcome-heading">Welcome back, Sujal!</h1>
-        <p style="color: var(--text-muted); margin: 0;">Here's how your sales pipeline is performing today.</p>
+      <!-- Welcome -->
+      <div class="welcome-header" id="crm-welcome-header">
+        <h1 id="crm-welcome-heading">Welcome back, Sujal! 👋</h1>
+        <p>Here's how your sales pipeline is performing today.</p>
       </div>
 
-      <!-- Stats Cards -->
-      <div class="stats-grid">
+      <!-- Stats -->
+      <div class="stats-grid" id="crm-kpi-grid">
         <div class="stat-card" id="crm-stat-leads">
-          <div class="stat-card-title">Total Leads</div>
-          <div class="stat-card-value" id="crm-leads-val">1,482</div>
-          <div class="stat-card-desc">▲ 12.4% from last week</div>
+          <div class="stat-card-accent" style="background: linear-gradient(90deg,#6366f1,#818cf8);"></div>
+          <div class="stat-title">Total Leads</div>
+          <div class="stat-value" id="crm-leads-val">1,482</div>
+          <div class="stat-desc">▲ 12.4% from last week</div>
         </div>
         <div class="stat-card" id="crm-stat-revenue">
-          <div class="stat-card-title">Open Deals Pipeline</div>
-          <div class="stat-card-value" id="crm-revenue-val">$45,200</div>
-          <div class="stat-card-desc" style="color: #6366f1;">8 active contracts pending</div>
+          <div class="stat-card-accent" style="background: linear-gradient(90deg,#7c3aed,#a78bfa);"></div>
+          <div class="stat-title">Open Deals Pipeline</div>
+          <div class="stat-value" id="crm-revenue-val">$45,200</div>
+          <div class="stat-desc blue">8 active contracts pending</div>
         </div>
         <div class="stat-card" id="crm-stat-conversions">
-          <div class="stat-card-title">Conversion Rate</div>
-          <div class="stat-card-value">3.24%</div>
-          <div class="stat-card-desc">▲ 0.8% increase</div>
+          <div class="stat-card-accent" style="background: linear-gradient(90deg,#10b981,#34d399);"></div>
+          <div class="stat-title">Conversion Rate</div>
+          <div class="stat-value">3.24%</div>
+          <div class="stat-desc">▲ 0.8% increase this month</div>
         </div>
       </div>
 
-      <!-- Table Section -->
-      <div class="table-container" id="crm-deals-panel">
-        <div class="table-header">
-          <h2>Recent Deals</h2>
-          <button class="btn" id="crm-add-deal-btn">+ Add New Deal</button>
+      <!-- Deals Table -->
+      <div class="panel" id="crm-deals-panel">
+        <div class="panel-header">
+          <span class="panel-title">Recent Deals</span>
+          <button class="btn btn-primary" id="crm-add-deal-btn">+ Add New Deal</button>
         </div>
         <table>
           <thead>
@@ -498,43 +649,55 @@
               <th>Contact Name</th>
               <th>Company</th>
               <th>Value</th>
+              <th>Stage</th>
               <th>Status</th>
             </tr>
           </thead>
           <tbody id="deals-table-body">
             <tr>
-              <td>Kenzo Infosystem</td>
+              <td><strong>Kenzo Infosystem</strong></td>
               <td>Kenzo Group</td>
-              <td>$12,500</td>
-              <td><span class="badge">Won</span></td>
+              <td><strong>$12,500</strong></td>
+              <td>Closed</td>
+              <td><span class="badge badge-success">Won</span></td>
             </tr>
             <tr>
-              <td>Alice Smith</td>
+              <td><strong>Alice Smith</strong></td>
               <td>Acme Corp</td>
-              <td>$8,200</td>
+              <td><strong>$8,200</strong></td>
+              <td>Negotiation</td>
               <td><span class="badge badge-progress">In Progress</span></td>
             </tr>
             <tr>
-              <td>Bob Johnson</td>
+              <td><strong>Bob Johnson</strong></td>
               <td>Globex Corp</td>
-              <td>$24,500</td>
+              <td><strong>$24,500</strong></td>
+              <td>Proposal</td>
               <td><span class="badge badge-progress">In Progress</span></td>
+            </tr>
+            <tr>
+              <td><strong>Maria Gonzalez</strong></td>
+              <td>Initech LLC</td>
+              <td><strong>$6,800</strong></td>
+              <td>Qualification</td>
+              <td><span class="badge badge-warning">New Lead</span></td>
             </tr>
           </tbody>
         </table>
       </div>
+
     </div>
 
-    <!-- Leads View -->
-    <div class="content-area" id="crm-leads-view" style="display: none;">
+    <!-- ── Leads View ─────────────────────────────────── -->
+    <div class="content-area fade-in" id="crm-leads-view" style="display:none;">
       <div class="welcome-header">
-        <h1>Contacts & Leads</h1>
-        <p style="color: var(--text-muted); margin: 0;">Direct access to your customer pipeline contacts.</p>
+        <h1>Contacts &amp; Leads</h1>
+        <p>Full pipeline visibility across all contacts.</p>
       </div>
-
-      <div class="table-container" id="crm-leads-panel">
-        <div class="table-header">
-          <h2>All Contacts</h2>
+      <div class="panel" id="crm-leads-panel">
+        <div class="panel-header">
+          <span class="panel-title">All Contacts</span>
+          <button class="btn btn-primary" id="crm-add-lead-btn">+ Add Contact</button>
         </div>
         <table>
           <thead>
@@ -542,75 +705,113 @@
               <th>Contact</th>
               <th>Email</th>
               <th>Pipeline Stage</th>
+              <th>Owner</th>
               <th>Status</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody id="leads-table-body">
             <tr>
               <td><strong>Kenzo Infosystem</strong></td>
               <td>contact@kenzoinfo.com</td>
               <td>Proposal Sent</td>
+              <td>Sujal K.</td>
               <td><span class="badge badge-progress">Warm</span></td>
             </tr>
             <tr>
               <td><strong>Alice Smith</strong></td>
               <td>alice@acme.com</td>
               <td>Needs Analysis</td>
+              <td>Sujal K.</td>
               <td><span class="badge badge-progress">Warm</span></td>
             </tr>
             <tr>
               <td><strong>Bob Johnson</strong></td>
               <td>bob@globex.org</td>
               <td>Negotiations</td>
-              <td><span class="badge">Hot</span></td>
+              <td>Raj M.</td>
+              <td><span class="badge badge-success">Hot</span></td>
             </tr>
             <tr>
-              <td><strong>Sujal Kenzo</strong></td>
-              <td>sujal@kenzodap.com</td>
+              <td><strong>Maria Gonzalez</strong></td>
+              <td>maria@initech.io</td>
               <td>Qualified Lead</td>
-              <td><span class="badge">Hot</span></td>
+              <td>Priya S.</td>
+              <td><span class="badge badge-warning">Cold</span></td>
             </tr>
           </tbody>
         </table>
       </div>
     </div>
 
-    <!-- Settings View -->
-    <div class="content-area" id="crm-settings-view" style="display: none;">
+    <!-- ── Pipeline View ─────────────────────────────────── -->
+    <div class="content-area fade-in" id="crm-pipeline-view" style="display:none;">
+      <div class="welcome-header">
+        <h1>Sales Pipeline</h1>
+        <p>Drag deals across stages to update their status.</p>
+      </div>
+      <div class="pipeline-grid" id="crm-pipeline-grid">
+        <div class="pipeline-column">
+          <div class="pipeline-col-header" style="color:#f59e0b;">🟡 New Leads</div>
+          <div class="pipeline-col-body">
+            <div class="pipeline-card"><div class="pipeline-card-name">Maria Gonzalez</div><div class="pipeline-card-value">$6,800 · Initech LLC</div></div>
+            <div class="pipeline-card"><div class="pipeline-card-name">David Chen</div><div class="pipeline-card-value">$3,200 · TechFlow</div></div>
+          </div>
+        </div>
+        <div class="pipeline-column">
+          <div class="pipeline-col-header" style="color:#818cf8;">🔵 Qualifying</div>
+          <div class="pipeline-col-body">
+            <div class="pipeline-card"><div class="pipeline-card-name">Alice Smith</div><div class="pipeline-card-value">$8,200 · Acme Corp</div></div>
+          </div>
+        </div>
+        <div class="pipeline-column">
+          <div class="pipeline-col-header" style="color:#a78bfa;">🟣 Proposal</div>
+          <div class="pipeline-col-body">
+            <div class="pipeline-card"><div class="pipeline-card-name">Bob Johnson</div><div class="pipeline-card-value">$24,500 · Globex Corp</div></div>
+            <div class="pipeline-card"><div class="pipeline-card-name">Kenzo Infosystem</div><div class="pipeline-card-value">$12,500 · Kenzo Group</div></div>
+          </div>
+        </div>
+        <div class="pipeline-column">
+          <div class="pipeline-col-header" style="color:#10b981;">🟢 Closed Won</div>
+          <div class="pipeline-col-body">
+            <div class="pipeline-card"><div class="pipeline-card-name">Priya Sharma</div><div class="pipeline-card-value">$18,000 · DevStack</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Settings View ─────────────────────────────────── -->
+    <div class="content-area fade-in" id="crm-settings-view" style="display:none;">
       <div class="welcome-header">
         <h1>Account Settings</h1>
-        <p style="color: var(--text-muted); margin: 0;">Configure your sandbox dashboard preferences.</p>
+        <p>Configure your CRM workspace and notification preferences.</p>
       </div>
 
       <div class="settings-group" id="crm-settings-preferences">
-        <h3>Dashboard Preferences</h3>
-        
+        <div class="settings-group-header">Dashboard Preferences</div>
         <div class="toggle-row" id="crm-setting-row-theme">
           <div>
-            <div style="font-weight: 600; margin-bottom: 2px;">Use Sleek Dark Theme</div>
-            <div style="font-size: 0.8rem; color: var(--text-muted);">Toggle dashboard appearance.</div>
+            <div class="toggle-label">Dark Theme</div>
+            <div class="toggle-desc">Enable sleek dark mode across the dashboard.</div>
           </div>
           <label class="switch">
             <input type="checkbox" checked id="settings-dark-mode-toggle">
             <span class="slider"></span>
           </label>
         </div>
-
         <div class="toggle-row" id="crm-setting-row-notif">
           <div>
-            <div style="font-weight: 600; margin-bottom: 2px;">Email Notifications</div>
-            <div style="font-size: 0.8rem; color: var(--text-muted);">Receive alerts on lead changes.</div>
+            <div class="toggle-label">Email Notifications</div>
+            <div class="toggle-desc">Receive alerts when new leads are assigned to you.</div>
           </div>
           <label class="switch">
             <input type="checkbox" id="settings-notif-toggle">
             <span class="slider"></span>
           </label>
         </div>
-
         <div class="toggle-row" id="crm-setting-row-key">
           <div>
-            <div style="font-weight: 600; margin-bottom: 2px;">Developer API Integration</div>
-            <div style="font-size: 0.8rem; color: var(--text-muted);">Expose analytical hooks to standard metrics endpoints.</div>
+            <div class="toggle-label">Developer API Integration</div>
+            <div class="toggle-desc">Expose analytical hooks to metrics endpoints.</div>
           </div>
           <label class="switch">
             <input type="checkbox" checked id="settings-api-toggle">
@@ -618,32 +819,62 @@
           </label>
         </div>
       </div>
+
+      <div class="settings-group" id="crm-settings-profile">
+        <div class="settings-group-header">Profile &amp; Team</div>
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">Two-Factor Authentication</div>
+            <div class="toggle-desc">Add an extra layer of security to your account.</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="settings-2fa-toggle">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">Slack Alerts</div>
+            <div class="toggle-desc">Push deal updates directly to your Slack workspace.</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" checked id="settings-slack-toggle">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
     </div>
 
-  </div>
+  </div><!-- /.main-container -->
 
   <!-- Add Deal Modal -->
-  <div id="crm-deal-modal" class="modal-overlay" style="display: none;">
-    <div class="modal-content">
-      <h3>Add New Deal</h3>
-      
+  <div id="crm-deal-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+      <h3 class="modal-title">Add New Deal</h3>
+
       <div class="k-field">
-        <label>Contact Name</label>
+        <label class="k-label">Contact Name</label>
         <input type="text" id="deal-contact" class="k-input" placeholder="e.g. Charlie Brown">
       </div>
-      
       <div class="k-field">
-        <label>Company</label>
+        <label class="k-label">Company</label>
         <input type="text" id="deal-company" class="k-input" placeholder="e.g. Hooli Inc">
       </div>
-      
       <div class="k-field">
-        <label>Deal Value ($)</label>
+        <label class="k-label">Deal Value ($)</label>
         <input type="number" id="deal-value" class="k-input" placeholder="e.g. 15000">
       </div>
-      
       <div class="k-field">
-        <label>Status</label>
+        <label class="k-label">Stage</label>
+        <select id="deal-stage" class="k-input">
+          <option value="Qualification">Qualification</option>
+          <option value="Proposal">Proposal</option>
+          <option value="Negotiation">Negotiation</option>
+          <option value="Closed">Closed</option>
+        </select>
+      </div>
+      <div class="k-field">
+        <label class="k-label">Status</label>
         <select id="deal-status" class="k-input">
           <option value="In Progress">In Progress</option>
           <option value="Won">Won</option>
@@ -651,131 +882,215 @@
         </select>
       </div>
 
-      <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end;">
-        <button id="deal-cancel-btn" class="btn btn-secondary" style="padding: 8px 16px;">Cancel</button>
-        <button id="deal-save-btn" class="btn" style="padding: 8px 16px;">Add Deal</button>
+      <div class="modal-actions">
+        <button id="deal-cancel-btn" class="btn btn-secondary">Cancel</button>
+        <button id="deal-save-btn" class="btn btn-primary">Add Deal</button>
       </div>
     </div>
   </div>
 
-  <!-- Load Kenzo SDK -->
+  <!-- Kenzo SDK -->
   <script src="/sdk.js"></script>
   <script>
-    // Initialize Kenzo SDK with dynamically loaded credentials (multi-tenant support)
-    document.addEventListener('DOMContentLoaded', async () => {
-      if (typeof Kenzo !== 'undefined') {
-        const urlParams = new URLSearchParams(window.location.search);
-        const apiKey = urlParams.get('api_key') || 'kenzo_project_dev_api_key_2026';
-        try {
-          await Kenzo.init({
-            apiKey: apiKey,
-            apiBaseUrl: '/api/v1',
-            debug: true
-          });
-          console.log(`[Sandbox] Kenzo SDK successfully initialized with API Key: ${apiKey}`);
-        } catch (e) {
-          console.error('[Sandbox] Kenzo SDK failed to initialize:', e);
-        }
+    // ─── SDK Initialization ───────────────────────────────
+    (async function initKenzo() {
+      if (typeof Kenzo === 'undefined') {
+        console.warn('[Sandbox] Kenzo SDK not loaded.');
+        return;
       }
-    });
 
-    // SPA Navigation Logic
-    const navItems = document.querySelectorAll('.nav-item');
-    const views = {
-      'crm-sidebar-dashboard': document.getElementById('crm-dashboard-view'),
-      'crm-sidebar-leads': document.getElementById('crm-leads-view'),
-      'crm-sidebar-settings': document.getElementById('crm-settings-view')
-    };
+      const urlParams = new URLSearchParams(window.location.search);
+      const apiKey = urlParams.get('api_key') || 'kenzo_project_dev_api_key_2026';
+      const flowIdParam = urlParams.get('kenzo_flow');
+      const builderMode = urlParams.get('kenzo_builder') === 'true';
 
-    navItems.forEach(item => {
-      item.addEventListener('click', () => {
-        // Toggle active menu state
-        navItems.forEach(i => i.classList.remove('active'));
-        item.classList.add('active');
+      try {
+        await Kenzo.init({
+          apiKey: apiKey,
+          apiBaseUrl: '/api/v1',
+          debug: true,
+          darkMode: true
+        });
+        console.log('[Sandbox] Kenzo SDK initialized. API Key:', apiKey);
 
-        // Toggle active view content
-        Object.values(views).forEach(v => v.style.display = 'none');
-        views[item.id].style.display = 'block';
+        // Auto-start a specific flow if kenzo_flow= param present
+        if (flowIdParam) {
+          console.log('[Sandbox] Auto-starting flow:', flowIdParam);
+          try {
+            await Kenzo.startFlow(flowIdParam);
+          } catch (e) {
+            console.warn('[Sandbox] Could not auto-start flow:', e.message);
+            // Fallback: try first published flow
+            setTimeout(() => triggerFirstFlow(), 1000);
+          }
+        } else if (!builderMode) {
+          // Auto-run the first matching flow if page loads fresh
+          const autoFlow = urlParams.get('auto_run');
+          if (autoFlow === 'true') {
+            setTimeout(() => triggerFirstFlow(), 800);
+          }
+        }
+      } catch (e) {
+        console.error('[Sandbox] SDK init failed:', e);
+      }
+    })();
 
-        // Trigger analytics custom event
+    // ─── Flow Trigger Logic ───────────────────────────────
+    async function triggerFirstFlow() {
+      if (typeof Kenzo === 'undefined') return;
+
+      try {
+        const authData = localStorage.getItem('kenzo_local_auth_token');
+        const token = authData ? JSON.parse(authData).token : null;
+
+        const response = await fetch('/api/v1/flows/published', {
+          headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+        });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.message || 'Could not fetch flows');
+        }
+
+        const data = await response.json();
+        const flows = data.flows || [];
+
+        // Find flows for sandbox page or any global flow
+        const matched = flows.filter(f => {
+          const rules = f.urlRules || [];
+          if (rules.length === 0) return true;
+          const href = window.location.href;
+          const pathname = window.location.pathname;
+          return rules.some(r => {
+            if (r.type === 'contains') return href.includes(r.pattern) || pathname.includes(r.pattern);
+            if (r.type === 'exact') return pathname === r.pattern;
+            if (r.type === 'startsWith') return pathname.startsWith(r.pattern);
+            return true;
+          });
+        });
+
+        if (matched.length > 0) {
+          // Sort by priority desc
+          matched.sort((a, b) => (b.priority || 0) - (a.priority || 0));
+          await Kenzo.startFlow(matched[0].id);
+          console.log('[Sandbox] Started flow:', matched[0].name);
+        } else if (flows.length > 0) {
+          // Start first available flow regardless
+          await Kenzo.startFlow(flows[0].id);
+          console.log('[Sandbox] Started first available flow:', flows[0].name);
+        } else {
+          alert('No tours published yet. Go to Admin Dashboard → Walkthrough Tours to create one!');
+        }
+      } catch (e) {
+        console.error('[Sandbox] Flow trigger error:', e);
+        alert('Could not start walkthrough: ' + e.message + '\n\nMake sure you have published flows in the Admin Dashboard.');
+      }
+    }
+
+    // ─── SPA Navigation ───────────────────────────────
+    const navButtons = document.querySelectorAll('.nav-item[data-view]');
+    const allViews = document.querySelectorAll('.content-area');
+
+    navButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const viewId = btn.getAttribute('data-view');
+
+        navButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        allViews.forEach(v => { v.style.display = 'none'; });
+        const target = document.getElementById(viewId);
+        if (target) {
+          target.style.display = 'block';
+          target.classList.remove('fade-in');
+          void target.offsetWidth; // reflow
+          target.classList.add('fade-in');
+        }
+
         if (typeof Kenzo !== 'undefined') {
-          Kenzo.track('navigation_clicked', { view: item.id });
+          Kenzo.track('navigation_clicked', { view: viewId });
         }
       });
     });
 
-    // Add Deal Modal Toggle & Save Logic
+    // ─── Add Deal Modal ───────────────────────────────
     const addDealBtn = document.getElementById('crm-add-deal-btn');
     const dealModal = document.getElementById('crm-deal-modal');
-    const cancelDealBtn = document.getElementById('deal-cancel-btn');
-    const saveDealBtn = document.getElementById('deal-save-btn');
+    const cancelBtn = document.getElementById('deal-cancel-btn');
+    const saveBtn = document.getElementById('deal-save-btn');
 
     addDealBtn.addEventListener('click', () => {
       dealModal.style.display = 'flex';
       document.getElementById('deal-contact').focus();
     });
 
-    cancelDealBtn.addEventListener('click', () => {
+    cancelBtn.addEventListener('click', () => {
       dealModal.style.display = 'none';
       clearDealForm();
     });
 
-    saveDealBtn.addEventListener('click', () => {
+    dealModal.addEventListener('click', (e) => {
+      if (e.target === dealModal) {
+        dealModal.style.display = 'none';
+        clearDealForm();
+      }
+    });
+
+    saveBtn.addEventListener('click', () => {
       const contact = document.getElementById('deal-contact').value.trim();
       const company = document.getElementById('deal-company').value.trim();
       const value = parseFloat(document.getElementById('deal-value').value) || 0;
+      const stage = document.getElementById('deal-stage').value;
       const status = document.getElementById('deal-status').value;
 
       if (!contact || !company) {
-        alert('Please fill in the Contact Name and Company.');
+        document.getElementById('deal-contact').style.borderColor = '#ef4444';
+        document.getElementById('deal-company').style.borderColor = '#ef4444';
         return;
       }
 
-      // Add row to Deals table
       const tbody = document.getElementById('deals-table-body');
       const tr = document.createElement('tr');
-      
+
       let badgeClass = 'badge-progress';
-      if (status === 'Won') badgeClass = '';
-      if (status === 'Lost') badgeClass = 'badge-lost';
+      if (status === 'Won') badgeClass = 'badge-success';
+      if (status === 'Lost') badgeClass = 'badge-danger';
 
       tr.innerHTML = `
-        <td>${contact}</td>
+        <td><strong>${contact}</strong></td>
         <td>${company}</td>
-        <td>$${value.toLocaleString()}</td>
+        <td><strong>$${value.toLocaleString()}</strong></td>
+        <td>${stage}</td>
         <td><span class="badge ${badgeClass}">${status}</span></td>
       `;
-      tbody.appendChild(tr);
+      tbody.insertBefore(tr, tbody.firstChild);
 
-      // Dynamically update Open Deals Pipeline and Total Leads metrics cards!
-      const currentLeadsEl = document.getElementById('crm-leads-val');
-      const currentRevenueEl = document.getElementById('crm-revenue-val');
+      // Update stats
+      const leadsEl = document.getElementById('crm-leads-val');
+      const revenueEl = document.getElementById('crm-revenue-val');
+      leadsEl.textContent = (parseInt(leadsEl.textContent.replace(/,/g, '')) + 1).toLocaleString();
+      const cur = parseFloat(revenueEl.textContent.replace(/[$,]/g, ''));
+      revenueEl.textContent = '$' + (cur + value).toLocaleString();
 
-      const newLeadsCount = parseInt(currentLeadsEl.textContent.replace(/,/g, '')) + 1;
-      currentLeadsEl.textContent = newLeadsCount.toLocaleString();
-
-      const currentRev = parseFloat(currentRevenueEl.textContent.replace(/[$,]/g, ''));
-      const newRev = currentRev + value;
-      currentRevenueEl.textContent = `$${newRev.toLocaleString()}`;
-
-      // Close modal & clean form
       dealModal.style.display = 'none';
       clearDealForm();
 
-      // Trigger analytics tracker custom event
       if (typeof Kenzo !== 'undefined') {
         Kenzo.track('deal_created', { contact, company, value, status });
       }
     });
 
     function clearDealForm() {
-      document.getElementById('deal-contact').value = '';
-      document.getElementById('deal-company').value = '';
-      document.getElementById('deal-value').value = '';
+      ['deal-contact', 'deal-company', 'deal-value'].forEach(id => {
+        const el = document.getElementById(id);
+        el.value = '';
+        el.style.borderColor = '';
+      });
+      document.getElementById('deal-stage').value = 'Qualification';
       document.getElementById('deal-status').value = 'In Progress';
     }
 
-    // Toggle Builder parameter triggers
+    // ─── Builder Toggle ───────────────────────────────
     document.getElementById('k-toggle-builder-btn').addEventListener('click', () => {
       const url = new URL(window.location.href);
       if (url.searchParams.get('kenzo_builder') === 'true') {
@@ -786,38 +1101,9 @@
       window.location.href = url.toString();
     });
 
-    document.getElementById('k-trigger-flow-btn').addEventListener('click', async () => {
-      if (typeof Kenzo !== 'undefined') {
-        try {
-          // Retrieve the auth token from local storage cache
-          const authData = localStorage.getItem('kenzo_local_auth_token');
-          const token = authData ? JSON.parse(authData).token : null;
-
-          const response = await fetch('/api/v1/flows/published', {
-            headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-          });
-
-          if (!response.ok) {
-            const errData = await response.json();
-            throw new Error(errData.message || 'Unauthorized');
-          }
-
-          const data = await response.json();
-          // Filter flows that match the current pathname "/sandbox.html" or are global
-          const crmFlows = data.flows.filter(f => {
-            const rules = f.urlRules || [];
-            return rules.length === 0 || rules.some(r => r.pattern.includes('sandbox') || r.pattern === '/');
-          });
-
-          if (crmFlows && crmFlows.length > 0) {
-            await Kenzo.startFlow(crmFlows[0].id);
-          } else {
-            alert('No tours published for the Sandbox page yet. Click "Toggle Builder" to create a tour for this page!');
-          }
-        } catch (e) {
-          alert('Failed to trigger flow: ' + e.message);
-        }
-      }
+    // ─── Run Walkthrough Button ───────────────────────────────
+    document.getElementById('k-trigger-flow-btn').addEventListener('click', () => {
+      triggerFirstFlow();
     });
   </script>
 </body>

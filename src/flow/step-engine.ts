@@ -141,26 +141,46 @@ export class StepEngine implements IStepEngine {
   private async renderStep(step: FlowStep): Promise<void> {
     if (!this.flow) return;
 
-    const resolved = await this.elementResolver.resolve(step.selector);
-    if (!resolved) {
-      this.logger.error('Cannot render step — element not found', undefined, {
-        stepId: step.id,
-      });
-      return;
+    // Normalize DB buttons format {text, action, style} → SDK format {label, action, primary}
+    if (step.buttons && step.buttons.length > 0) {
+      step = {
+        ...step,
+        buttons: step.buttons.map((btn: any) => ({
+          label: btn.label ?? btn.text ?? 'Next',
+          action: btn.action === 'prev' ? 'previous' : btn.action,
+          primary: btn.primary ?? btn.style === 'primary',
+        }))
+      };
     }
 
-    if (step.autoScroll !== false) {
-      resolved.element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    const displayMode = step.displayMode ?? 'tooltip';
+    const isModal = displayMode === 'modal';
+    const isCenterMode = isModal || (step.selector as any)?.value === 'body' || (step.selector as any)?.css === 'body';
 
-    const displayMode = step.displayMode ?? 'spotlight';
-    if (displayMode === 'spotlight') {
-      this.overlayManager.showSpotlight(resolved.element, {
-        padding: step.spotlightPadding,
-        blockInteraction: step.blockInteraction,
-      });
-    } else if (displayMode === 'highlight') {
-      this.overlayManager.showHighlight(resolved.element);
+    let targetElement: Element = document.body;
+    if (!isCenterMode) {
+      const resolved = await this.elementResolver.resolve(step.selector);
+      if (resolved && resolved.element !== document.body) {
+        targetElement = resolved.element;
+        if (step.autoScroll !== false) {
+          targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          await new Promise(r => setTimeout(r, 400));
+        }
+
+        if (displayMode === 'spotlight') {
+          this.overlayManager.showSpotlight(targetElement, {
+            padding: step.spotlightPadding,
+            blockInteraction: step.blockInteraction,
+          });
+        } else if (displayMode === 'highlight') {
+          this.overlayManager.showHighlight(targetElement);
+        }
+      } else {
+        // Element not found — render as modal fallback
+        this.overlayManager.hide();
+      }
+    } else {
+      this.overlayManager.hide();
     }
 
     const config = this.config.get();
@@ -175,14 +195,22 @@ export class StepEngine implements IStepEngine {
         darkMode: config.darkMode,
         onAction: (action) => void this.handleAction(action),
       },
-      resolved.element,
+      targetElement,
     );
 
-    const placement = step.placement ?? 'auto';
-    await this.tooltipPositioner.position(tooltip, resolved.element, placement);
+    if (!isCenterMode && targetElement !== document.body) {
+      const placement = step.placement ?? 'auto';
+      await this.tooltipPositioner.position(tooltip, targetElement, placement);
+    } else {
+      // Center modal positioning — override any floating-ui positioning
+      Object.assign(tooltip.style, {
+        position: 'fixed',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+      });
+    }
     await this.tooltipAnimator.enter(tooltip);
-
-    this.progressManager.markStepCompleted(this.flow.id, step.id);
 
     const progress = this.progressManager.getProgress(this.flow.id);
     if (progress) {
