@@ -182,7 +182,25 @@ export async function bootstrapDb(): Promise<void> {
       );
     `);
 
-    console.log('[Database] Core tables verified.');
+    // 10. Route pattern normalization for legacy seeded flows
+    await client.query(`
+      UPDATE flows SET url_rules = '[{"type":"contains","pattern":"/dashboard/crm"}]'::jsonb
+      WHERE (name LIKE '%CRM%' OR name LIKE '%Pipeline%' OR name LIKE '%Deal%') AND (url_rules IS NULL OR url_rules = '[]'::jsonb OR url_rules = '[{"type":"contains","pattern":"/"}]'::jsonb);
+    `);
+    await client.query(`
+      UPDATE flows SET url_rules = '[{"type":"contains","pattern":"/dashboard/hrms"}]'::jsonb
+      WHERE (name LIKE '%HRMS%' OR name LIKE '%Employee%' OR name LIKE '%HR %') AND (url_rules IS NULL OR url_rules = '[]'::jsonb OR url_rules = '[{"type":"contains","pattern":"/"}]'::jsonb);
+    `);
+    await client.query(`
+      UPDATE flows SET url_rules = '[{"type":"contains","pattern":"/dashboard/finance"}]'::jsonb
+      WHERE (name LIKE '%Finance%' OR name LIKE '%Financial%') AND (url_rules IS NULL OR url_rules = '[]'::jsonb OR url_rules = '[{"type":"contains","pattern":"/"}]'::jsonb);
+    `);
+    await client.query(`
+      UPDATE flows SET url_rules = '[{"type":"contains","pattern":"/dashboard"}]'::jsonb
+      WHERE (name LIKE '%Admin Control Hub%' OR name LIKE '%Overview%') AND (url_rules IS NULL OR url_rules = '[]'::jsonb OR url_rules = '[{"type":"contains","pattern":"/"}]'::jsonb);
+    `);
+
+    console.log('[Database] Tables bootstrapped and route rules normalized.');
 
     // Seed default developer project if not exists
     const devApiKey = 'kenzo_project_dev_api_key_2026';

@@ -55,7 +55,9 @@ const VALID_ACTIONS = new Set<StepAction>(['next', 'previous', 'skip', 'finish',
 /** Normalise a button from either DB or SDK shape into a consistent internal form. */
 function normalizeButton(raw: RawDbButton): NormalizedButton | null {
   const label = (raw.label ?? raw.text ?? '').trim();
-  const rawAction = (raw.action ?? '').trim();
+  let rawAction = (raw.action ?? '').trim();
+
+  if (rawAction === 'prev') rawAction = 'previous';
 
   if (!label || !VALID_ACTIONS.has(rawAction as StepAction)) return null;
 
@@ -109,37 +111,40 @@ const CSS = `
   #${MODAL_BACKDROP_ID} {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.65);
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
+    background: rgba(0, 0, 0, 0.70);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     animation: kenzo-backdrop-in 220ms ease forwards;
+    z-index: 2147482999;
   }
 
   /* ── Tooltip root (shared by both tooltip + modal modes) ── */
   #${TOOLTIP_ROOT_ID} {
     --kenzo-radius: 14px;
-    --kenzo-header-h: 48px;
+    --kenzo-header-h: 44px;
     --kenzo-shadow:
-      0 0 0 1px rgba(99,102,241,0.18),
-      0 8px 16px rgba(0,0,0,0.22),
-      0 24px 48px rgba(0,0,0,0.28);
+      0 0 0 1px rgba(99,102,241,0.25),
+      0 12px 32px rgba(0,0,0,0.45);
     --kenzo-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 55%, #6366f1 100%);
-    --kenzo-glass-bg: rgba(15, 15, 25, 0.88);
-    --kenzo-border: rgba(255,255,255,0.10);
+    --kenzo-glass-bg: rgba(15, 15, 25, 0.95);
+    --kenzo-border: rgba(255,255,255,0.12);
     --kenzo-text: #e8e8f0;
-    --kenzo-subtext: rgba(200,200,220,0.65);
-    --kenzo-btn-ghost-bg: rgba(255,255,255,0.07);
-    --kenzo-btn-ghost-hover: rgba(255,255,255,0.13);
+    --kenzo-subtext: rgba(210,210,230,0.85);
+    --kenzo-btn-ghost-bg: rgba(255,255,255,0.08);
+    --kenzo-btn-ghost-hover: rgba(255,255,255,0.15);
     --kenzo-btn-primary-bg: linear-gradient(135deg, #6366f1 0%, #7c3aed 100%);
     --kenzo-btn-primary-hover: linear-gradient(135deg, #4f46e5 0%, #6d28d9 100%);
-    --kenzo-progress-track: rgba(255,255,255,0.10);
+    --kenzo-progress-track: rgba(255,255,255,0.12);
     --kenzo-progress-fill: linear-gradient(90deg, #6366f1, #a78bfa);
 
     position: fixed;
     top: 0;
     left: 0;
-    width: 360px;
+    width: 380px;
     max-width: calc(100vw - 32px);
+    max-height: min(85vh, 540px);
+    display: flex;
+    flex-direction: column;
     background: var(--kenzo-glass-bg);
     border: 1px solid var(--kenzo-border);
     border-radius: var(--kenzo-radius);
@@ -148,12 +153,13 @@ const CSS = `
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto, sans-serif;
     font-size: 14px;
-    line-height: 1.6;
+    line-height: 1.5;
     color: var(--kenzo-text);
     outline: none;
     overflow: hidden;
     animation: kenzo-fade-in 280ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
     will-change: transform, opacity;
+    z-index: 2147483000;
   }
 
   /* ── Modal variant ── */

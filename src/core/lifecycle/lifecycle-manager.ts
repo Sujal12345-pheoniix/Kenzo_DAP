@@ -185,13 +185,8 @@ export class LifecycleManager implements ILifecycleManager {
         }
       }
 
-      // Fallback: If no flow matched strict URL pattern, start the top published flow
-      if (!flowToStart && flows.length > 0) {
-        flowToStart = flows[0];
-      }
-
       if (flowToStart) {
-        this.logger.info(`Auto-starting flow: ${flowToStart.name} (${flowToStart.id})`);
+        this.logger.info(`Auto-starting matching flow: ${flowToStart.name} (${flowToStart.id})`);
         await this.flowRunner.start(flowToStart);
       }
     } catch (error) {

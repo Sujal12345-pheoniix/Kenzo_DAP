@@ -24,6 +24,14 @@ export class ConditionEvaluator implements IConditionEvaluator {
   private matchUrlRule(rule: UrlRule): boolean {
     const target = rule.matchFullUrl ? window.location.href : window.location.pathname;
 
+    // Wildcard pattern matches any route
+    if (rule.pattern === '*' || rule.pattern === 'all') return true;
+
+    // Root path '/' matching — should only match root path (/ or /index.html or /sandbox.html), not sub-routes like /dashboard/crm
+    if (rule.pattern === '/' || rule.pattern === '') {
+      return target === '/' || target === '/index.html' || target === '/sandbox.html' || target.endsWith('/');
+    }
+
     switch (rule.type) {
       case 'exact':
         return target === rule.pattern;
