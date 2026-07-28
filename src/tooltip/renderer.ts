@@ -102,9 +102,21 @@ const CSS = `
     from { opacity: 0; transform: translate(-50%, -48%) scale(0.90); }
     to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
   }
+  @keyframes kenzo-modal-in-mobile {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
   @keyframes kenzo-backdrop-in {
     from { opacity: 0; }
     to   { opacity: 1; }
+  }
+
+  /* ── Body scroll lock when modal active ── */
+  body.kenzo-scroll-locked {
+    overflow: hidden !important;
+    position: fixed !important;
+    width: 100% !important;
+    touch-action: none !important;
   }
 
   /* ── Modal backdrop ── */
@@ -116,6 +128,7 @@ const CSS = `
     -webkit-backdrop-filter: blur(4px);
     animation: kenzo-backdrop-in 220ms ease forwards;
     z-index: 2147482999;
+    -webkit-tap-highlight-color: transparent;
   }
 
   /* ── Tooltip root (shared by both tooltip + modal modes) ── */
@@ -141,7 +154,7 @@ const CSS = `
     top: 0;
     left: 0;
     width: 380px;
-    max-width: calc(100vw - 32px);
+    max-width: calc(100vw - 24px);
     max-height: min(85vh, 540px);
     display: flex;
     flex-direction: column;
@@ -160,6 +173,9 @@ const CSS = `
     animation: kenzo-fade-in 280ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
     will-change: transform, opacity;
     z-index: 2147483000;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   /* ── Modal variant ── */
@@ -169,7 +185,7 @@ const CSS = `
     left: 50%;
     transform: translate(-50%, -50%);
     width: 480px;
-    max-width: calc(100vw - 48px);
+    max-width: calc(100vw - 32px);
     animation: kenzo-modal-in 300ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
 
@@ -224,8 +240,8 @@ const CSS = `
   .kenzo-tooltip__close {
     position: relative;
     z-index: 1;
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     border: 1px solid rgba(255,255,255,0.22);
     background: rgba(255,255,255,0.12);
@@ -239,6 +255,8 @@ const CSS = `
     transition: background 150ms ease, transform 150ms ease;
     flex-shrink: 0;
     padding: 0;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
   .kenzo-tooltip__close:hover {
     background: rgba(255,255,255,0.22);
@@ -249,6 +267,10 @@ const CSS = `
   /* ── Body ── */
   .kenzo-tooltip__body {
     padding: 20px 20px 0;
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
 
   /* ── Title ── */
@@ -259,6 +281,7 @@ const CSS = `
     color: #ffffff;
     letter-spacing: -0.01em;
     line-height: 1.3;
+    word-break: break-word;
   }
 
   /* ── Content ── */
@@ -267,6 +290,8 @@ const CSS = `
     font-size: 13.5px;
     line-height: 1.65;
     margin-bottom: 4px;
+    word-break: break-word;
+    overflow-wrap: break-word;
   }
   .kenzo-tooltip__content p { margin: 0 0 8px; }
   .kenzo-tooltip__content p:last-child { margin-bottom: 0; }
@@ -284,7 +309,7 @@ const CSS = `
 
   /* ── Progress bar track ── */
   .kenzo-tooltip__progress-bar-wrap {
-    margin: 18px 20px 0;
+    margin: 14px 20px 0;
     height: 3px;
     border-radius: 999px;
     background: var(--kenzo-progress-track);
@@ -307,14 +332,17 @@ const CSS = `
     gap: 8px;
     flex-wrap: wrap;
     padding: 14px 20px 16px;
+    flex-shrink: 0;
   }
 
   /* ── Ghost (secondary) button ── */
   .kenzo-tooltip__btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 5px;
-    padding: 7px 15px;
+    padding: 9px 16px;
+    min-height: 38px;
     border-radius: 8px;
     border: 1px solid rgba(255,255,255,0.12);
     background: var(--kenzo-btn-ghost-bg);
@@ -326,6 +354,9 @@ const CSS = `
     line-height: 1;
     transition: background 150ms ease, color 150ms ease, transform 100ms ease;
     white-space: nowrap;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    user-select: none;
   }
   .kenzo-tooltip__btn:hover {
     background: var(--kenzo-btn-ghost-hover);
@@ -352,7 +383,8 @@ const CSS = `
     background: transparent;
     color: var(--kenzo-subtext);
     font-size: 12px;
-    padding: 7px 10px;
+    padding: 9px 10px;
+    min-height: 38px;
     margin-right: auto;
   }
   .kenzo-tooltip__btn--skip:hover { color: var(--kenzo-text); background: transparent; }
@@ -370,6 +402,7 @@ const CSS = `
     text-transform: uppercase;
     color: rgba(255,255,255,0.22);
     user-select: none;
+    flex-shrink: 0;
   }
   .kenzo-tooltip__brand svg {
     width: 11px;
@@ -417,6 +450,208 @@ const CSS = `
   }
   #${TOOLTIP_ROOT_ID}.kenzo-tooltip--light .kenzo-tooltip__btn--skip { color: rgba(99,102,241,0.45); }
   #${TOOLTIP_ROOT_ID}.kenzo-tooltip--light .kenzo-tooltip__brand { color: rgba(49,46,129,0.25); }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     ██  MOBILE RESPONSIVE BREAKPOINTS
+     ══════════════════════════════════════════════════════════════════════════ */
+
+  /* ── Tablet: ≤ 768px ── */
+  @media screen and (max-width: 768px) {
+    #${TOOLTIP_ROOT_ID} {
+      width: calc(100vw - 20px);
+      max-width: calc(100vw - 20px);
+      max-height: min(80vh, 480px);
+      --kenzo-radius: 12px;
+      font-size: 14px;
+    }
+    #${TOOLTIP_ROOT_ID}.kenzo-tooltip--modal {
+      width: calc(100vw - 24px);
+      max-width: calc(100vw - 24px);
+    }
+    .kenzo-tooltip__header {
+      padding: 0 14px;
+      height: 48px;
+    }
+    .kenzo-tooltip__close {
+      width: 36px;
+      height: 36px;
+    }
+    .kenzo-tooltip__body {
+      padding: 16px 16px 0;
+    }
+    .kenzo-tooltip__title {
+      font-size: 15px;
+    }
+    .kenzo-tooltip__content {
+      font-size: 13px;
+    }
+    .kenzo-tooltip__footer {
+      padding: 12px 16px 14px;
+      gap: 8px;
+    }
+    .kenzo-tooltip__btn {
+      padding: 10px 16px;
+      min-height: 42px;
+      font-size: 13px;
+    }
+    .kenzo-tooltip__btn--skip {
+      padding: 10px 10px;
+      min-height: 42px;
+    }
+    .kenzo-tooltip__progress-bar-wrap {
+      margin: 12px 16px 0;
+    }
+    .kenzo-tooltip__brand {
+      padding-bottom: 8px;
+    }
+    /* Hide arrow on mobile — floating-ui positioning is unreliable */
+    .kenzo-tooltip__arrow {
+      display: none !important;
+    }
+  }
+
+  /* ── Mobile: ≤ 480px ── */
+  @media screen and (max-width: 480px) {
+    #${TOOLTIP_ROOT_ID} {
+      width: 100vw;
+      max-width: 100vw;
+      max-height: 75vh;
+      border-radius: 16px 16px 0 0;
+      --kenzo-radius: 16px 16px 0 0;
+      bottom: 0 !important;
+      top: auto !important;
+      left: 0 !important;
+      right: 0 !important;
+      transform: none !important;
+      animation: kenzo-modal-in-mobile 300ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    #${TOOLTIP_ROOT_ID}.kenzo-tooltip--modal {
+      top: auto !important;
+      bottom: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      transform: none !important;
+      width: 100vw;
+      max-width: 100vw;
+      border-radius: 16px 16px 0 0;
+      animation: kenzo-modal-in-mobile 300ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .kenzo-tooltip__header {
+      padding: 0 16px;
+      height: 52px;
+    }
+    .kenzo-tooltip__close {
+      width: 40px;
+      height: 40px;
+    }
+    .kenzo-tooltip__close svg {
+      width: 12px;
+      height: 12px;
+    }
+    .kenzo-tooltip__body {
+      padding: 16px 16px 0;
+    }
+    .kenzo-tooltip__title {
+      font-size: 17px;
+      margin: 0 0 10px;
+    }
+    .kenzo-tooltip__content {
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .kenzo-tooltip__footer {
+      padding: 12px 16px 16px;
+      gap: 10px;
+      flex-wrap: nowrap;
+    }
+    .kenzo-tooltip__btn {
+      padding: 12px 18px;
+      min-height: 44px;
+      font-size: 14px;
+      border-radius: 10px;
+      flex: 1;
+    }
+    .kenzo-tooltip__btn--primary {
+      flex: 2;
+    }
+    .kenzo-tooltip__btn--skip {
+      flex: none;
+      padding: 12px 10px;
+      min-height: 44px;
+      font-size: 12px;
+    }
+    .kenzo-tooltip__step-pill {
+      font-size: 10px;
+      padding: 4px 10px;
+    }
+    .kenzo-tooltip__progress-bar-wrap {
+      margin: 10px 16px 0;
+      height: 4px;
+    }
+    .kenzo-tooltip__brand {
+      padding-bottom: 12px;
+      padding-top: 2px;
+      font-size: 9px;
+    }
+    /* Safe area padding for notched phones */
+    .kenzo-tooltip__footer {
+      padding-bottom: max(16px, env(safe-area-inset-bottom));
+    }
+  }
+
+  /* ── Small phones: ≤ 360px ── */
+  @media screen and (max-width: 360px) {
+    #${TOOLTIP_ROOT_ID} {
+      max-height: 70vh;
+    }
+    .kenzo-tooltip__title {
+      font-size: 15px;
+    }
+    .kenzo-tooltip__content {
+      font-size: 13px;
+    }
+    .kenzo-tooltip__btn {
+      font-size: 12px;
+      padding: 10px 12px;
+    }
+  }
+
+  /* ── Landscape orientation on mobile ── */
+  @media screen and (max-height: 500px) and (orientation: landscape) {
+    #${TOOLTIP_ROOT_ID} {
+      max-height: 90vh;
+    }
+    #${TOOLTIP_ROOT_ID}.kenzo-tooltip--modal {
+      max-height: 90vh;
+    }
+    .kenzo-tooltip__header {
+      height: 38px;
+    }
+    .kenzo-tooltip__body {
+      padding: 10px 14px 0;
+    }
+    .kenzo-tooltip__title {
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+    .kenzo-tooltip__content {
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .kenzo-tooltip__footer {
+      padding: 8px 14px 10px;
+    }
+    .kenzo-tooltip__btn {
+      min-height: 36px;
+      padding: 7px 12px;
+    }
+    .kenzo-tooltip__brand {
+      display: none;
+    }
+    .kenzo-tooltip__progress-bar-wrap {
+      margin: 6px 14px 0;
+    }
+  }
 `;
 
 // ─── Renderer class ───────────────────────────────────────────────────────────
@@ -444,6 +679,8 @@ export class TooltipRenderer implements ITooltipRenderer {
     if (isModalMode(options)) {
       this.backdrop = this.buildBackdrop(this.zIndex);
       document.body.appendChild(this.backdrop);
+      // Lock body scroll on modal (critical for mobile)
+      this.lockBodyScroll();
     }
 
     this.element = this.buildTooltip(options, referenceEl);
@@ -451,6 +688,11 @@ export class TooltipRenderer implements ITooltipRenderer {
 
     document.body.appendChild(this.element);
     this.attachKeyboard(options.onAction);
+
+    // Prevent touch-through on modal backdrop
+    if (this.backdrop) {
+      this.backdrop.addEventListener('touchmove', (e: Event) => e.preventDefault(), { passive: false });
+    }
 
     // Defer focus so animation frame doesn't clip it
     requestAnimationFrame(() => this.element?.focus());
@@ -488,6 +730,9 @@ export class TooltipRenderer implements ITooltipRenderer {
 
     this.element?.remove();
     this.element = null;
+
+    // Unlock body scroll
+    this.unlockBodyScroll();
 
     if (this.zIndex !== null) {
       this.zIndexManager.release(this.zIndex);
@@ -716,12 +961,43 @@ export class TooltipRenderer implements ITooltipRenderer {
 
   // ── Style injection ────────────────────────────────────────────────────────
 
+  private scrollY = 0;
+
+  private lockBodyScroll(): void {
+    if (typeof window === 'undefined') return;
+    this.scrollY = window.scrollY;
+    document.body.classList.add('kenzo-scroll-locked');
+    document.body.style.top = `-${this.scrollY}px`;
+  }
+
+  private unlockBodyScroll(): void {
+    if (typeof window === 'undefined') return;
+    document.body.classList.remove('kenzo-scroll-locked');
+    document.body.style.top = '';
+    window.scrollTo(0, this.scrollY);
+  }
+
   private injectStyles(): void {
     if (document.getElementById(STYLES_ID)) return;
+
+    // Add meta viewport check for mobile
+    this.ensureViewportMeta();
 
     const style = document.createElement('style');
     style.id = STYLES_ID;
     style.textContent = CSS;
     document.head.appendChild(style);
+  }
+
+  /** Ensure viewport meta tag exists for proper mobile rendering */
+  private ensureViewportMeta(): void {
+    if (typeof document === 'undefined') return;
+    const existing = document.querySelector('meta[name="viewport"]');
+    if (!existing) {
+      const meta = document.createElement('meta');
+      meta.name = 'viewport';
+      meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+      document.head.appendChild(meta);
+    }
   }
 }

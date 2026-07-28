@@ -52,8 +52,9 @@ export class MaskLayer implements IMaskLayer {
   private applyCutout(rect: SpotlightRect, padding: number): void {
     if (!this.element) return;
 
-    const top = rect.top - padding + window.scrollY;
-    const left = rect.left - padding + window.scrollX;
+    // Use viewport-relative coordinates (no scrollY/scrollX for position: fixed)
+    const top = rect.top - padding;
+    const left = rect.left - padding;
     const width = rect.width + padding * 2;
     const height = rect.height + padding * 2;
     const radius = rect.borderRadius ?? 4;

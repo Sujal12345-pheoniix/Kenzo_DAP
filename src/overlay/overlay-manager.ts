@@ -10,14 +10,15 @@ import type {
   ISpotlight,
 } from '@/core/interfaces';
 import type { SpotlightRect } from '@/types';
-import { throttle } from '@/utils/throttle';
 
 export class OverlayManager implements IOverlayManager {
   private activeElement: Element | null = null;
   private resizeHandler: (() => void) | null = null;
   private scrollHandler: (() => void) | null = null;
+  private orientationHandler: (() => void) | null = null;
   private currentMode: 'spotlight' | 'highlight' | null = null;
   private currentPadding = 8;
+  private rafId: number | null = null;
 
   constructor(
     private readonly backdrop: IBackdrop,
@@ -74,30 +75,59 @@ export class OverlayManager implements IOverlayManager {
   }
 
   private attachListeners(): void {
-    const update = throttle(() => {
-      if (!this.activeElement) return;
-      const rect = this.getSpotlightRect(this.activeElement);
-      this.spotlight.update(rect, this.currentPadding);
-      if (this.currentMode === 'spotlight') {
-        this.maskLayer.update(rect, this.currentPadding);
-      }
-    }, 50);
+    const update = () => {
+      if (this.rafId !== null) return;
+      this.rafId = requestAnimationFrame(() => {
+        this.rafId = null;
+        if (!this.activeElement) return;
+        const rect = this.getSpotlightRect(this.activeElement);
+        this.spotlight.update(rect, this.currentPadding);
+        if (this.currentMode === 'spotlight') {
+          this.maskLayer.update(rect, this.currentPadding);
+        }
+      });
+    };
 
     this.resizeHandler = update;
     this.scrollHandler = update;
 
     window.addEventListener('resize', this.resizeHandler, { passive: true });
     window.addEventListener('scroll', this.scrollHandler, { passive: true, capture: true });
+
+    // Mobile: orientation change triggers viewport recalculation
+    this.orientationHandler = () => {
+      // Delay to let the viewport settle after orientation change
+      setTimeout(update, 300);
+    };
+    window.addEventListener('orientationchange', this.orientationHandler, { passive: true });
+
+    // Mobile: also listen to visualViewport changes (keyboard popup, pinch zoom)
+    if (typeof window !== 'undefined' && window.visualViewport) {
+      window.visualViewport.addEventListener('resize', this.resizeHandler, { passive: true });
+      window.visualViewport.addEventListener('scroll', this.scrollHandler, { passive: true });
+    }
   }
 
   private cleanupListeners(): void {
     if (this.resizeHandler) {
       window.removeEventListener('resize', this.resizeHandler);
+      if (typeof window !== 'undefined' && window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', this.resizeHandler);
+        window.visualViewport.removeEventListener('scroll', this.resizeHandler);
+      }
       this.resizeHandler = null;
     }
     if (this.scrollHandler) {
       window.removeEventListener('scroll', this.scrollHandler, true);
       this.scrollHandler = null;
+    }
+    if (this.orientationHandler) {
+      window.removeEventListener('orientationchange', this.orientationHandler);
+      this.orientationHandler = null;
+    }
+    if (this.rafId !== null) {
+      cancelAnimationFrame(this.rafId);
+      this.rafId = null;
     }
   }
 

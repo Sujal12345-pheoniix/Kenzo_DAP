@@ -19,11 +19,21 @@ export class TooltipPositioner implements ITooltipPositioner {
   ): Promise<void> {
     this.destroyAutoUpdate();
 
+    // Detect mobile viewport
+    const isMobile = typeof window !== 'undefined' && window.innerWidth <= 480;
+
     const update = async (): Promise<void> => {
+      // On mobile (≤480px), tooltip becomes a bottom sheet — skip floating-ui positioning
+      if (isMobile) {
+        // Bottom sheet mode: positioned by CSS media queries
+        return;
+      }
+
       const { x, y, placement: resolvedPlacement } = await computePosition(
         referenceEl,
         tooltipEl,
         {
+          strategy: 'fixed',
           placement: placement as Parameters<typeof computePosition>[2] extends infer O
             ? O extends { placement?: infer P }
               ? P
@@ -36,8 +46,9 @@ export class TooltipPositioner implements ITooltipPositioner {
             size({
               padding: 8,
               apply({ availableWidth, availableHeight, elements }) {
+                const vw = typeof window !== 'undefined' ? window.innerWidth : 9999;
                 Object.assign(elements.floating.style, {
-                  maxWidth: `${Math.min(availableWidth, 400)}px`,
+                  maxWidth: `${Math.min(availableWidth, vw - 24, 400)}px`,
                   maxHeight: `${availableHeight}px`,
                 });
               },
@@ -49,7 +60,7 @@ export class TooltipPositioner implements ITooltipPositioner {
       Object.assign(tooltipEl.style, {
         left: `${x}px`,
         top: `${y}px`,
-        position: 'absolute',
+        position: 'fixed',
       });
 
       tooltipEl.setAttribute('data-placement', resolvedPlacement);

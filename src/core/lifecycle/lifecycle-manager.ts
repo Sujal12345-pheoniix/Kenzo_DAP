@@ -285,6 +285,9 @@ export class LifecycleManager implements ILifecycleManager {
           gap: 8px;
           transition: all 0.3s ease;
           animation: ken-pulse 2s infinite ease-in-out;
+          -webkit-tap-highlight-color: transparent;
+          touch-action: manipulation;
+          user-select: none;
         }
 
         #ken-launcher-widget:hover {
@@ -293,8 +296,17 @@ export class LifecycleManager implements ILifecycleManager {
           box-shadow: 0 6px 24px rgba(99, 102, 241, 0.5);
         }
 
+        #ken-launcher-widget:active {
+          transform: scale(0.95);
+        }
+
         #ken-launcher-widget svg {
           animation: ken-spin 4s infinite linear;
+          flex-shrink: 0;
+        }
+
+        #ken-launcher-widget .ken-label {
+          white-space: nowrap;
         }
 
         @keyframes ken-pulse {
@@ -312,6 +324,76 @@ export class LifecycleManager implements ILifecycleManager {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
+
+        /* Mobile: Compact circular button */
+        @media screen and (max-width: 640px) {
+          #ken-launcher-widget {
+            bottom: max(16px, env(safe-area-inset-bottom, 16px));
+            right: 16px;
+            padding: 0;
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            justify-content: center;
+            gap: 0;
+          }
+          #ken-launcher-widget .ken-label {
+            display: none;
+          }
+          #ken-launcher-widget svg {
+            width: 20px;
+            height: 20px;
+          }
+        }
+
+        /* Small phones */
+        @media screen and (max-width: 375px) {
+          #ken-launcher-widget {
+            width: 48px;
+            height: 48px;
+            bottom: max(12px, env(safe-area-inset-bottom, 12px));
+            right: 12px;
+          }
+        }
+
+        /* Toast notification */
+        @keyframes ken-toast-in {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes ken-toast-out {
+          from { opacity: 1; transform: translateY(0); }
+          to { opacity: 0; transform: translateY(20px); }
+        }
+        #ken-toast-notification {
+          position: fixed;
+          bottom: 90px;
+          right: 16px;
+          background: rgba(15, 15, 25, 0.95);
+          border: 1px solid rgba(99, 102, 241, 0.3);
+          color: #e8e8f0;
+          padding: 12px 20px;
+          border-radius: 12px;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          font-size: 13px;
+          font-weight: 500;
+          z-index: 2147482001;
+          backdrop-filter: blur(12px);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+          animation: ken-toast-in 250ms ease forwards;
+          max-width: calc(100vw - 40px);
+        }
+        #ken-toast-notification.ken-toast-hiding {
+          animation: ken-toast-out 200ms ease forwards;
+        }
+        @media screen and (max-width: 480px) {
+          #ken-toast-notification {
+            bottom: 80px;
+            left: 16px;
+            right: 16px;
+            text-align: center;
+          }
+        }
       `;
       document.head.appendChild(style);
     }
@@ -323,7 +405,7 @@ export class LifecycleManager implements ILifecycleManager {
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 21l8.982-11.795m-8.982 6.795L21 4.5l-12.018 7.378z"></path>
       </svg>
-      Start Guide
+      <span class="ken-label">Start Guide</span>
     `;
 
     // Click handler to run best matching flow
@@ -341,7 +423,7 @@ export class LifecycleManager implements ILifecycleManager {
           this.progressManager.reset(matchedFlow.id);
           await this.flowRunner.start(matchedFlow);
         } else {
-          alert('No onboarding guides available for this page.');
+          this.showToast('No onboarding guides available for this page.');
         }
       } catch (err) {
         this.logger.error('Failed to trigger flow via launcher', err as Error);
@@ -349,6 +431,22 @@ export class LifecycleManager implements ILifecycleManager {
     });
 
     document.body.appendChild(btn);
+  }
+
+  /** Show a temporary toast notification instead of native alert() */
+  private showToast(message: string, duration = 3000): void {
+    const existing = document.getElementById('ken-toast-notification');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.id = 'ken-toast-notification';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+      toast.classList.add('ken-toast-hiding');
+      setTimeout(() => toast.remove(), 200);
+    }, duration);
   }
 
   private sendHeartbeat(): void {

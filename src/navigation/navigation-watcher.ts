@@ -13,6 +13,7 @@ export class NavigationWatcher implements INavigationWatcher {
   private originalReplaceState: History['replaceState'] | null = null;
   private boundPopState: (() => void) | null = null;
   private boundHashChange: (() => void) | null = null;
+  private pollInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor(private readonly eventBus: IEventBus) {
     this.currentUrl = this.getHref();
@@ -49,8 +50,8 @@ export class NavigationWatcher implements INavigationWatcher {
       }
     }
 
-    // Safety polling for Next.js soft navigation (every 300ms)
-    setInterval(() => this.onUrlChange(), 300);
+    // Safety polling for Next.js soft navigation (500ms — mobile battery friendly)
+    this.pollInterval = setInterval(() => this.onUrlChange(), 500);
 
     this.started = true;
   }
@@ -70,6 +71,12 @@ export class NavigationWatcher implements INavigationWatcher {
     }
     if (this.boundHashChange) {
       window.removeEventListener('hashchange', this.boundHashChange);
+    }
+
+    // Clear the polling interval to prevent memory leak
+    if (this.pollInterval !== null) {
+      clearInterval(this.pollInterval);
+      this.pollInterval = null;
     }
 
     this.started = false;
