@@ -238,9 +238,11 @@ export class LifecycleManager implements ILifecycleManager {
         }
       }
 
-      // ignoreProgress = true: auto-trigger walkthroughs even if user previously
-      // dismissed/completed them — each new page navigation shows its tour fresh.
-      const flowToStart = this.selectBestMatchingFlow(flows, true);
+      // Respect progress: ignoreProgress = false
+      // Walkthroughs auto-trigger on the first page visit ONLY. Once completed or dismissed,
+      // coming back to the page will NOT auto-trigger the walkthrough again.
+      // Users can always manually replay via the "Start Guide" button.
+      const flowToStart = this.selectBestMatchingFlow(flows, false);
 
       if (flowToStart) {
         this.lastAutoTriggeredPath = currentPath; // mark so we don't retrigger on same page

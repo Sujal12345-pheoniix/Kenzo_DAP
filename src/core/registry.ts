@@ -51,7 +51,8 @@ export function createContainer(): Container {
 
   container.registerSingleton(TOKENS.Storage, () => {
     const logger = container.resolve<Logger>(TOKENS.Logger);
-    return new LocalStorageService(logger);
+    const config = container.resolve<ConfigService>(TOKENS.Config);
+    return new LocalStorageService(logger, config);
   });
 
   container.registerSingleton(TOKENS.SessionStorage, () => {

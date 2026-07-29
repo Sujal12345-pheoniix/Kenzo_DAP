@@ -1,24 +1,43 @@
 /**
- * Local storage wrapper with TTL support and graceful degradation.
+ * Local storage wrapper with TTL support, project isolation scoping, and graceful degradation.
  * @module storage/local-storage
  */
 
-import type { IStorageService } from '@/core/interfaces';
-import type { ILogger } from '@/core/interfaces';
+import type { IConfigService, ILogger, IStorageService } from '@/core/interfaces';
 
 interface CacheEntry<T> {
   value: T;
   expiresAt: number | null;
 }
 
-const STORAGE_PREFIX = 'kenzo_';
+const DEFAULT_PREFIX = 'kenzo_';
 
 export class LocalStorageService implements IStorageService {
-  constructor(private readonly logger: ILogger) {}
+  constructor(
+    private readonly logger: ILogger,
+    private readonly configService?: IConfigService,
+  ) {}
+
+  private getPrefix(): string {
+    if (this.configService && this.configService.isReady()) {
+      const apiKey = this.configService.get().apiKey || '';
+      if (apiKey) {
+        let hash = 0;
+        for (let i = 0; i < apiKey.length; i++) {
+          hash = (hash << 5) - hash + apiKey.charCodeAt(i);
+          hash |= 0;
+        }
+        const scope = Math.abs(hash).toString(36);
+        return `kenzo_prj_${scope}_`;
+      }
+    }
+    return DEFAULT_PREFIX;
+  }
 
   get<T>(key: string): T | null {
     try {
-      const raw = localStorage.getItem(STORAGE_PREFIX + key);
+      const prefix = this.getPrefix();
+      const raw = localStorage.getItem(prefix + key);
       if (!raw) return null;
 
       const entry = JSON.parse(raw) as CacheEntry<T>;
@@ -36,11 +55,12 @@ export class LocalStorageService implements IStorageService {
 
   set<T>(key: string, value: T, ttl?: number): void {
     try {
+      const prefix = this.getPrefix();
       const entry: CacheEntry<T> = {
         value,
         expiresAt: ttl ? Date.now() + ttl : null,
       };
-      localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(entry));
+      localStorage.setItem(prefix + key, JSON.stringify(entry));
     } catch {
       this.logger.warn('Failed to write to localStorage', { key });
     }
@@ -48,7 +68,8 @@ export class LocalStorageService implements IStorageService {
 
   remove(key: string): void {
     try {
-      localStorage.removeItem(STORAGE_PREFIX + key);
+      const prefix = this.getPrefix();
+      localStorage.removeItem(prefix + key);
     } catch {
       this.logger.warn('Failed to remove from localStorage', { key });
     }
@@ -56,7 +77,7 @@ export class LocalStorageService implements IStorageService {
 
   clear(prefix?: string): void {
     try {
-      const fullPrefix = STORAGE_PREFIX + (prefix ?? '');
+      const fullPrefix = this.getPrefix() + (prefix ?? '');
       const keysToRemove: string[] = [];
 
       for (let i = 0; i < localStorage.length; i++) {

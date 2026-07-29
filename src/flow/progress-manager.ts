@@ -14,9 +14,10 @@ export class ProgressManager implements IProgressManager {
   getProgress(flowId: string): FlowProgress | null {
     const p = this.storage.get<FlowProgress>(PROGRESS_PREFIX + flowId);
     
-    // Check fallback local/session storage indicators
+    // Check fallback local/session storage indicators (using project-scoped storage service)
     if (typeof window !== 'undefined') {
-      const isDone = window.localStorage?.getItem(`kenzo_flow_done_${flowId}`) === 'true' ||
+      const isDone = this.storage.get<boolean>(`flow_done_${flowId}`) === true ||
+                     window.localStorage?.getItem(`kenzo_flow_done_${flowId}`) === 'true' ||
                      window.sessionStorage?.getItem(`kenzo_flow_done_${flowId}`) === 'true';
       if (isDone) {
         const progress = p ?? this.createInitial(flowId);
@@ -32,6 +33,7 @@ export class ProgressManager implements IProgressManager {
   saveProgress(progress: FlowProgress): void {
     this.storage.set(PROGRESS_PREFIX + progress.flowId, progress);
     if (progress.completed || progress.dismissed) {
+      this.storage.set(`flow_done_${progress.flowId}`, true);
       if (typeof window !== 'undefined') {
         try {
           window.localStorage?.setItem(`kenzo_flow_done_${progress.flowId}`, 'true');
@@ -68,6 +70,7 @@ export class ProgressManager implements IProgressManager {
 
   reset(flowId: string): void {
     this.storage.remove(PROGRESS_PREFIX + flowId);
+    this.storage.remove(`flow_done_${flowId}`);
     if (typeof window !== 'undefined') {
       try {
         window.localStorage?.removeItem(`kenzo_flow_done_${flowId}`);
