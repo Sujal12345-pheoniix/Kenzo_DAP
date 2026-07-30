@@ -30,6 +30,14 @@ export class ApiClient implements IApiClient {
     this.authToken = null;
   }
 
+  clearCache(path?: string): void {
+    if (path) {
+      this.cache.invalidate(`GET:${path}`);
+    } else {
+      this.cache.invalidate();
+    }
+  }
+
   async get<T>(path: string, options?: ApiRequestOptions): Promise<T> {
     return this.request<T>('GET', path, undefined, options);
   }

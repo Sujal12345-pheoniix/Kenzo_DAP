@@ -413,7 +413,8 @@ export class LifecycleManager implements ILifecycleManager {
     // Click handler to run best matching flow
     btn.addEventListener('click', async () => {
       try {
-        const flows = await this.flowLoader.loadAll();
+        // Invalidate cache and fetch live flows from server so admin changes apply fast
+        const flows = await this.flowLoader.loadAll(true);
         const matchedFlow = this.selectBestMatchingFlow(flows, true);
 
         if (matchedFlow) {

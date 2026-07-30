@@ -7,7 +7,7 @@ import type { IApiClient, IFlowLoader, ILogger, IStorageService } from '@/core/i
 import type { Flow, FlowsResponse } from '@/types';
 
 const FLOWS_CACHE_KEY = 'flows_cache';
-const FLOWS_CACHE_TTL = 10 * 60 * 1000;
+const FLOWS_CACHE_TTL = 5 * 1000; // 5 seconds fast TTL for fast website synchronization
 
 export class FlowLoader implements IFlowLoader {
   private memoryCache: Flow[] | null = null;
@@ -18,7 +18,11 @@ export class FlowLoader implements IFlowLoader {
     private readonly logger: ILogger,
   ) {}
 
-  async loadAll(): Promise<Flow[]> {
+  async loadAll(forceRefresh = false): Promise<Flow[]> {
+    if (forceRefresh) {
+      this.invalidate();
+    }
+
     if (this.memoryCache) {
       return this.memoryCache;
     }
@@ -32,7 +36,7 @@ export class FlowLoader implements IFlowLoader {
     this.logger.info('Loading published flows');
 
     const response = await this.apiClient.get<FlowsResponse>('/flows/published', {
-      cache: true,
+      cache: !forceRefresh,
       cacheTtl: FLOWS_CACHE_TTL,
     });
 
@@ -50,7 +54,7 @@ export class FlowLoader implements IFlowLoader {
 
     if (!flow) {
       const single = await this.apiClient
-        .get<Flow>(`/flows/${flowId}`, { cache: true })
+        .get<Flow>(`/flows/${flowId}`, { cache: true, cacheTtl: FLOWS_CACHE_TTL })
         .catch(() => null);
       return single;
     }
@@ -65,5 +69,6 @@ export class FlowLoader implements IFlowLoader {
   invalidate(): void {
     this.memoryCache = null;
     this.storage.remove(FLOWS_CACHE_KEY);
+    this.apiClient.clearCache('/flows/published');
   }
 }

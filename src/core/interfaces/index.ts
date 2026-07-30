@@ -75,6 +75,7 @@ export interface IApiClient {
   post<T>(path: string, body?: unknown, options?: ApiRequestOptions): Promise<T>;
   setAuthToken(token: string): void;
   clearAuthToken(): void;
+  clearCache(path?: string): void;
 }
 
 /** Storage abstraction contract. */
@@ -198,7 +199,7 @@ export interface ITooltipAnimator {
 
 /** Flow loader contract. */
 export interface IFlowLoader {
-  loadAll(): Promise<Flow[]>;
+  loadAll(forceRefresh?: boolean): Promise<Flow[]>;
   loadById(flowId: string): Promise<Flow | null>;
   getCached(flowId: string): Flow | null;
   invalidate(): void;
