@@ -22,35 +22,38 @@ export class ConditionEvaluator implements IConditionEvaluator {
   }
 
   private matchUrlRule(rule: UrlRule): boolean {
-    const target = rule.matchFullUrl ? window.location.href : window.location.pathname;
+    const rawTarget = rule.matchFullUrl ? window.location.href : window.location.pathname;
+    const target = rule.matchFullUrl ? rawTarget : (rawTarget.replace(/\/+$/, '') || '/');
+    const rawPattern = (rule.pattern || '').trim();
+    const pattern = rule.matchFullUrl ? rawPattern : (rawPattern ? rawPattern.replace(/\/+$/, '') : '');
 
     // Wildcard or empty pattern matches any route
-    if (rule.pattern === '*' || rule.pattern === 'all' || !rule.pattern) return true;
+    if (pattern === '*' || pattern === 'all' || !pattern) return true;
 
     // Root path '/' matching
-    if (rule.pattern === '/') {
+    if (pattern === '/' || pattern === '') {
       if (rule.type === 'exact') {
         return target === '/' || target === '/index.html' || target === '/sandbox.html' || target === '';
       }
-      // In 'contains', 'startsWith' or default mode, '/' acts as universal/global fallback (matches all paths starting with '/')
+      // In 'contains', 'startsWith' or default mode, '/' acts as universal/global fallback
       return target.startsWith('/');
     }
 
     switch (rule.type) {
       case 'exact':
-        return target === rule.pattern;
+        return target === pattern;
       case 'contains':
-        return target.includes(rule.pattern);
+        return target.includes(pattern);
       case 'startsWith':
-        return target.startsWith(rule.pattern);
+        return target.startsWith(pattern);
       case 'regex':
         try {
-          return new RegExp(rule.pattern).test(target);
+          return new RegExp(pattern).test(target);
         } catch {
           return false;
         }
       default:
-        return target.includes(rule.pattern);
+        return target.includes(pattern);
     }
   }
 

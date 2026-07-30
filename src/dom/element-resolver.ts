@@ -23,40 +23,48 @@ export class ElementResolver implements IElementResolver {
     private readonly logger: ILogger,
   ) {}
 
+  private healer: any = null;
+
   resolveSync(selector: ElementSelector): ResolvedElement | null {
     const element = this.selectorEngine.queryOne(selector);
     if (element) {
       return this.buildResolved(element, selector);
     }
 
-    // Try Self-Healing Engine recovery if primary selector failed
-    const { SelfHealingEngine } = require('@/dom/self-healing-engine');
-    const healer = new SelfHealingEngine();
-    const recovery = healer.attemptRecovery(selector);
+    // Lazy instantiate healer once if primary selector failed
+    try {
+      if (!this.healer) {
+        const { SelfHealingEngine } = require('@/dom/self-healing-engine');
+        this.healer = new SelfHealingEngine();
+      }
+      const recovery = this.healer.attemptRecovery(selector);
 
-    if (recovery.recoveredElement && recovery.confidence >= 0.7) {
-      this.logger.info(`[Kenzo Self-Healing] Recovered element using ${recovery.strategyUsed}`, {
-        original: selector,
-        repaired: recovery.repairedSelector,
-        confidence: recovery.confidence,
-      });
-
-      // Non-blocking repair event report to server
-      const config = this.config.get();
-      fetch(`${config.apiBaseUrl}/sdk/self-heal`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          apiKey: config.apiKey,
-          originalSelector: selector,
-          repairedSelector: recovery.repairedSelector,
+      if (recovery.recoveredElement && recovery.confidence >= 0.7) {
+        this.logger.info(`[Kenzo Self-Healing] Recovered element using ${recovery.strategyUsed}`, {
+          original: selector,
+          repaired: recovery.repairedSelector,
           confidence: recovery.confidence,
-          strategy: recovery.strategyUsed,
-          url: window.location.href,
-        }),
-      }).catch(() => {});
+        });
 
-      return this.buildResolved(recovery.recoveredElement, { css: recovery.repairedSelector! });
+        // Non-blocking repair event report to server
+        const config = this.config.get();
+        fetch(`${config.apiBaseUrl}/sdk/self-heal`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            apiKey: config.apiKey,
+            originalSelector: selector,
+            repairedSelector: recovery.repairedSelector,
+            confidence: recovery.confidence,
+            strategy: recovery.strategyUsed,
+            url: window.location.href,
+          }),
+        }).catch(() => {});
+
+        return this.buildResolved(recovery.recoveredElement, { css: recovery.repairedSelector! });
+      }
+    } catch (_) {
+      // Ignore self-healing errors gracefully
     }
 
     return null;
@@ -66,9 +74,9 @@ export class ElementResolver implements IElementResolver {
     selector: ElementSelector,
     options?: { retries?: number; interval?: number; maxTimeoutMs?: number },
   ): Promise<ResolvedElement | null> {
-    const maxTimeoutMs = options?.maxTimeoutMs ?? (options?.retries && options?.interval ? options.retries * options.interval : 5000);
+    const maxTimeoutMs = options?.maxTimeoutMs ?? (options?.retries && options?.interval ? options.retries * options.interval : 1200);
     const startTime = Date.now();
-    let currentDelay = options?.interval ?? 100;
+    const interval = options?.interval ?? 50;
 
     while (Date.now() - startTime < maxTimeoutMs) {
       const resolved = this.resolveSync(selector);
@@ -77,11 +85,10 @@ export class ElementResolver implements IElementResolver {
         return resolved;
       }
 
-      await sleep(currentDelay);
-      currentDelay = Math.min(currentDelay * 1.5, 1000);
+      await sleep(interval);
     }
 
-    this.logger.warn('Element not found after exponential backoff', { selector, elapsedMs: Date.now() - startTime });
+    this.logger.warn('Element not found', { selector, elapsedMs: Date.now() - startTime });
     this.eventBus.emit('dom:element:not_found', { selector });
     return null;
   }

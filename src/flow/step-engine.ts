@@ -23,6 +23,8 @@ export class StepEngine implements IStepEngine {
   private flow: Flow | null = null;
   private currentIndex = 0;
   private autoAdvanceTimer: ReturnType<typeof setTimeout> | null = null;
+  private isActionProcessing = false;
+  private activeCleanups: Array<() => void> = [];
 
   constructor(
     private readonly elementResolver: IElementResolver,
@@ -102,33 +104,38 @@ export class StepEngine implements IStepEngine {
   }
 
   async handleAction(action: StepAction): Promise<void> {
-    if (!this.flow) return;
+    if (!this.flow || this.isActionProcessing) return;
+    this.isActionProcessing = true;
 
-    const step = this.getCurrentStep();
-    if (!step) return;
+    try {
+      const step = this.getCurrentStep();
+      if (!step) return;
 
-    switch (action) {
-      case 'next':
-        this.progressManager.markStepCompleted(this.flow.id, step.id);
-        if (this.canGoNext()) {
-          await this.next();
-        } else {
+      switch (action) {
+        case 'next':
+          this.progressManager.markStepCompleted(this.flow.id, step.id);
+          if (this.canGoNext()) {
+            await this.next();
+          } else {
+            this.onFlowEnd('finish');
+          }
+          break;
+        case 'previous':
+          await this.previous();
+          break;
+        case 'skip':
+          this.onFlowEnd('skip');
+          break;
+        case 'finish':
+          this.progressManager.markStepCompleted(this.flow.id, step.id);
           this.onFlowEnd('finish');
-        }
-        break;
-      case 'previous':
-        await this.previous();
-        break;
-      case 'skip':
-        this.onFlowEnd('skip');
-        break;
-      case 'finish':
-        this.progressManager.markStepCompleted(this.flow.id, step.id);
-        this.onFlowEnd('finish');
-        break;
-      case 'close':
-        this.onFlowEnd('close');
-        break;
+          break;
+        case 'close':
+          this.onFlowEnd('close');
+          break;
+      }
+    } finally {
+      this.isActionProcessing = false;
     }
   }
 
@@ -163,8 +170,12 @@ export class StepEngine implements IStepEngine {
       if (resolved && resolved.element && resolved.element !== document.body) {
         targetElement = resolved.element;
         if (step.autoScroll !== false) {
-          targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          await new Promise(r => setTimeout(r, 400));
+          const rect = targetElement.getBoundingClientRect();
+          const inViewport = rect.top >= 0 && rect.left >= 0 && rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) && rect.right <= (window.innerWidth || document.documentElement.clientWidth);
+          if (!inViewport) {
+            targetElement.scrollIntoView({ behavior: 'auto', block: 'nearest' });
+            await new Promise(r => setTimeout(r, 80));
+          }
         }
 
         if (displayMode === 'spotlight') {
@@ -176,7 +187,7 @@ export class StepEngine implements IStepEngine {
           this.overlayManager.showHighlight(targetElement);
         }
 
-        // Click-to-Advance: Support autoAdvanceOnClick so clicking targeted ERP element advances flow
+        // Click-to-Advance: Support autoAdvanceOnClick so clicking targeted element advances flow
         const autoAdvance = step.autoAdvanceOnClick ?? true;
         if (autoAdvance) {
           const clickHandler = () => {
@@ -184,6 +195,9 @@ export class StepEngine implements IStepEngine {
             void this.handleAction('next');
           };
           targetElement.addEventListener('click', clickHandler, { once: true });
+          this.activeCleanups.push(() => {
+            targetElement.removeEventListener('click', clickHandler);
+          });
         }
       } else {
         // Targeted element not found on page — skip safely to next step if available
@@ -268,6 +282,11 @@ export class StepEngine implements IStepEngine {
   }
 
   private async teardownCurrentStep(): Promise<void> {
+    for (const cleanup of this.activeCleanups) {
+      try { cleanup(); } catch (_) {}
+    }
+    this.activeCleanups = [];
+
     if (this.autoAdvanceTimer) {
       clearTimeout(this.autoAdvanceTimer);
       this.autoAdvanceTimer = null;

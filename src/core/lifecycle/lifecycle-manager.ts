@@ -216,8 +216,8 @@ export class LifecycleManager implements ILifecycleManager {
       (window.location.search.includes('kenzo_force=true') || window.location.search.includes('kenzo_builder=true'));
     const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/';
 
-    // Skip if we've already auto-triggered for this exact URL (unless forced)
-    if (!targetFlowId && !isForceRun && currentPath === this.lastAutoTriggeredPath) {
+    // Skip if a flow is already running or if auto-trigger already ran for this path
+    if (this.flowRunner.isRunning() || (!targetFlowId && !isForceRun && currentPath === this.lastAutoTriggeredPath)) {
       return;
     }
 
@@ -233,6 +233,7 @@ export class LifecycleManager implements ILifecycleManager {
         if (explicitFlow) {
           this.logger.info(`Starting explicit flow from URL param: ${explicitFlow.name}`);
           this.progressManager.reset(explicitFlow.id);
+          this.lastAutoTriggeredPath = currentPath;
           await this.flowRunner.start(explicitFlow);
           return;
         }
@@ -245,7 +246,7 @@ export class LifecycleManager implements ILifecycleManager {
       const flowToStart = this.selectBestMatchingFlow(flows, false);
 
       if (flowToStart) {
-        this.lastAutoTriggeredPath = currentPath; // mark so we don't retrigger on same page
+        this.lastAutoTriggeredPath = currentPath;
         this.logger.info(`Auto-starting matching flow: ${flowToStart.name} (${flowToStart.id})`);
         await this.flowRunner.start(flowToStart);
       }
