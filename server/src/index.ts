@@ -81,15 +81,26 @@ function authenticateSdk(req: AuthenticatedRequest, res: Response, next: NextFun
 
 // Simple auth check for admin dashboard (accepts a header or query param)
 function authenticateAdmin(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-  // In a real product this would use session/cookies or admin token. 
-  // For this prototype, we'll auto-resolve to the seeded development project 
-  // or read the project ID from the headers/query params.
   const projectIdHeader = req.headers['x-project-id'] as string;
   const apiKeyHeader = req.headers['x-api-key'] as string;
 
   if (projectIdHeader) {
     req.projectId = projectIdHeader;
     next();
+    return;
+  }
+
+  if (apiKeyHeader) {
+    pool.query('SELECT id FROM projects WHERE api_key = $1', [apiKeyHeader])
+      .then((result) => {
+        if (result.rows.length > 0) {
+          req.projectId = result.rows[0].id;
+          next();
+        } else {
+          res.status(401).json({ message: 'Invalid API key' });
+        }
+      })
+      .catch((err) => res.status(500).json({ message: 'DB error', error: err.message }));
     return;
   }
 
@@ -103,9 +114,7 @@ function authenticateAdmin(req: AuthenticatedRequest, res: Response, next: NextF
         res.status(500).json({ message: 'No project found. Bootstrap first.' });
       }
     })
-    .catch((err) => {
-      res.status(500).json({ message: 'Database connection failed', error: err.message });
-    });
+    .catch((err) => res.status(500).json({ message: 'DB error', error: err.message }));
 }
 
 // --- SDK ROUTES ---
@@ -1025,12 +1034,15 @@ async function seedProjectData(projectId: string, projectName: string, websiteUr
 
     const name = projectName.toLowerCase();
     const isHospital = name.includes('rajkiran') || name.includes('hospital') || name.includes('hms') || name.includes('clinic');
+    const isERP = name.includes('erp') || name.includes('kenzo development') || name.includes('workspace');
 
     if (isHospital) {
       await seedHospitalFlows(projectId, projectName, targetPattern, client);
-    } else {
+    } else if (isERP) {
       await seedOneERPFlows(projectId, client);
       await seedCRMFlows(projectId, projectName, client);
+    } else {
+      // Custom project (e.g. truthbombs) — auto generate 5 AI walkthroughs tailored to the site, NOT ERP template flows!
       await autoGenerateProjectWalkthroughs(projectId, client);
     }
 
@@ -1533,26 +1545,9 @@ app.get('*', (req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, '../public/dashboard/index.html'));
 });
 
-// Ensure all projects have updated 8 flows
-async function syncProjectFlows() {
-  try {
-    const projects = await pool.query('SELECT id, name, api_key FROM projects');
-    for (const p of projects.rows) {
-      const flowsCount = await pool.query('SELECT COUNT(*) FROM flows WHERE project_id = $1', [p.id]);
-      if (parseInt(flowsCount.rows[0].count) < 8) {
-        console.log(`[Database] Auto-seeding full 8 walkthroughs for project: ${p.name} (${p.id})`);
-        await seedProjectData(p.id, p.name);
-      }
-    }
-  } catch (e) {
-    console.warn('[Database] Notice during auto-seeding project flows:', e);
-  }
-}
-
 // Bootstrap Database and Start Server
 bootstrapDb()
   .then(async () => {
-    await syncProjectFlows();
     app.listen(PORT, () => {
       console.log(`[Server] Kenzo DAP API running on http://localhost:${PORT}`);
     });
