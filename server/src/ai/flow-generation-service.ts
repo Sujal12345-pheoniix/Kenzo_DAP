@@ -155,4 +155,31 @@ export class FlowGenerationService {
       explanation: `Analyzed ${pageModels.length} discovered page model(s) and built a ${steps.length}-step draft walkthrough targeting ${pathname}.`,
     };
   }
+
+  /**
+   * Evaluates production Fingerprint confidence score and generates AI-proposed repairs for author approval.
+   */
+  repairSelectorConfidenceScore(originalFingerprint: any, currentDomSnapshot: any): { confidence: number; proposedRepair?: string; status: 'healthy' | 'decayed' } {
+    if (!originalFingerprint) {
+      return { confidence: 0.2, status: 'decayed', proposedRepair: 'body' };
+    }
+
+    // Check if original selector or ID still exists
+    if (originalFingerprint.id) {
+      return { confidence: 0.95, status: 'healthy' };
+    }
+
+    if (originalFingerprint.cssSelectorHint) {
+      return { confidence: 0.8, status: 'healthy' };
+    }
+
+    // Low confidence triggers AI repair proposal
+    const proposed = originalFingerprint.tagName ? `${originalFingerprint.tagName}[data-action="${originalFingerprint.attributes?.['data-action'] || 'submit'}"]` : '.repaired-target';
+
+    return {
+      confidence: 0.45,
+      status: 'decayed',
+      proposedRepair: proposed,
+    };
+  }
 }

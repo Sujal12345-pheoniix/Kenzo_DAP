@@ -101,6 +101,8 @@ export interface ElementSelector {
   dataAttribute?: { key: string; value?: string };
   /** Index when multiple elements match (0-based). */
   index?: number;
+  /** Composite element fingerprint for self-healing resolution. */
+  fingerprint?: any;
 }
 
 /** Button configuration on a step tooltip. */

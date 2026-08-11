@@ -12,6 +12,7 @@ import type {
 } from '@/core/interfaces';
 import type { IConfigService } from '@/core/interfaces';
 import type { ElementSelector, ResolvedElement } from '@/types';
+import { resolveFingerprint } from '@/dom/fingerprint';
 import { sleep } from '@/utils/sleep';
 
 export class ElementResolver implements IElementResolver {
@@ -26,9 +27,21 @@ export class ElementResolver implements IElementResolver {
   private healer: any = null;
 
   resolveSync(selector: ElementSelector): ResolvedElement | null {
+    // 1. Try standard query engine first
     const element = this.selectorEngine.queryOne(selector);
     if (element) {
       return this.buildResolved(element, selector);
+    }
+
+    // 2. Try composite Fingerprint resolution if fingerprint is present
+    if (selector.fingerprint) {
+      const fpMatch = resolveFingerprint(selector.fingerprint, document, 0.55);
+      if (fpMatch.element) {
+        this.logger.info('[Kenzo] Resolved element via composite fingerprint scoring', {
+          confidence: fpMatch.confidence,
+        });
+        return this.buildResolved(fpMatch.element, selector);
+      }
     }
 
     // Lazy instantiate healer once if primary selector failed

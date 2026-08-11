@@ -1,7 +1,7 @@
 import { Search, Bell, Sparkles, Command } from 'lucide-react';
 
 interface TopNavProps {
-  activeTab: 'dashboard' | 'walkthroughs' | 'integration';
+  activeTab: 'dashboard' | 'insights' | 'walkthroughs' | 'integration';
   onSearchClick: () => void;
   flowsCount: number;
 }
@@ -11,6 +11,8 @@ export default function TopNav({ activeTab, onSearchClick, flowsCount }: TopNavP
     switch (activeTab) {
       case 'dashboard':
         return 'Analytics Dashboard';
+      case 'insights':
+        return 'Insights Builder';
       case 'walkthroughs':
         return 'Walkthrough Tours';
       case 'integration':

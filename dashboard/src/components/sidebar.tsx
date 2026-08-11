@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   BarChart3, 
+  TrendingUp,
   Layers, 
   BookOpen, 
   ExternalLink, 
@@ -23,8 +24,8 @@ interface Project {
 }
 
 interface SidebarProps {
-  activeTab: 'dashboard' | 'walkthroughs' | 'integration';
-  setActiveTab: (tab: 'dashboard' | 'walkthroughs' | 'integration') => void;
+  activeTab: 'dashboard' | 'insights' | 'walkthroughs' | 'integration';
+  setActiveTab: (tab: 'dashboard' | 'insights' | 'walkthroughs' | 'integration') => void;
   loadData: () => void;
   flowsCount: number;
   projects: Project[];
@@ -35,7 +36,7 @@ interface SidebarProps {
 }
 
 interface NavItem {
-  id: 'dashboard' | 'walkthroughs' | 'integration';
+  id: 'dashboard' | 'insights' | 'walkthroughs' | 'integration';
   label: string;
   icon: any;
   badge?: number;
@@ -57,6 +58,7 @@ export default function Sidebar({
 
   const navItems: NavItem[] = [
     { id: 'dashboard', label: 'Analytics Dashboard', icon: BarChart3 },
+    { id: 'insights', label: 'Insights Builder', icon: TrendingUp },
     { id: 'walkthroughs', label: 'Walkthrough Tours', icon: Layers, badge: flowsCount > 0 ? flowsCount : undefined },
     { id: 'integration', label: 'Snippet Install', icon: BookOpen },
   ];

@@ -137,7 +137,7 @@ export class SelectorEngine implements ISelectorEngine {
       return { css: s };
     }
 
-    // Absolute fallback
-    return { css: 'body' };
+    // Return empty selector when invalid/empty
+    return {};
   }
 }

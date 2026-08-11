@@ -6,6 +6,7 @@ import CommandPalette from './components/command-palette';
 import AnalyticsView from './components/analytics-view';
 import ToursView from './components/tours-view';
 import IntegrationView from './components/integration-view';
+import InsightsBuilder from './components/insights-builder';
 
 interface Flow {
   id: string;
@@ -46,7 +47,7 @@ interface Project {
 }
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'walkthroughs' | 'integration'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'insights' | 'walkthroughs' | 'integration'>('dashboard');
   const [flows, setFlows] = useState<Flow[]>([]);
   const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -315,6 +316,10 @@ export default function App() {
                   activePublishedCount={activePublishedCount}
                   getCompletionRate={getCompletionRate}
                 />
+              )}
+
+              {activeTab === 'insights' && (
+                <InsightsBuilder apiKey={activeProject?.apiKey || ''} />
               )}
 
               {activeTab === 'walkthroughs' && (
