@@ -80,24 +80,30 @@ export default function App() {
           const exists = data.some((p: any) => p.id === savedId);
           const defaultId = exists && savedId ? savedId : data[0].id;
           setActiveProjectId(defaultId);
+        } else {
+          setActiveProjectId('default-project');
+          setLoading(false);
         }
+      } else {
+        setActiveProjectId('default-project');
+        setLoading(false);
       }
     } catch (err) {
       console.error('Failed to fetch projects list:', err);
+      setActiveProjectId('default-project');
+      setLoading(false);
     }
   };
 
   const loadData = async () => {
-    if (!activeProjectId) return;
     setLoading(true);
     try {
-      const headers = { 'x-project-id': activeProjectId };
+      const headers = { 'x-project-id': activeProjectId || 'default-project' };
       const flowsRes = await fetch('/api/v1/admin/flows', { headers });
       if (flowsRes.ok) {
         const flowsData = await flowsRes.json();
         setFlows(Array.isArray(flowsData) ? flowsData : []);
       } else {
-        console.error('Failed to fetch flows:', flowsRes.statusText);
         setFlows([]);
       }
 
@@ -106,13 +112,12 @@ export default function App() {
         const analyticsData = await analyticsRes.json();
         setAnalytics(analyticsData);
       } else {
-        console.error('Failed to fetch analytics summary:', analyticsRes.statusText);
         setAnalytics(null);
       }
     } catch (err) {
       console.error('Error loading admin portal data:', err);
     } finally {
-      setTimeout(() => setLoading(false), 200);
+      setLoading(false);
     }
   };
 
@@ -258,7 +263,7 @@ export default function App() {
   const activePublishedCount = flows.filter(f => f.status === 'published').length;
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-background text-zinc-100 font-sans antialiased">
+    <div className="flex h-screen w-screen overflow-hidden bg-[#f3f4f6] text-[#1f2937] font-sans antialiased">
       
       {/* Sidebar Navigation */}
       <Sidebar 
@@ -284,7 +289,7 @@ export default function App() {
         />
 
         {/* Dynamic Pages Area */}
-        <main className="flex-1 overflow-y-auto p-8 relative">
+        <main className="flex-1 overflow-y-auto relative">
           
           {loading ? (
             /* Premium Skeleton Shimmer Loader */
