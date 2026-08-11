@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Lock, Mail, ArrowRight, Building } from 'lucide-react';
+import { Lock, Mail, ArrowRight } from 'lucide-react';
 import KenLogo from './logo';
 
 interface LoginViewProps {
@@ -46,12 +46,6 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleQuickLogin = (presetEmail: string, presetPass: string) => {
-    setEmail(presetEmail);
-    setPassword(presetPass);
-    setError(null);
   };
 
   return (
@@ -118,36 +112,6 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
             <ArrowRight size={14} />
           </button>
         </form>
-
-        {/* Quick Demo Access Credentials */}
-        <div className="border-t border-zinc-800/80 pt-4 space-y-3">
-          <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block text-center">
-            Quick Demo Login Presets
-          </span>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => handleQuickLogin('Kenzo@gmail.com', 'kenzo123')}
-              className="bg-zinc-900/90 hover:bg-zinc-800 border border-indigo-500/30 text-left p-2.5 rounded-xl transition-all"
-            >
-              <div className="flex items-center gap-1.5 text-indigo-400 font-bold text-xs">
-                <Shield size={12} />
-                <span>Super Admin</span>
-              </div>
-              <span className="text-[10px] text-zinc-400 block truncate mt-0.5">Kenzo@gmail.com</span>
-            </button>
-
-            <button
-              onClick={() => handleQuickLogin('client1@kenzo.com', 'client@123')}
-              className="bg-zinc-900/90 hover:bg-zinc-800 border border-purple-500/30 text-left p-2.5 rounded-xl transition-all"
-            >
-              <div className="flex items-center gap-1.5 text-purple-400 font-bold text-xs">
-                <Building size={12} />
-                <span>Client CEO</span>
-              </div>
-              <span className="text-[10px] text-zinc-400 block truncate mt-0.5">client1@kenzo.com</span>
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );
