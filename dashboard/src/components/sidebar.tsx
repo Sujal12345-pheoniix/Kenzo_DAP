@@ -17,8 +17,19 @@ import {
   Cpu,
   TestTube,
   MessageSquare,
-  Globe,
-  Plus
+  Plus,
+  Home,
+  Key,
+  Bot,
+  PieChart,
+  ShieldCheck,
+  Languages,
+  GitBranch,
+  FileText,
+  ScrollText,
+  Settings,
+  LogOut,
+  Sparkles
 } from 'lucide-react';
 import KenLogo from './logo';
 
@@ -30,18 +41,59 @@ interface Project {
 }
 
 export type TabType = 
-  | 'all_content'
-  | 'my_content'
-  | 'repositories'
-  | 'widget'
+  // Super Admin Tabs
+  | 'overview'
+  | 'organizations'
+  | 'applications'
+  | 'project_keys'
+  | 'guidance_flows'
+  | 'guidance_tips'
+  | 'guidance_popups'
+  | 'guidance_beacons'
+  | 'guidance_tasks'
+  | 'guidance_surveys'
+  | 'guidance_selfhelp'
+  | 'content_library'
+  | 'ai_studio'
+  | 'analytics_overview'
+  | 'adoption_health'
+  | 'product_analytics'
+  | 'events'
+  | 'trends'
+  | 'funnels'
+  | 'user_journeys'
+  | 'session_replay'
+  | 'cohorts'
   | 'users'
+  | 'roles'
   | 'tags'
-  | 'dashboard'
-  | 'integration'
-  | 'auto_testing'
-  | 'insights'
-  | 'feedback'
-  | 'community';
+  | 'localization'
+  | 'lifecycle'
+  | 'integrations'
+  | 'reports'
+  | 'notifications'
+  | 'audit_logs'
+  | 'settings'
+  // Client CEO Tabs
+  | 'ceo_overview'
+  | 'ceo_apps'
+  | 'ceo_walkthroughs'
+  | 'ceo_selfhelp'
+  | 'ceo_growth'
+  | 'ceo_analytics'
+  | 'ceo_users'
+  | 'ceo_ai'
+  | 'ceo_reports'
+  | 'ceo_settings';
+
+interface UserSession {
+  id: string;
+  email: string;
+  name: string;
+  role: 'SUPER_ADMIN' | 'CLIENT_CEO' | 'MEMBER';
+  companyId: string;
+  companyName: string;
+}
 
 interface SidebarProps {
   activeTab: TabType;
@@ -53,13 +105,18 @@ interface SidebarProps {
   setActiveProjectId: (id: string) => void;
   onOpenRegisterModal: () => void;
   onDeleteProject: (id: string, name: string) => Promise<void>;
+  user: UserSession | null;
+  onLogout: () => void;
 }
 
-interface NavItem {
-  id: TabType;
-  label: string;
-  icon: any;
-  badge?: number;
+interface NavGroup {
+  category: string;
+  items: Array<{
+    id: TabType;
+    label: string;
+    icon: any;
+    badge?: number;
+  }>;
 }
 
 export default function Sidebar({ 
@@ -71,86 +128,153 @@ export default function Sidebar({
   activeProjectId,
   setActiveProjectId,
   onOpenRegisterModal,
-  onDeleteProject
+  onDeleteProject,
+  user,
+  onLogout
 }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [workspaceMenuOpen, setWorkspaceMenuOpen] = useState(false);
 
-  const mainNavItems: NavItem[] = [
-    { id: 'all_content', label: 'All content', icon: Layers, badge: flowsCount > 0 ? flowsCount : undefined },
-    { id: 'my_content', label: 'My content', icon: User },
-    { id: 'repositories', label: 'Repositories', icon: FolderKanban },
-    { id: 'widget', label: 'Widget', icon: Boxes },
-    { id: 'users', label: 'Users', icon: Users },
-    { id: 'tags', label: 'Tags', icon: Tag },
-    { id: 'dashboard', label: 'Analytics', icon: BarChart3 },
-    { id: 'integration', label: 'Integrations', icon: Cpu },
-    { id: 'auto_testing', label: 'Auto testing', icon: TestTube },
-    { id: 'insights', label: 'Insights', icon: TrendingUp },
+  const isSuperAdmin = !user || user.role === 'SUPER_ADMIN';
+
+  // Super Admin Full Navigation Hierarchy
+  const superAdminNav: NavGroup[] = [
+    {
+      category: 'Core',
+      items: [
+        { id: 'overview', label: 'Overview', icon: Home },
+        { id: 'organizations', label: 'Organizations', icon: Building },
+        { id: 'applications', label: 'Applications', icon: Boxes },
+        { id: 'project_keys', label: 'Project Keys', icon: Key },
+      ]
+    },
+    {
+      category: 'Guidance Suite',
+      items: [
+        { id: 'guidance_flows', label: 'Flows', icon: Layers, badge: flowsCount > 0 ? flowsCount : undefined },
+        { id: 'guidance_tips', label: 'Smart Tips', icon: Tag },
+        { id: 'guidance_popups', label: 'Pop-ups', icon: MessageSquare },
+        { id: 'guidance_beacons', label: 'Beacons', icon: Sparkles },
+        { id: 'guidance_tasks', label: 'Task Lists', icon: FolderKanban },
+        { id: 'guidance_surveys', label: 'Surveys', icon: TestTube },
+        { id: 'guidance_selfhelp', label: 'Self Help', icon: User },
+      ]
+    },
+    {
+      category: 'Intelligence & Studio',
+      items: [
+        { id: 'content_library', label: 'Content Library', icon: FolderKanban },
+        { id: 'ai_studio', label: 'AI Studio', icon: Bot },
+      ]
+    },
+    {
+      category: 'Analytics & Insights',
+      items: [
+        { id: 'analytics_overview', label: 'Analytics Overview', icon: BarChart3 },
+        { id: 'adoption_health', label: 'Adoption Health', icon: PieChart },
+        { id: 'trends', label: 'Trends & Insights', icon: TrendingUp },
+        { id: 'funnels', label: 'Funnels & Journeys', icon: GitBranch },
+      ]
+    },
+    {
+      category: 'Management',
+      items: [
+        { id: 'users', label: 'Users', icon: Users },
+        { id: 'roles', label: 'Roles & Permissions', icon: ShieldCheck },
+        { id: 'tags', label: 'Tags', icon: Tag },
+        { id: 'localization', label: 'Localization', icon: Languages },
+        { id: 'integrations', label: 'Integrations', icon: Cpu },
+        { id: 'reports', label: 'Reports', icon: FileText },
+        { id: 'audit_logs', label: 'Audit Logs', icon: ScrollText },
+        { id: 'settings', label: 'Settings', icon: Settings },
+      ]
+    }
   ];
 
-  const bottomNavItems: NavItem[] = [
-    { id: 'feedback', label: 'Feedback', icon: MessageSquare },
-    { id: 'community', label: 'Community', icon: Globe },
+  // Client CEO Navigation Hierarchy
+  const clientCeoNav: NavGroup[] = [
+    {
+      category: 'Company Portal',
+      items: [
+        { id: 'ceo_overview', label: 'Company Overview', icon: Home },
+        { id: 'ceo_apps', label: 'My Applications', icon: Boxes },
+        { id: 'ceo_walkthroughs', label: 'My Walkthroughs', icon: Layers, badge: flowsCount > 0 ? flowsCount : undefined },
+        { id: 'ceo_selfhelp', label: 'Self Help Content', icon: User },
+      ]
+    },
+    {
+      category: 'Analytics & Growth',
+      items: [
+        { id: 'ceo_growth', label: 'Application Growth', icon: TrendingUp },
+        { id: 'ceo_analytics', label: 'Analytics', icon: BarChart3 },
+        { id: 'ceo_users', label: 'Company Users', icon: Users },
+        { id: 'ceo_ai', label: 'AI Insights', icon: Bot },
+        { id: 'ceo_reports', label: 'Reports', icon: FileText },
+        { id: 'ceo_settings', label: 'Company Settings', icon: Settings },
+      ]
+    }
   ];
 
+  const currentNav = isSuperAdmin ? superAdminNav : clientCeoNav;
   const activeProject = projects.find(p => p.id === activeProjectId);
 
   return (
     <motion.div 
       animate={{ width: isCollapsed ? 80 : 250 }}
       transition={{ type: 'spring', damping: 22, stiffness: 130 }}
-      className="h-screen bg-[#242424] border-r border-[#333333] flex flex-col justify-between relative z-30 select-none shrink-0 text-[#e0e0e0] font-sans"
+      className="h-screen bg-[#11131f] border-r border-[#1e2238] flex flex-col justify-between relative z-30 select-none shrink-0 text-[#e0e0e0] font-sans"
     >
       {/* Collapse Trigger Button */}
       <button 
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute -right-3 top-7 bg-[#333333] border border-[#444] text-zinc-300 hover:text-white w-6 h-6 rounded-full flex items-center justify-center cursor-pointer transition-all z-50 shadow-md"
+        className="absolute -right-3 top-7 bg-[#1e2238] border border-[#2e3454] text-zinc-300 hover:text-white w-6 h-6 rounded-full flex items-center justify-center cursor-pointer transition-all z-50 shadow-md"
       >
         {isCollapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
       </button>
 
       <div className="flex flex-col h-full overflow-hidden">
-        {/* Header / Logo */}
-        <div className={`p-4 flex items-center gap-3 border-b border-[#333333] ${isCollapsed ? 'justify-center' : ''}`}>
+        {/* Header Branding */}
+        <div className={`p-4 flex items-center gap-3 border-b border-[#1e2238] ${isCollapsed ? 'justify-center' : ''}`}>
           <div className="shrink-0 flex items-center justify-center">
             <KenLogo size={32} />
           </div>
           {!isCollapsed && (
             <div className="flex flex-col">
-              <h1 className="font-bold text-base tracking-tight text-white leading-tight">whatfix</h1>
-              <span className="text-[10px] font-semibold text-amber-500 tracking-wider uppercase">Kenzo DAP Parity</span>
+              <h1 className="font-bold text-base tracking-tight text-white leading-tight font-outfit">Kenzo_DAP</h1>
+              <span className="text-[10px] font-bold text-indigo-400 tracking-wider uppercase">
+                {isSuperAdmin ? 'SUPER ADMIN' : user?.companyName || 'CLIENT CEO'}
+              </span>
             </div>
           )}
         </div>
 
         {/* Workspace Switcher */}
         {!isCollapsed && (
-          <div className="p-3 border-b border-[#333333] relative">
+          <div className="p-3 border-b border-[#1e2238] relative">
             <button
               onClick={() => setWorkspaceMenuOpen(!workspaceMenuOpen)}
-              className="w-full bg-[#1e1e1e] hover:bg-[#2a2a2a] border border-[#383838] text-left px-3 py-2 rounded-lg flex items-center justify-between text-xs transition-colors"
+              className="w-full bg-[#181b2e] hover:bg-[#20243d] border border-[#2a2f4c] text-left px-3 py-2 rounded-xl flex items-center justify-between text-xs transition-colors"
             >
               <div className="flex items-center gap-2 truncate">
-                <Building size={14} className="text-amber-500 shrink-0" />
+                <Building size={14} className="text-indigo-400 shrink-0" />
                 <span className="font-semibold text-zinc-200 truncate">
-                  {activeProject ? activeProject.name : 'Select Workspace'}
+                  {activeProject ? activeProject.name : 'Select Project'}
                 </span>
               </div>
               <ChevronDown size={14} className={`text-zinc-400 transition-transform ${workspaceMenuOpen ? 'rotate-180' : ''}`} />
             </button>
 
-            {/* Dropdown Menu */}
+            {/* Workspace Dropdown */}
             <AnimatePresence>
               {workspaceMenuOpen && (
                 <motion.div
                   initial={{ opacity: 0, y: -6 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
-                  className="absolute left-3 right-3 top-14 bg-[#1e1e1e] border border-[#3a3a3a] rounded-xl shadow-2xl z-50 py-1 overflow-hidden"
+                  className="absolute left-3 right-3 top-14 bg-[#181b2e] border border-[#2a2f4c] rounded-xl shadow-2xl z-50 py-1 overflow-hidden"
                 >
                   <div className="px-3 py-1.5 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
-                    Workspaces ({projects.length})
+                    Projects ({projects.length})
                   </div>
                   <div className="max-h-40 overflow-y-auto">
                     {projects.map((p) => (
@@ -163,11 +287,11 @@ export default function Sidebar({
                           loadData();
                         }}
                         className={`px-3 py-2 text-xs flex items-center justify-between cursor-pointer transition-colors ${
-                          p.id === activeProjectId ? 'bg-amber-600/20 text-amber-400 font-semibold' : 'text-zinc-300 hover:bg-[#2a2a2a]'
+                          p.id === activeProjectId ? 'bg-indigo-600/20 text-indigo-400 font-semibold' : 'text-zinc-300 hover:bg-[#20243d]'
                         }`}
                       >
                         <span className="truncate">{p.name}</span>
-                        {projects.length > 1 && (
+                        {isSuperAdmin && projects.length > 1 && (
                           <Trash2
                             size={12}
                             className="text-zinc-500 hover:text-red-400 transition-colors ml-2 shrink-0"
@@ -180,73 +304,92 @@ export default function Sidebar({
                       </div>
                     ))}
                   </div>
-                  <div className="border-t border-[#333] pt-1">
-                    <button
-                      onClick={() => {
-                        setWorkspaceMenuOpen(false);
-                        onOpenRegisterModal();
-                      }}
-                      className="w-full text-left px-3 py-2 text-xs text-amber-400 hover:bg-[#2a2a2a] font-semibold flex items-center gap-2"
-                    >
-                      <Plus size={12} /> New Workspace
-                    </button>
-                  </div>
+                  {isSuperAdmin && (
+                    <div className="border-t border-[#1e2238] pt-1">
+                      <button
+                        onClick={() => {
+                          setWorkspaceMenuOpen(false);
+                          onOpenRegisterModal();
+                        }}
+                        className="w-full text-left px-3 py-2 text-xs text-indigo-400 hover:bg-[#20243d] font-semibold flex items-center gap-2"
+                      >
+                        <Plus size={12} /> New Application / Project
+                      </button>
+                    </div>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
         )}
 
-        {/* Main Nav Section */}
-        <div className="flex-1 overflow-y-auto py-3 px-2 space-y-1">
-          {mainNavItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-all ${
-                  isActive
-                    ? 'bg-[#333333] text-white border-l-4 border-amber-500 font-semibold shadow-sm'
-                    : 'text-zinc-300 hover:bg-[#2a2a2a] hover:text-white'
-                } ${isCollapsed ? 'justify-center px-0' : ''}`}
-                title={isCollapsed ? item.label : undefined}
-              >
-                <Icon size={16} className={isActive ? 'text-amber-500' : 'text-zinc-400'} />
-                {!isCollapsed && (
-                  <span className="truncate flex-1 text-left">{item.label}</span>
-                )}
-                {!isCollapsed && item.badge !== undefined && (
-                  <span className="bg-amber-500/20 text-amber-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-500/30">
-                    {item.badge}
-                  </span>
-                )}
-              </button>
-            );
-          })}
+        {/* Navigation Sections */}
+        <div className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
+          {currentNav.map((group, idx) => (
+            <div key={idx} className="space-y-1">
+              {!isCollapsed && (
+                <div className="px-3 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                  {group.category}
+                </div>
+              )}
+              {group.items.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveTab(item.id)}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                      isActive
+                        ? 'bg-gradient-to-r from-indigo-600/30 to-purple-600/30 text-white border-l-4 border-indigo-500 font-semibold shadow-sm'
+                        : 'text-zinc-400 hover:bg-[#181b2e] hover:text-white'
+                    } ${isCollapsed ? 'justify-center px-0' : ''}`}
+                    title={isCollapsed ? item.label : undefined}
+                  >
+                    <Icon size={16} className={isActive ? 'text-indigo-400' : 'text-zinc-400'} />
+                    {!isCollapsed && <span className="truncate flex-1 text-left">{item.label}</span>}
+                    {!isCollapsed && item.badge !== undefined && (
+                      <span className="bg-indigo-500/20 text-indigo-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-indigo-500/30">
+                        {item.badge}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </div>
 
-          <div className="my-4 border-t border-[#333333] mx-2" />
-
-          {bottomNavItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
+        {/* User Footer & Logout */}
+        <div className="p-3 border-t border-[#1e2238] bg-[#0d0f17]">
+          {!isCollapsed ? (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 truncate">
+                <div className="w-7 h-7 rounded-full bg-indigo-600/30 border border-indigo-500/50 flex items-center justify-center text-indigo-300 font-bold text-xs shrink-0">
+                  {user?.name ? user.name[0].toUpperCase() : 'A'}
+                </div>
+                <div className="flex flex-col truncate">
+                  <span className="text-xs font-bold text-white truncate">{user?.name || 'Super Admin'}</span>
+                  <span className="text-[10px] text-zinc-400 truncate">{user?.email || 'Kenzo@gmail.com'}</span>
+                </div>
+              </div>
               <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-all ${
-                  isActive
-                    ? 'bg-[#333333] text-white border-l-4 border-amber-500 font-semibold shadow-sm'
-                    : 'text-zinc-400 hover:bg-[#2a2a2a] hover:text-white'
-                } ${isCollapsed ? 'justify-center px-0' : ''}`}
-                title={isCollapsed ? item.label : undefined}
+                onClick={onLogout}
+                className="p-1.5 text-zinc-400 hover:text-red-400 hover:bg-zinc-800/80 rounded-lg transition-colors"
+                title="Sign out"
               >
-                <Icon size={16} className="text-zinc-400" />
-                {!isCollapsed && <span className="truncate flex-1 text-left">{item.label}</span>}
+                <LogOut size={15} />
               </button>
-            );
-          })}
+            </div>
+          ) : (
+            <button
+              onClick={onLogout}
+              className="w-full flex items-center justify-center p-2 text-zinc-400 hover:text-red-400 transition-colors"
+              title="Sign out"
+            >
+              <LogOut size={16} />
+            </button>
+          )}
         </div>
       </div>
     </motion.div>

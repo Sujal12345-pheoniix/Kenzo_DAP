@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import Sidebar, { TabType } from './components/sidebar';
 import TopNav from './components/top-nav';
@@ -7,6 +7,8 @@ import AnalyticsView from './components/analytics-view';
 import ToursView from './components/tours-view';
 import IntegrationView from './components/integration-view';
 import InsightsBuilder from './components/insights-builder';
+import LoginView from './components/login-view';
+import { X } from 'lucide-react';
 
 interface Flow {
   id: string;
@@ -46,11 +48,25 @@ interface Project {
   createdAt: string;
 }
 
+interface UserSession {
+  id: string;
+  email: string;
+  name: string;
+  role: 'SUPER_ADMIN' | 'CLIENT_CEO' | 'MEMBER';
+  companyId: string;
+  companyName: string;
+}
+
 export default function App() {
-  const [activeTab, setActiveTab] = useState<TabType>('insights');
+  const [user, setUser] = useState<UserSession | null>(() => {
+    const saved = localStorage.getItem('kenzo_user_session');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [flows, setFlows] = useState<Flow[]>([]);
   const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [editingFlow, setEditingFlow] = useState<Flow | null>(null);
   const [apiBaseUrl, setApiBaseUrl] = useState('');
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
@@ -82,16 +98,13 @@ export default function App() {
           setActiveProjectId(defaultId);
         } else {
           setActiveProjectId('default-project');
-          setLoading(false);
         }
       } else {
         setActiveProjectId('default-project');
-        setLoading(false);
       }
     } catch (err) {
       console.error('Failed to fetch projects list:', err);
       setActiveProjectId('default-project');
-      setLoading(false);
     }
   };
 
@@ -123,7 +136,9 @@ export default function App() {
 
   useEffect(() => {
     fetchBaseUrl();
-    loadProjects();
+    if (user) {
+      loadProjects();
+    }
 
     const handleGlobalKeydown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
@@ -133,131 +148,148 @@ export default function App() {
     };
     window.addEventListener('keydown', handleGlobalKeydown);
     return () => window.removeEventListener('keydown', handleGlobalKeydown);
-  }, []);
+  }, [user]);
 
   useEffect(() => {
-    if (activeProjectId) {
+    if (activeProjectId && user) {
       localStorage.setItem('kenzo_active_project_id', activeProjectId);
       loadData();
     }
-  }, [activeProjectId]);
+  }, [activeProjectId, user]);
+
+  const handleLoginSuccess = (data: {
+    token: string;
+    user: UserSession;
+    projects: Array<{ id: string; name: string; apiKey: string }>;
+  }) => {
+    localStorage.setItem('kenzo_jwt_token', data.token);
+    localStorage.setItem('kenzo_user_session', JSON.stringify(data.user));
+    setUser(data.user);
+    if (data.projects && data.projects.length > 0) {
+      setProjects(data.projects as any);
+      setActiveProjectId(data.projects[0].id);
+    }
+    setActiveTab(data.user.role === 'SUPER_ADMIN' ? 'overview' : 'ceo_overview');
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('kenzo_jwt_token');
+    localStorage.removeItem('kenzo_user_session');
+    setUser(null);
+  };
 
   const handleCreateProject = async (name: string, url?: string) => {
     try {
+      const apiKey = `kenzo_project_${Date.now()}_key_${Math.random().toString(36).substring(2, 8)}`;
       const res = await fetch('/api/v1/admin/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, url })
+        body: JSON.stringify({ name, apiKey, domainUrl: url }),
       });
+
       if (res.ok) {
         const newProj = await res.json();
-        setProjects(prev => [newProj, ...prev]);
+        setProjects(prev => [...prev, newProj]);
         setActiveProjectId(newProj.id);
-      } else {
-        alert('Failed to register website: ' + res.statusText);
+        setIsRegisterModalOpen(false);
+        setNewProjectName('');
+        setNewProjectUrl('');
       }
     } catch (err) {
-      alert('Failed to register website: ' + err);
+      console.error('Failed to create project:', err);
     }
   };
 
-  const handleDeleteProject = async (projectId: string, projectName: string) => {
-    if (projects.length <= 1) {
-      alert('You must keep at least one website workspace in the dashboard.');
-      return;
-    }
-    if (!confirm(`Are you sure you want to permanently delete the website "${projectName}"?\n\nThis will delete all its flows, steps, and analytics data.`)) {
-      return;
-    }
+  const handleDeleteProject = async (id: string, name: string) => {
+    if (!confirm(`Are you sure you want to delete workspace "${name}"?`)) return;
     try {
-      const res = await fetch(`/api/v1/admin/projects/${projectId}`, {
-        method: 'DELETE'
-      });
+      const res = await fetch(`/api/v1/admin/projects/${id}`, { method: 'DELETE' });
       if (res.ok) {
-        const remaining = projects.filter(p => p.id !== projectId);
-        setProjects(remaining);
-        if (activeProjectId === projectId) {
-          setActiveProjectId(remaining[0].id);
+        const updated = projects.filter(p => p.id !== id);
+        setProjects(updated);
+        if (updated.length > 0) {
+          setActiveProjectId(updated[0].id);
         }
-        alert(`Successfully deleted website: ${projectName}`);
-      } else {
-        alert('Failed to delete website.');
       }
     } catch (err) {
-      alert('Delete failed: ' + err);
+      console.error('Failed to delete project:', err);
     }
   };
 
-  const handleDeleteFlow = async (flowId: string) => {
+  const handleDeleteFlow = async (id: string) => {
     if (!confirm('Are you sure you want to delete this walkthrough tour?')) return;
     try {
-      const headers = activeProjectId ? { 'x-project-id': activeProjectId } : undefined;
-      const res = await fetch(`/api/v1/admin/flows/${flowId}`, {
+      const res = await fetch(`/api/v1/admin/flows/${id}`, {
         method: 'DELETE',
-        headers
+        headers: { 'x-project-id': activeProjectId },
       });
       if (res.ok) {
-        setFlows(flows.filter((f: Flow) => f.id !== flowId));
-        if (editingFlow?.id === flowId) setEditingFlow(null);
-        loadData();
+        setFlows(prev => prev.filter(f => f.id !== id));
       }
     } catch (err) {
-      alert('Delete failed: ' + err);
+      console.error('Failed to delete flow:', err);
     }
   };
 
-  const handleUpdateFlowStatus = async (flow: Flow, status: 'draft' | 'published') => {
+  const handleUpdateFlowStatus = async (id: string, newStatus: 'draft' | 'published' | 'archived') => {
     try {
-      const headers = {
-        'Content-Type': 'application/json',
-        ...(activeProjectId ? { 'x-project-id': activeProjectId } : {})
-      };
-      const res = await fetch(`/api/v1/admin/flows/${flow.id}`, {
-        method: 'PUT',
-        headers,
-        body: JSON.stringify({
-          ...flow,
-          status
-        })
+      const endpoint = newStatus === 'published' ? `/api/v1/admin/flows/${id}/publish` : `/api/v1/admin/flows/${id}`;
+      const method = newStatus === 'published' ? 'POST' : 'PUT';
+      const res = await fetch(endpoint, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'x-project-id': activeProjectId,
+        },
+        body: newStatus === 'published' ? undefined : JSON.stringify({ status: newStatus }),
       });
+
       if (res.ok) {
-        loadData();
+        setFlows(prev =>
+          prev.map(f => (f.id === id ? { ...f, status: newStatus } : f))
+        );
       }
     } catch (err) {
-      alert('Status update failed: ' + err);
+      console.error('Failed to update flow status:', err);
     }
   };
 
-  const handleSaveFlowDetails = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingFlow) return;
-
+  const handleSaveFlowDetails = async (id: string, updatedData: Partial<Flow>) => {
     try {
-      const headers = {
-        'Content-Type': 'application/json',
-        ...(activeProjectId ? { 'x-project-id': activeProjectId } : {})
-      };
-      const res = await fetch(`/api/v1/admin/flows/${editingFlow.id}`, {
+      const res = await fetch(`/api/v1/admin/flows/${id}`, {
         method: 'PUT',
-        headers,
-        body: JSON.stringify(editingFlow)
+        headers: {
+          'Content-Type': 'application/json',
+          'x-project-id': activeProjectId,
+        },
+        body: JSON.stringify(updatedData),
       });
+
       if (res.ok) {
+        const saved = await res.json();
+        setFlows(prev => prev.map(f => (f.id === id ? { ...f, ...saved } : f)));
         setEditingFlow(null);
-        loadData();
       }
     } catch (err) {
-      alert('Save failed: ' + err);
+      console.error('Failed to save flow details:', err);
     }
   };
 
   const getCompletionRate = () => {
     if (!analytics || !analytics.tourMetrics || analytics.tourMetrics.length === 0) return '0%';
-    const totalStarts = analytics.tourMetrics.reduce((sum: number, item: any) => sum + item.starts, 0);
-    const totalCompletions = analytics.tourMetrics.reduce((sum: number, item: any) => sum + item.completions, 0);
+    let totalStarts = 0;
+    let totalCompletions = 0;
+    analytics.tourMetrics.forEach(m => {
+      totalStarts += m.starts || 0;
+      totalCompletions += m.completions || 0;
+    });
     if (totalStarts === 0) return '0%';
-    return `${((totalCompletions / totalStarts) * 100).toFixed(1)}%`;
+    return `${Math.round((totalCompletions / totalStarts) * 100)}%`;
   };
+
+  if (!user) {
+    return <LoginView onLoginSuccess={handleLoginSuccess} />;
+  }
 
   const activeProject = projects.find(p => p.id === activeProjectId);
   const activePublishedCount = flows.filter(f => f.status === 'published').length;
@@ -276,6 +308,8 @@ export default function App() {
         setActiveProjectId={setActiveProjectId}
         onOpenRegisterModal={() => setIsRegisterModalOpen(true)}
         onDeleteProject={handleDeleteProject}
+        user={user}
+        onLogout={handleLogout}
       />
 
       {/* Main Content Pane */}
@@ -292,66 +326,72 @@ export default function App() {
         <main className="flex-1 overflow-y-auto relative">
           
           {loading ? (
-            /* Premium Skeleton Shimmer Loader */
-            <div className="space-y-8 animate-pulse text-left">
+            <div className="p-8 space-y-8 animate-pulse text-left">
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
-                  <div className="h-6 w-48 bg-zinc-800 rounded-lg"></div>
-                  <div className="h-3 w-64 bg-zinc-900 rounded"></div>
+                  <div className="h-6 w-48 bg-slate-300 rounded-lg" />
+                  <div className="h-3 w-64 bg-slate-200 rounded" />
                 </div>
-                <div className="h-8 w-24 bg-zinc-850 rounded-lg"></div>
               </div>
-
-              {/* Grid loader */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="h-28 bg-zinc-900 border border-zinc-850 rounded-xl"></div>
-                <div className="h-28 bg-zinc-900 border border-zinc-850 rounded-xl"></div>
-                <div className="h-28 bg-zinc-900 border border-zinc-850 rounded-xl"></div>
+                <div className="h-28 bg-white border border-slate-200 rounded-xl" />
+                <div className="h-28 bg-white border border-slate-200 rounded-xl" />
+                <div className="h-28 bg-white border border-slate-200 rounded-xl" />
               </div>
-
-              {/* Larger pane loader */}
-              <div className="h-44 bg-zinc-900 border border-zinc-850 rounded-xl"></div>
             </div>
           ) : (
             <div className="fade-in transition-all duration-350">
-              {(activeTab === 'all_content' || activeTab === 'my_content' || activeTab === 'repositories' || activeTab === 'widget') && (
-                <ToursView 
-                  flows={flows} 
-                  editingFlow={editingFlow}
-                  setEditingFlow={setEditingFlow}
-                  handleDeleteFlow={handleDeleteFlow}
-                  handleUpdateFlowStatus={handleUpdateFlowStatus}
-                  handleSaveFlowDetails={handleSaveFlowDetails}
-                  apiKey={activeProject?.apiKey || ''}
-                />
+              {/* Guidance / Tours Views */}
+              {(activeTab === 'guidance_flows' || activeTab === 'ceo_walkthroughs' || activeTab === 'content_library') && (
+                <div className="p-8">
+                  <ToursView 
+                    flows={flows} 
+                    editingFlow={editingFlow}
+                    setEditingFlow={setEditingFlow}
+                    handleDeleteFlow={handleDeleteFlow}
+                    handleUpdateFlowStatus={handleUpdateFlowStatus}
+                    handleSaveFlowDetails={handleSaveFlowDetails}
+                    apiKey={activeProject?.apiKey || ''}
+                  />
+                </div>
               )}
 
-              {activeTab === 'insights' && (
-                <InsightsBuilder apiKey={activeProject?.apiKey || ''} onBack={() => setActiveTab('all_content')} />
+              {/* Trends & Insights */}
+              {(activeTab === 'trends' || activeTab === 'ceo_growth') && (
+                <InsightsBuilder apiKey={activeProject?.apiKey || ''} onBack={() => setActiveTab('overview')} />
               )}
 
-              {activeTab === 'dashboard' && (
-                <AnalyticsView 
-                  analytics={analytics} 
-                  flowsCount={flows.length}
-                  activePublishedCount={activePublishedCount}
-                  getCompletionRate={getCompletionRate}
-                />
+              {/* Analytics Dashboards */}
+              {(activeTab === 'overview' || activeTab === 'analytics_overview' || activeTab === 'ceo_overview' || activeTab === 'ceo_analytics') && (
+                <div className="p-8">
+                  <AnalyticsView 
+                    analytics={analytics} 
+                    flowsCount={flows.length}
+                    activePublishedCount={activePublishedCount}
+                    getCompletionRate={getCompletionRate}
+                  />
+                </div>
               )}
 
-              {activeTab === 'integration' && (
+              {/* Integrations */}
+              {activeTab === 'integrations' && (
                 <IntegrationView 
                   apiBaseUrl={apiBaseUrl} 
                   apiKey={activeProject?.apiKey || ''} 
                 />
               )}
 
-              {(activeTab === 'users' || activeTab === 'tags' || activeTab === 'auto_testing' || activeTab === 'feedback' || activeTab === 'community') && (
-                <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm text-center py-16">
-                  <h3 className="text-lg font-bold text-gray-800 capitalize mb-2">{activeTab.replace('_', ' ')} Module</h3>
-                  <p className="text-sm text-gray-500 max-w-md mx-auto">
-                    Whatfix DAP parity view active for {activeTab.replace('_', ' ')}. Fully configured and ready for workspace management.
-                  </p>
+              {/* Generic Module Placeholder Views for full hierarchy */}
+              {!['guidance_flows', 'ceo_walkthroughs', 'content_library', 'trends', 'ceo_growth', 'overview', 'analytics_overview', 'ceo_overview', 'ceo_analytics', 'integrations'].includes(activeTab) && (
+                <div className="p-8">
+                  <div className="bg-white p-12 rounded-2xl border border-slate-200 shadow-sm text-center py-20 space-y-3">
+                    <h3 className="text-xl font-bold text-slate-900 capitalize">
+                      Kenzo_DAP — {activeTab.replace(/_/g, ' ')}
+                    </h3>
+                    <p className="text-sm text-slate-500 max-w-md mx-auto">
+                      Module active under role <span className="font-bold text-indigo-600">{user.role}</span> ({user.companyName}). Scoped to workspace: <span className="font-bold text-slate-800">{activeProject?.name || 'Default Project'}</span>.
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
@@ -359,7 +399,7 @@ export default function App() {
         </main>
       </div>
 
-      {/* Command Console modal */}
+      {/* Command Console Modal */}
       <CommandPalette 
         isOpen={isCommandPaletteOpen}
         onClose={() => setIsCommandPaletteOpen(false)}
@@ -368,71 +408,62 @@ export default function App() {
         flows={flows}
       />
 
-      {/* Custom Register Website Modal */}
+      {/* Register Workspace Modal */}
       <AnimatePresence>
         {isRegisterModalOpen && (
           <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
             <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-2xl relative text-left"
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white border border-slate-200 rounded-2xl p-6 w-full max-w-md shadow-2xl text-left"
             >
-              <h3 className="text-base font-bold font-outfit text-white uppercase tracking-wider mb-2">Register New Website</h3>
-              <p className="text-zinc-500 text-xs mb-6 leading-normal">Create a separate workspace to isolate walkthrough campaigns and analytics for a domain.</p>
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                <h3 className="text-base font-bold text-slate-900">Create Application Workspace</h3>
+                <button onClick={() => setIsRegisterModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                  <X size={18} />
+                </button>
+              </div>
 
-              <form onSubmit={async (e) => {
-                e.preventDefault();
-                if (!newProjectName.trim()) return;
-                await handleCreateProject(newProjectName.trim(), newProjectUrl.trim());
-                setIsRegisterModalOpen(false);
-                setNewProjectName('');
-                setNewProjectUrl('');
-              }} className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Website Name *</label>
-                  <input 
-                    type="text" 
-                    placeholder="e.g. CrickBuddy"
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">Application Name</label>
+                  <input
+                    type="text"
                     value={newProjectName}
-                    onChange={e => setNewProjectName(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-850 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-3 py-2.5 text-xs text-white outline-none transition-all"
-                    required
+                    onChange={(e) => setNewProjectName(e.target.value)}
+                    placeholder="e.g. Company A - ERP Portal"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 outline-none focus:border-indigo-500"
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Website URL (Optional)</label>
-                  <input 
-                    type="text" 
-                    placeholder="e.g. https://crickbuddy.com"
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">Domain URL (Optional)</label>
+                  <input
+                    type="text"
                     value={newProjectUrl}
-                    onChange={e => setNewProjectUrl(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-850 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-3 py-2.5 text-xs text-white outline-none transition-all"
+                    onChange={(e) => setNewProjectUrl(e.target.value)}
+                    placeholder="e.g. https://erp.companya.com"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 outline-none focus:border-indigo-500"
                   />
-                  <span className="text-[9px] text-zinc-500 leading-normal block mt-1">If provided, we'll auto-scope the Onboarding triggers directly to this domain route.</span>
                 </div>
 
-                <div className="flex items-center gap-3 pt-4">
-                  <button 
-                    type="button" 
-                    onClick={() => {
-                      setIsRegisterModalOpen(false);
-                      setNewProjectName('');
-                      setNewProjectUrl('');
-                    }}
-                    className="flex-1 bg-zinc-950 border border-zinc-850 hover:border-zinc-800 text-zinc-400 hover:text-white text-xs font-bold py-2.5 rounded-xl cursor-pointer transition-all focus:outline-none"
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    onClick={() => setIsRegisterModalOpen(false)}
+                    className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100"
                   >
                     Cancel
                   </button>
-                  <button 
-                    type="submit" 
-                    className="flex-1 bg-gradient-to-r from-violet-600 to-indigo-650 hover:from-violet-500 hover:to-indigo-550 text-white text-xs font-bold py-2.5 rounded-xl cursor-pointer transition-all shadow-md shadow-indigo-600/10 focus:outline-none"
+                  <button
+                    onClick={() => handleCreateProject(newProjectName, newProjectUrl)}
+                    disabled={!newProjectName.trim()}
+                    className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold disabled:opacity-50"
                   >
-                    Register Workspace
+                    Create Workspace
                   </button>
                 </div>
-              </form>
+              </div>
             </motion.div>
           </div>
         )}

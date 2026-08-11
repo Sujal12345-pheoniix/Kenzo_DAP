@@ -24,7 +24,7 @@ export default function CommandPalette({ isOpen, onClose, setActiveTab, loadData
       title: 'Go to Analytics Dashboard', 
       category: 'Navigation', 
       icon: BarChart2, 
-      action: () => setActiveTab('dashboard'),
+      action: () => setActiveTab('analytics_overview'),
       shortcut: '↵'
     },
     { 
@@ -32,7 +32,7 @@ export default function CommandPalette({ isOpen, onClose, setActiveTab, loadData
       title: 'Go to Walkthrough Tours', 
       category: 'Navigation', 
       icon: Layout, 
-      action: () => setActiveTab('all_content'),
+      action: () => setActiveTab('guidance_flows'),
       shortcut: '↵'
     },
     { 
@@ -40,7 +40,7 @@ export default function CommandPalette({ isOpen, onClose, setActiveTab, loadData
       title: 'Go to Snippet Installation', 
       category: 'Navigation', 
       icon: Code, 
-      action: () => setActiveTab('integration'),
+      action: () => setActiveTab('integrations'),
       shortcut: '↵'
     },
     { 

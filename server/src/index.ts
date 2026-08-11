@@ -2,6 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import path from 'path';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 import https from 'https';
 import http from 'http';
 import { v2 as cloudinary } from 'cloudinary';
@@ -12,6 +13,82 @@ import { bootstrapDb, pool } from './db/connection';
 const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'kenzo_dap_jwt_secret_key_2026';
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// --- User Authentication API (JWT + Bcrypt) ---
+app.post('/api/v1/auth/login', async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      res.status(400).json({ message: 'Email and password are required' });
+      return;
+    }
+
+    const userRes = await pool.query('SELECT * FROM users WHERE LOWER(email) = LOWER($1)', [email.trim()]);
+    if (userRes.rows.length === 0) {
+      res.status(401).json({ message: 'Invalid email or password' });
+      return;
+    }
+
+    const user = userRes.rows[0];
+    const isMatch = bcrypt.compareSync(password, user.password_hash);
+    if (!isMatch) {
+      res.status(401).json({ message: 'Invalid email or password' });
+      return;
+    }
+
+    // Fetch projects accessible to this user
+    let accessibleProjects = [];
+    if (user.role === 'SUPER_ADMIN') {
+      const projRes = await pool.query('SELECT id, name, api_key as "apiKey" FROM projects ORDER BY created_at ASC');
+      accessibleProjects = projRes.rows;
+    } else {
+      const projRes = await pool.query('SELECT id, name, api_key as "apiKey" FROM projects WHERE name ILIKE $1 OR api_key ILIKE $2 LIMIT 5', [
+        `%${user.company_name}%`,
+        `%${user.company_id}%`
+      ]);
+      if (projRes.rows.length === 0) {
+        // Fallback to all projects if specific match isn't found
+        const fallbackRes = await pool.query('SELECT id, name, api_key as "apiKey" FROM projects LIMIT 1');
+        accessibleProjects = fallbackRes.rows;
+      } else {
+        accessibleProjects = projRes.rows;
+      }
+    }
+
+    const token = jwt.sign(
+      {
+        userId: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        companyId: user.company_id,
+        companyName: user.company_name,
+      },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        companyId: user.company_id,
+        companyName: user.company_name,
+      },
+      projects: accessibleProjects
+    });
+  } catch (err: any) {
+    console.error('Login error:', err);
+    res.status(500).json({ message: 'Authentication server error', error: err.message });
+  }
+});
 
 // Configure Cloudinary
 cloudinary.config({

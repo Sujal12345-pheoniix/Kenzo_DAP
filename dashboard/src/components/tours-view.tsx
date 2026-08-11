@@ -53,8 +53,8 @@ interface ToursViewProps {
   editingFlow: Flow | null;
   setEditingFlow: (flow: Flow | null) => void;
   handleDeleteFlow: (flowId: string) => void;
-  handleUpdateFlowStatus: (flow: Flow, status: 'draft' | 'published') => void;
-  handleSaveFlowDetails: (e: React.FormEvent) => void;
+  handleUpdateFlowStatus: (id: string, status: 'draft' | 'published' | 'archived') => void;
+  handleSaveFlowDetails: (id: string, updatedData: Partial<Flow>) => void;
   apiKey: string;
 }
 
@@ -857,8 +857,8 @@ export default function ToursView({
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800/40 pb-4">
         <div>
-          <h2 className="text-2xl font-bold font-outfit text-white tracking-tight leading-tight">Walkthrough Tours</h2>
-          <p className="text-zinc-500 text-xs mt-1">Deploy, monitor, and configure active user onboarding flows.</p>
+          <h2 className="text-2xl font-bold font-outfit text-slate-900 tracking-tight leading-tight">Walkthrough Tours</h2>
+          <p className="text-slate-600 text-xs mt-1 font-medium">Deploy, monitor, and configure active user onboarding flows.</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -1005,14 +1005,14 @@ export default function ToursView({
                   <div className="flex items-center gap-2">
                     {isPublished ? (
                       <button
-                        onClick={() => handleUpdateFlowStatus(flow, 'draft')}
+                        onClick={() => handleUpdateFlowStatus(flow.id, 'draft')}
                         className="text-[10px] bg-zinc-950 border border-zinc-800 hover:border-zinc-750 hover:text-white px-2.5 py-1.5 rounded-lg text-zinc-400 transition-all cursor-pointer font-bold"
                       >
                         Draft
                       </button>
                     ) : (
                       <button
-                        onClick={() => handleUpdateFlowStatus(flow, 'published')}
+                        onClick={() => handleUpdateFlowStatus(flow.id, 'published')}
                         className="text-[10px] bg-indigo-600/10 border border-indigo-500/20 hover:bg-indigo-650 hover:text-white px-2.5 py-1.5 rounded-lg text-indigo-300 transition-all cursor-pointer font-bold"
                       >
                         Publish
@@ -1102,7 +1102,7 @@ export default function ToursView({
                 </button>
               </div>
 
-              <form onSubmit={handleSaveFlowDetails} className="p-6 overflow-y-auto space-y-5">
+              <form onSubmit={(e) => { e.preventDefault(); handleSaveFlowDetails(editingFlow.id, editingFlow); }} className="p-6 overflow-y-auto space-y-5">
                 <div className="space-y-1.5 text-left">
                   <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Tour Name</label>
                   <input

@@ -202,17 +202,77 @@ export async function bootstrapDb(): Promise<void> {
 
     console.log('[Database] Tables bootstrapped and route rules normalized.');
 
+    // 11. Users Table (Authentication & RBAC)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        role VARCHAR(50) NOT NULL, -- 'SUPER_ADMIN', 'CLIENT_CEO', 'MEMBER'
+        company_id VARCHAR(255) NOT NULL,
+        company_name VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
     // Seed default developer project if not exists
     const devApiKey = 'kenzo_project_dev_api_key_2026';
     const result = await client.query('SELECT id FROM projects WHERE api_key = $1', [devApiKey]);
+    let defaultProjectId = '';
     if (result.rows.length === 0) {
+      const inserted = await client.query(
+        'INSERT INTO projects (name, api_key) VALUES ($1, $2) RETURNING id',
+        ['Company A - ERP & HRMS', devApiKey]
+      );
+      defaultProjectId = inserted.rows[0].id;
+      console.log('[Database] Seeded Company A project with API Key:', devApiKey);
+    } else {
+      defaultProjectId = result.rows[0].id;
+      console.log('[Database] Development project verified.');
+    }
+
+    // Seed Company B project
+    const client2ApiKey = 'kenzo_project_client2_api_key_2026';
+    const c2Result = await client.query('SELECT id FROM projects WHERE api_key = $1', [client2ApiKey]);
+    if (c2Result.rows.length === 0) {
       await client.query(
         'INSERT INTO projects (name, api_key) VALUES ($1, $2)',
-        ['Kenzo Development Workspace', devApiKey]
+        ['Company B - CRM', client2ApiKey]
       );
-      console.log('[Database] Seeded development project with API Key:', devApiKey);
-    } else {
-      console.log('[Database] Development project verified.');
+      console.log('[Database] Seeded Company B project with API Key:', client2ApiKey);
+    }
+
+    // Seed Auth Users (Bcrypt Hashed)
+    const bcrypt = require('bcryptjs');
+    const adminPassHash = bcrypt.hashSync('kenzo123', 10);
+    const clientPassHash = bcrypt.hashSync('client@123', 10);
+
+    const adminUser = await client.query('SELECT id FROM users WHERE email = $1', ['Kenzo@gmail.com']);
+    if (adminUser.rows.length === 0) {
+      await client.query(
+        'INSERT INTO users (email, password_hash, name, role, company_id, company_name) VALUES ($1, $2, $3, $4, $5, $6)',
+        ['Kenzo@gmail.com', adminPassHash, 'Kenzo Super Admin', 'SUPER_ADMIN', 'super_admin_corp', 'Kenzo_DAP Global']
+      );
+      console.log('[Database] Seeded Super Admin user (Kenzo@gmail.com / kenzo123)');
+    }
+
+    const client1User = await client.query('SELECT id FROM users WHERE email = $1', ['client1@kenzo.com']);
+    if (client1User.rows.length === 0) {
+      await client.query(
+        'INSERT INTO users (email, password_hash, name, role, company_id, company_name) VALUES ($1, $2, $3, $4, $5, $6)',
+        ['client1@kenzo.com', clientPassHash, 'CEO Company A', 'CLIENT_CEO', 'comp_a', 'Company A']
+      );
+      console.log('[Database] Seeded Client CEO 1 (client1@kenzo.com / client@123)');
+    }
+
+    const client2User = await client.query('SELECT id FROM users WHERE email = $1', ['client2@kenzo.com']);
+    if (client2User.rows.length === 0) {
+      await client.query(
+        'INSERT INTO users (email, password_hash, name, role, company_id, company_name) VALUES ($1, $2, $3, $4, $5, $6)',
+        ['client2@kenzo.com', clientPassHash, 'CEO Company B', 'CLIENT_CEO', 'comp_b', 'Company B']
+      );
+      console.log('[Database] Seeded Client CEO 2 (client2@kenzo.com / client@123)');
     }
 
   } catch (err) {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   ChevronLeft, 
   Edit2, 
@@ -36,19 +36,54 @@ export default function InsightsBuilder({ apiKey, onBack }: InsightsBuilderProps
   const [searchQuery, setSearchQuery] = useState('');
   const [entriesPerPage, setEntriesPerPage] = useState('10');
   const [selectedAll, setSelectedAll] = useState(true);
+  const [totalCount, setTotalCount] = useState('413.9K');
 
-  // Default color palette matching screenshot
-  const legendItems = [
-    { label: 'Flow Start / Self Help', color: '#6366f1', value: '144.9K', count: '8.9k', checked: true },
-    { label: 'Flow Start/ Task List', color: '#eab308', value: '78.2K', count: '8.9k', checked: true },
-    { label: 'Flow Start/ Slideshow', color: '#f97316', value: '62.1K', count: '8.9k', checked: true },
-    { label: 'Flow Start/ User Action', color: '#a855f7', value: '54.0K', count: '8.9k', checked: true },
-    { label: 'Flow Start/ Article', color: '#3b82f6', value: '38.2K', count: '8.9k', checked: true },
-    { label: 'Flow Start / URL', color: '#14b8a6', value: '24.5K', count: '8.9k', checked: true },
-    { label: 'Flow Start/ Live Tour', color: '#f43f5e', value: '12.0K', count: '8.9k', checked: true },
+  const defaultLegendItems = [
+    { label: 'Flow Start / Self Help', color: '#6366f1', count: '8.9k', checked: true },
+    { label: 'Flow Start/ Task List', color: '#eab308', count: '8.9k', checked: true },
+    { label: 'Flow Start/ Slideshow', color: '#f97316', count: '8.9k', checked: true },
+    { label: 'Flow Start/ User Action', color: '#a855f7', count: '8.9k', checked: true },
+    { label: 'Flow Start/ Article', color: '#3b82f6', count: '8.9k', checked: true },
+    { label: 'Flow Start / URL', color: '#14b8a6', count: '8.9k', checked: true },
+    { label: 'Flow Start/ Live Tour', color: '#f43f5e', count: '8.9k', checked: true },
   ];
 
-  const [rows, setRows] = useState(legendItems);
+  const [rows, setRows] = useState(defaultLegendItems);
+
+  useEffect(() => {
+    const fetchRealData = async () => {
+      try {
+        const activeProjectId = localStorage.getItem('kenzo_active_project_id') || '';
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (activeProjectId) headers['x-project-id'] = activeProjectId;
+        if (apiKey) headers['x-api-key'] = apiKey;
+
+        const res = await fetch('/api/v1/admin/analytics/query', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ metric, dateRange, chartType }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.chartData && data.chartData.length > 0) {
+            const colors = ['#6366f1', '#eab308', '#f97316', '#a855f7', '#3b82f6', '#14b8a6', '#f43f5e'];
+            const mappedRows = data.chartData.map((item: any, i: number) => ({
+              label: `Flow Start / ${item.label}`,
+              color: colors[i % colors.length],
+              count: `${(item.value / 1000).toFixed(1)}k`,
+              checked: true
+            }));
+            setRows(mappedRows);
+            if (data.total) setTotalCount(data.total);
+          }
+        }
+      } catch (err) {
+        console.warn('Using fallback sample data for insights');
+      }
+    };
+    fetchRealData();
+  }, [metric, dateRange, chartType, apiKey]);
 
   const toggleRowCheck = (index: number) => {
     const updated = [...rows];
@@ -91,7 +126,7 @@ export default function InsightsBuilder({ apiKey, onBack }: InsightsBuilderProps
 
   return (
     <div className="min-h-screen bg-[#f3f4f6] text-[#1f2937] font-sans antialiased pb-16">
-      {/* Top Header Bar matching Whatfix screenshot */}
+      {/* Top Header Bar matching Kenzo_DAP screenshot */}
       <header className="bg-white border-b border-gray-200 px-6 py-3.5 flex items-center justify-between shadow-sm sticky top-0 z-20">
         <div className="flex items-center gap-4">
           <button 
@@ -232,7 +267,7 @@ export default function InsightsBuilder({ apiKey, onBack }: InsightsBuilderProps
           )}
         </div>
 
-        {/* Chart Container matching Whatfix screenshot */}
+        {/* Chart Container matching Kenzo_DAP screenshot */}
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 space-y-8">
           {/* Controls Bar */}
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-100 pb-4">
@@ -293,7 +328,7 @@ export default function InsightsBuilder({ apiKey, onBack }: InsightsBuilderProps
             }}>
               {/* Inner cutout for Donut */}
               <div className="w-36 h-36 bg-white rounded-full flex flex-col items-center justify-center shadow-md">
-                <span className="text-3xl font-extrabold text-gray-900 tracking-tight">413.9K</span>
+                <span className="text-3xl font-extrabold text-gray-900 tracking-tight">{totalCount}</span>
               </div>
             </div>
 
@@ -309,7 +344,7 @@ export default function InsightsBuilder({ apiKey, onBack }: InsightsBuilderProps
           </div>
         </div>
 
-        {/* Data Table Section matching Whatfix screenshot */}
+        {/* Data Table Section matching Kenzo_DAP screenshot */}
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden space-y-4">
           <div className="p-4 border-b border-gray-200 flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-2 text-sm font-semibold text-gray-800">

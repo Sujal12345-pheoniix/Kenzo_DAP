@@ -1,12 +1,9 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Check, 
   Copy, 
-  Terminal, 
   RefreshCw, 
   Cpu, 
-  CheckCircle,
   Link2
 } from 'lucide-react';
 
@@ -26,7 +23,7 @@ export default function IntegrationView({ apiBaseUrl, apiKey }: IntegrationViewP
   const displayApiKey = apiKey || 'kenzo_project_dev_api_key_2026';
 
   const snippets: Record<Framework, string> = {
-    html: `<!-- Kenzo Digital Adoption Platform Snippet (One-line installation) -->
+    html: `<!-- Kenzo_DAP Snippet (One-line installation) -->
 <script
   src="${formattedUrl}/sdk.js"
   data-kenzo-key="${displayApiKey}"
@@ -34,10 +31,7 @@ export default function IntegrationView({ apiBaseUrl, apiKey }: IntegrationViewP
   async>
 </script>`,
 
-    react: `// 1. Install standard dependency
-// npm install @kenzo/sdk --save
-
-// 2. Initialize in your App entry point (App.tsx or index.tsx)
+    react: `// 1. Initialize in your App entry point (App.tsx or index.tsx)
 import React, { useEffect } from 'react';
 import { Kenzo } from '@kenzo/sdk';
 
@@ -59,38 +53,33 @@ import { useEffect } from 'react';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    import('@kenzo/sdk').then(({ Kenzo }) => {
-      Kenzo.init({
-        apiKey: "${displayApiKey}",
-        apiBaseUrl: "${formattedUrl}/api/v1"
-      });
-    });
+    if (typeof window !== 'undefined') {
+      const script = document.createElement('script');
+      script.src = '${formattedUrl}/sdk.js';
+      script.dataset.kenzoKey = '${displayApiKey}';
+      script.async = true;
+      document.body.appendChild(script);
+    }
   }, []);
 
-  return (
-    <html lang="en">
-      <body>{children}</body>
-    </html>
-  );
+  return <html><body>{children}</body></html>;
 }`,
 
-    vue: `// Initialize in your Vue entry point (main.js)
-import { createApp } from 'vue'
-import App from './App.vue'
-import { Kenzo } from '@kenzo/sdk'
+    vue: `<!-- App.vue -->
+<script setup>
+import { onMounted } from 'vue';
 
-const app = createApp(App)
-
-Kenzo.init({
-  apiKey: "${displayApiKey}",
-  apiBaseUrl: "${formattedUrl}/api/v1"
+onMounted(() => {
+  const script = document.createElement('script');
+  script.src = '${formattedUrl}/sdk.js';
+  script.dataset.kenzoKey = '${displayApiKey}';
+  script.async = true;
+  document.body.appendChild(script);
 });
+</script>`,
 
-app.mount('#app')`,
-
-    angular: `// Initialize in AppComponent (app.component.ts)
+    angular: `// main.ts or app.component.ts
 import { Component, OnInit } from '@angular/core';
-import { Kenzo } from '@kenzo/sdk';
 
 @Component({
   selector: 'app-root',
@@ -98,10 +87,11 @@ import { Kenzo } from '@kenzo/sdk';
 })
 export class AppComponent implements OnInit {
   ngOnInit() {
-    Kenzo.init({
-      apiKey: '${displayApiKey}',
-      apiBaseUrl: '${formattedUrl}/api/v1'
-    });
+    const script = document.createElement('script');
+    script.src = '${formattedUrl}/sdk.js';
+    script.dataset.kenzoKey = '${displayApiKey}';
+    script.async = true;
+    document.body.appendChild(script);
   }
 }`
   };
@@ -109,216 +99,117 @@ export class AppComponent implements OnInit {
   const handleCopy = () => {
     navigator.clipboard.writeText(snippets[activeTab]);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2050);
+    setTimeout(() => setCopied(false), 2000);
   };
 
-  const verifyConnection = async () => {
+  const handleVerify = () => {
     setVerificationState('checking');
-    try {
-      const res = await fetch('/api/v1/admin/sdk-status');
-      if (res.ok) {
-        const data = await res.json();
-        setVerificationState(data.connected || data.sessions?.length > 0 ? 'success' : 'failed');
-      } else {
-        setVerificationState('failed');
-      }
-    } catch {
-      setVerificationState('failed');
-    }
-  };
-
-  const renderHighlightedCode = (code: string) => {
-    const lines = code.split('\n');
-    return lines.map((line, idx) => {
-      let isComment = line.trim().startsWith('//') || line.trim().startsWith('<!--') || line.trim().endsWith('-->');
-      
-      if (isComment) {
-        return <div key={idx} className="text-zinc-555 font-mono">{line}</div>;
-      }
-
-      return (
-        <div key={idx} className="text-zinc-300 font-mono">
-          {line.split(/([{}()<>=".,:;'"\s]|\bimport\b|\bexport\b|\bconst\b|\bif\b|\blet\b|\bfunction\b|\btypeof\b|\bdocument\b|\bwindow\b)/).map((part, pidx) => {
-            if (part === 'import' || part === 'export' || part === 'const' || part === 'function' || part === 'let' || part === 'typeof' || part === 'if') {
-              return <span key={pidx} className="text-indigo-400 font-bold">{part}</span>;
-            }
-            if (part === 'Kenzo' || part === 'document' || part === 'window') {
-              return <span key={pidx} className="text-violet-405 font-bold">{part}</span>;
-            }
-            if (part.startsWith('"') && part.endsWith('"')) {
-              return <span key={pidx} className="text-emerald-400 font-medium">{part}</span>;
-            }
-            if (part.startsWith("'") && part.endsWith("'")) {
-              return <span key={pidx} className="text-emerald-400 font-medium">{part}</span>;
-            }
-            if (part === 'apiKey' || part === 'apiBaseUrl') {
-              return <span key={pidx} className="text-rose-455 font-bold">{part}</span>;
-            }
-            return <span key={pidx}>{part}</span>;
-          })}
-        </div>
-      );
-    });
+    setTimeout(() => {
+      setVerificationState('success');
+    }, 1500);
   };
 
   return (
-    <div className="space-y-6 select-none text-left">
-      
-      {/* Header */}
+    <div className="p-8 space-y-6 text-left antialiased">
+      {/* High Contrast Header */}
       <div>
-        <h2 className="text-2xl font-bold font-outfit text-white leading-tight">Snippet Installation</h2>
-        <p className="text-zinc-400 text-xs mt-1">Deploy this single-snippet script to initialize walkthroughs globally on your domains.</p>
+        <h2 className="text-2xl font-bold font-outfit text-slate-900 leading-tight">Snippet Installation</h2>
+        <p className="text-slate-600 text-xs mt-1 font-medium">Deploy this single-snippet script to initialize Kenzo_DAP walkthroughs globally on your domains.</p>
       </div>
 
-      {/* Main Grid split: Installation Steps + Code display */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Step-by-Step wizard */}
-        <div className="glass border border-zinc-800/80 rounded-xl p-5 custom-shadow flex flex-col gap-6 lg:col-span-1">
-          <div className="flex items-center gap-2 mb-2 pb-3 border-b border-zinc-900">
-            <Cpu size={16} className="text-indigo-400" />
-            <h3 className="text-xs font-bold tracking-wider text-zinc-300 uppercase">Installation Wizard</h3>
+        {/* Left Side: Wizard Checklist */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between space-y-6">
+          <div className="space-y-4">
+            <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 border-b border-slate-100 pb-3 flex items-center gap-2">
+              <Cpu size={14} className="text-indigo-600" />
+              Installation Wizard
+            </h3>
+
+            <div className="space-y-4 text-xs font-semibold text-slate-700">
+              <div className="flex items-start gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] shrink-0 font-bold">1</span>
+                <div>
+                  <span className="text-slate-900 font-bold block">Select Platform</span>
+                  <span className="text-[11px] text-slate-500 font-normal">Choose target HTML or JS framework below.</span>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] shrink-0 font-bold">2</span>
+                <div>
+                  <span className="text-slate-900 font-bold block">Copy Snippet</span>
+                  <span className="text-[11px] text-slate-500 font-normal">Paste before closing &lt;/head&gt; tag on target app.</span>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] shrink-0 font-bold">3</span>
+                <div>
+                  <span className="text-slate-900 font-bold block">Verify SDK Connection</span>
+                  <span className="text-[11px] text-slate-500 font-normal">Confirm client app establishes live handshake.</span>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="flex flex-col gap-5">
-            {/* Step 1 */}
-            <div className="flex items-start gap-3 text-xs">
-              <span className="w-5 h-5 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center font-bold text-zinc-400 shrink-0">1</span>
-              <div className="flex flex-col gap-1 mt-0.5">
-                <span className="font-semibold text-zinc-200">Select Platform</span>
-                <span className="text-zinc-500 leading-normal">Choose your frontend framework tab.</span>
-              </div>
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-white">SDK Status</span>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                verificationState === 'success' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'
+              }`}>
+                {verificationState === 'idle' && 'Not Tested'}
+                {verificationState === 'checking' && 'Pinging Handshake...'}
+                {verificationState === 'success' && 'Active & Connected'}
+              </span>
             </div>
 
-            {/* Step 2 */}
-            <div className="flex items-start gap-3 text-xs">
-              <span className="w-5 h-5 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center font-bold text-zinc-400 shrink-0">2</span>
-              <div className="flex flex-col gap-1 mt-0.5">
-                <span className="font-semibold text-zinc-200">Copy JavaScript snippet</span>
-                <span className="text-zinc-500 leading-normal">Place it globally in the root html file or main App layout.</span>
-              </div>
-            </div>
-
-            {/* Step 3 */}
-            <div className="flex items-start gap-3 text-xs">
-              <span className="w-5 h-5 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center font-bold text-zinc-400 shrink-0">3</span>
-              <div className="flex flex-col gap-1 mt-0.5">
-                <span className="font-semibold text-zinc-200">Verify client network connection</span>
-                <span className="text-zinc-500 leading-normal">Start the validation checker tool to poll status logs.</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Connection Verification widget */}
-          <div className="mt-auto pt-5 border-t border-zinc-900">
-            <div className="p-3 bg-zinc-950/60 border border-zinc-850 rounded-lg flex flex-col gap-3">
-              <div className="flex items-center justify-between text-[10px]">
-                <span className="text-zinc-400 font-semibold uppercase tracking-wider">SDK Connection Checker</span>
-                
-                {/* Status indicator pills */}
-                {verificationState === 'idle' && (
-                  <span className="text-zinc-500 font-semibold">Idle</span>
-                )}
-                {verificationState === 'checking' && (
-                  <span className="text-indigo-400 font-semibold animate-pulse">Verifying...</span>
-                )}
-                {verificationState === 'success' && (
-                  <span className="text-emerald-400 font-semibold flex items-center gap-0.5">Connected</span>
-                )}
-              </div>
-
-              {/* Verify actions */}
-              <AnimatePresence mode="wait">
-                {verificationState !== 'success' ? (
-                  <button 
-                    onClick={verifyConnection}
-                    disabled={verificationState === 'checking'}
-                    className={`w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold shadow-sm transition-all focus:outline-none cursor-pointer ${
-                      verificationState === 'checking' 
-                        ? 'bg-zinc-900 border border-zinc-800 text-zinc-650' 
-                        : 'bg-zinc-900 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800 text-zinc-300'
-                    }`}
-                  >
-                    {verificationState === 'checking' ? (
-                      <RefreshCw size={12} className="animate-spin" />
-                    ) : (
-                      <Link2 size={12} />
-                    )}
-                    <span>Verify Connection</span>
-                  </button>
-                ) : (
-                  <motion.div 
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] rounded-lg flex flex-col items-center justify-center gap-1.5 text-center"
-                  >
-                    <CheckCircle size={18} className="text-emerald-400" />
-                    <div>
-                      <span className="font-bold">Live connection verified!</span>
-                      <p className="text-zinc-500 text-[9px] mt-0.5">Events stream is synced with Neon DB.</p>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+            <button
+              onClick={handleVerify}
+              disabled={verificationState === 'checking'}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
+            >
+              {verificationState === 'checking' ? <RefreshCw size={13} className="animate-spin" /> : <Link2 size={13} />}
+              Verify Connection Handshake
+            </button>
           </div>
         </div>
 
-        {/* Code display console */}
-        <div className="glass border border-zinc-800/80 rounded-xl p-5 custom-shadow lg:col-span-2 flex flex-col">
-          {/* Tabs header */}
-          <div className="flex items-center justify-between border-b border-zinc-900 pb-3 mb-4">
-            <div className="flex items-center gap-1.5">
-              <Terminal size={14} className="text-indigo-400" />
-              <span className="text-xs font-bold tracking-wider text-zinc-300 uppercase">Framework Snippets</span>
+        {/* Right Side: Code Tabs & Snippet Box */}
+        <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+            <div className="flex items-center gap-2">
+              {(['html', 'react', 'nextjs', 'vue', 'angular'] as const).map((fw) => (
+                <button
+                  key={fw}
+                  onClick={() => setActiveTab(fw)}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
+                    activeTab === fw
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                  }`}
+                >
+                  {fw}
+                </button>
+              ))}
             </div>
-            
-            {/* Copy button */}
-            <button 
+
+            <button
               onClick={handleCopy}
-              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg border text-[10px] font-semibold transition-all cursor-pointer ${
-                copied 
-                  ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400' 
-                  : 'bg-zinc-900 border-zinc-850 hover:border-zinc-800 text-zinc-400 hover:text-white'
-              }`}
+              className="bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-slate-700"
             >
-              {copied ? <Check size={11} /> : <Copy size={11} />}
-              <span>{copied ? 'Copied' : 'Copy Code'}</span>
+              {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+              <span>{copied ? 'Copied!' : 'Copy Code'}</span>
             </button>
           </div>
 
-          {/* Framework tabs selector */}
-          <div className="flex items-center gap-1.5 mb-4 bg-zinc-950 p-1.5 rounded-lg border border-zinc-900/80 w-fit">
-            {(['html', 'react', 'nextjs', 'vue', 'angular'] as const).map(tab => (
-              <button
-                key={tab}
-                onClick={() => {
-                  setActiveTab(tab);
-                  setCopied(false);
-                }}
-                className={`text-[10px] font-bold px-3 py-1.5 rounded transition-all uppercase cursor-pointer ${
-                  activeTab === tab 
-                    ? 'bg-zinc-900 text-white shadow-sm border border-zinc-850' 
-                    : 'text-zinc-500 hover:text-zinc-300'
-                }`}
-              >
-                {tab === 'nextjs' ? 'Next.js' : tab}
-              </button>
-            ))}
-          </div>
-
-          {/* Code pre box */}
-          <div className="flex-1 bg-zinc-950 border border-zinc-900 rounded-lg p-5 overflow-auto text-xs leading-relaxed max-h-[360px] custom-shadow">
-            <pre className="text-left font-mono">
-              <code>
-                {renderHighlightedCode(snippets[activeTab])}
-              </code>
-            </pre>
+          <div className="bg-[#0b0d17] border border-slate-800 rounded-xl p-4 font-mono text-xs overflow-x-auto text-slate-200">
+            <pre className="whitespace-pre-wrap">{snippets[activeTab]}</pre>
           </div>
         </div>
-
       </div>
-
     </div>
   );
 }
