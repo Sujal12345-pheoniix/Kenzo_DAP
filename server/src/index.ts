@@ -1526,8 +1526,6 @@ app.get('/api/v1/admin/analytics/summary', authenticateAdmin, async (req: Authen
   }
 });
 
-});
-
 // 9. Generic Insights Query API (backs Trend, Funnel, Journey UI)
 app.post('/api/v1/admin/analytics/query', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
   try {
