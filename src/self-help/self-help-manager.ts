@@ -1,5 +1,6 @@
 /**
  * Self Help Widget — slide-over panel with keyword and semantic search over authored content and external KB.
+ * Ultra-responsive, glassmorphic UI with vibrant category tags and micro-interactions.
  * @module self-help/self-help-manager
  */
 
@@ -37,90 +38,151 @@ export class SelfHelpManager {
         position: fixed;
         bottom: 24px;
         right: 90px;
-        background: #181825;
-        color: #cba6f7;
-        border: 1px solid rgba(203, 166, 247, 0.3);
+        background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+        color: #c7d2fe;
+        border: 1px solid rgba(199, 210, 254, 0.3);
         border-radius: 24px;
-        padding: 10px 18px;
+        padding: 10px 20px;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         font-size: 13px;
-        font-weight: 600;
+        font-weight: 700;
         cursor: pointer;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 8px 25px rgba(49, 46, 129, 0.45);
         display: flex;
         align-items: center;
         gap: 8px;
         z-index: 2147483400;
+        transition: all 0.25s ease;
+      }
+      .self-help-fab:hover {
+        transform: translateY(-2px) scale(1.04);
+        border-color: rgba(199, 210, 254, 0.6);
+        box-shadow: 0 12px 30px rgba(49, 46, 129, 0.6);
       }
       .self-help-panel {
         position: fixed;
         top: 0;
-        right: -380px;
-        width: 360px;
+        right: -420px;
+        width: 380px;
+        max-width: 100vw;
         height: 100vh;
-        background: #11111b;
-        border-left: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: -10px 0 40px rgba(0, 0, 0, 0.5);
-        color: #cdd6f4;
+        background: rgba(15, 15, 26, 0.96);
+        backdrop-filter: blur(16px);
+        border-left: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: -15px 0 50px rgba(0, 0, 0, 0.6);
+        color: #e2e8f0;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         display: flex;
         flex-direction: column;
         z-index: 2147483401;
-        transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
       }
       .self-help-panel.open {
         right: 0;
       }
       .self-help-header {
-        padding: 20px;
+        padding: 24px 20px 16px 20px;
+        background: linear-gradient(180deg, rgba(30, 27, 75, 0.6) 0%, rgba(15, 15, 26, 0) 100%);
         border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .self-help-title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 14px;
       }
       .self-help-title {
         font-size: 18px;
-        font-weight: 700;
-        color: #f5e0dc;
-        margin-bottom: 12px;
+        font-weight: 800;
+        color: #ffffff;
+        letter-spacing: -0.02em;
+      }
+      .self-help-close-btn {
+        background: rgba(255,255,255,0.06);
+        border: none;
+        color: #94a3b8;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s;
+      }
+      .self-help-close-btn:hover {
+        background: rgba(255,255,255,0.15);
+        color: #ffffff;
+      }
+      .self-help-search-box {
+        position: relative;
       }
       .self-help-search-input {
         width: 100%;
-        padding: 10px 14px;
-        background: rgba(255, 255, 255, 0.05);
+        padding: 11px 16px 11px 40px;
+        background: rgba(255, 255, 255, 0.06);
         border: 1px solid rgba(255, 255, 255, 0.15);
-        border-radius: 8px;
+        border-radius: 12px;
         color: #ffffff;
         font-size: 13px;
         outline: none;
         box-sizing: border-box;
+        transition: all 0.2s ease;
       }
       .self-help-search-input:focus {
-        border-color: #cba6f7;
+        border-color: #818cf8;
+        box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2);
+        background: rgba(255, 255, 255, 0.09);
+      }
+      .self-help-search-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+        pointer-events: none;
       }
       .self-help-list {
-        padding: 16px;
+        padding: 16px 20px;
         overflow-y: auto;
         flex: 1;
       }
       .self-help-card {
-        padding: 14px;
+        padding: 16px;
         background: rgba(255, 255, 255, 0.03);
-        border-radius: 10px;
-        margin-bottom: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 14px;
+        margin-bottom: 12px;
         cursor: pointer;
-        transition: background 0.2s ease;
+        transition: all 0.2s ease;
       }
       .self-help-card:hover {
-        background: rgba(255, 255, 255, 0.08);
+        background: rgba(129, 140, 248, 0.08);
+        border-color: rgba(129, 140, 248, 0.3);
+        transform: translateY(-1px);
+      }
+      .self-help-card-category {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 2px 8px;
+        border-radius: 6px;
+        background: rgba(129, 140, 248, 0.15);
+        color: #818cf8;
+        margin-bottom: 6px;
       }
       .self-help-card-title {
         font-size: 14px;
-        font-weight: 600;
-        color: #cba6f7;
+        font-weight: 700;
+        color: #ffffff;
         margin-bottom: 4px;
       }
       .self-help-card-summary {
         font-size: 12px;
-        color: #a6adc8;
-        line-height: 1.4;
+        color: #94a3b8;
+        line-height: 1.5;
       }
     `;
 
@@ -129,7 +191,7 @@ export class SelfHelpManager {
     const fab = document.createElement('button');
     fab.className = 'self-help-fab';
     fab.innerHTML = `
-      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
       <span>Self Help</span>
     `;
 
@@ -137,16 +199,25 @@ export class SelfHelpManager {
     panel.className = 'self-help-panel';
     panel.innerHTML = `
       <div class="self-help-header">
-        <div class="self-help-title">Help & Knowledge</div>
-        <input type="text" class="self-help-search-input" placeholder="Search guides, walkthroughs, FAQs..." />
+        <div class="self-help-title-row">
+          <div class="self-help-title">Help & Knowledge</div>
+          <button class="self-help-close-btn">✕</button>
+        </div>
+        <div class="self-help-search-box">
+          <svg class="self-help-search-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          <input type="text" class="self-help-search-input" placeholder="Search guides, walkthroughs, FAQs..." />
+        </div>
       </div>
       <div class="self-help-list"></div>
     `;
 
-    fab.addEventListener('click', () => {
-      this.isOpen = !this.isOpen;
+    const togglePanel = (open: boolean) => {
+      this.isOpen = open;
       panel.classList.toggle('open', this.isOpen);
-    });
+    };
+
+    fab.addEventListener('click', () => togglePanel(!this.isOpen));
+    panel.querySelector('.self-help-close-btn')?.addEventListener('click', () => togglePanel(false));
 
     const searchInput = panel.querySelector('.self-help-search-input') as HTMLInputElement;
     searchInput?.addEventListener('input', (e) => {
@@ -175,7 +246,7 @@ export class SelfHelpManager {
     });
 
     if (filtered.length === 0) {
-      listEl.innerHTML = `<div style="text-align:center; color:#6c7086; padding: 20px;">No articles found</div>`;
+      listEl.innerHTML = `<div style="text-align:center; color:#64748b; font-size: 13px; padding: 40px 20px;">No matching articles found</div>`;
       return;
     }
 
@@ -183,6 +254,7 @@ export class SelfHelpManager {
       .map(
         (art) => `
       <div class="self-help-card" data-flow-id="${art.flowId || ''}" data-url="${art.externalUrl || ''}">
+        <span class="self-help-card-category">${art.category || (art.flowId ? 'Interactive Tour' : 'Article')}</span>
         <div class="self-help-card-title">${art.title}</div>
         <div class="self-help-card-summary">${art.summary}</div>
       </div>

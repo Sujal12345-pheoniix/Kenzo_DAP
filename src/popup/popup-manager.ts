@@ -1,5 +1,6 @@
 /**
  * Pop-up Manager — renders modal/banner dialogs triggered by page load, events, idle time, or exit intent.
+ * Glassmorphic design with subtle glowing border and rich gradient action buttons.
  * @module popup/popup-manager
  */
 
@@ -38,43 +39,47 @@ export class PopupManager {
       .kenzo-popup-overlay {
         position: fixed;
         inset: 0;
-        background: rgba(10, 10, 18, 0.75);
-        backdrop-filter: blur(8px);
+        background: rgba(10, 10, 18, 0.78);
+        backdrop-filter: blur(12px);
         display: flex;
         align-items: center;
         justify-content: center;
         z-index: 2147483500;
-        animation: kenzo-popup-fade 0.25s ease-out;
+        animation: kenzo-popup-backdrop-fade 0.25s ease-out;
       }
       .kenzo-popup-card {
-        background: #181825;
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        border-radius: 16px;
+        background: rgba(24, 24, 37, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 20px;
         width: 90%;
         max-width: 440px;
-        padding: 24px;
-        color: #cdd6f4;
+        padding: 28px;
+        color: #f1f5f9;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(99, 102, 241, 0.2);
+        animation: kenzo-popup-card-scale 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        overflow: hidden;
       }
       .kenzo-popup-image {
-        width: 100%;
-        height: 180px;
+        width: calc(100% + 56px);
+        margin-left: -28px;
+        margin-top: -28px;
+        height: 190px;
         object-fit: cover;
-        border-radius: 10px;
-        margin-bottom: 16px;
+        margin-bottom: 20px;
       }
       .kenzo-popup-title {
         font-size: 20px;
-        font-weight: 700;
-        color: #f5e0dc;
+        font-weight: 800;
+        color: #ffffff;
+        letter-spacing: -0.02em;
         margin-bottom: 10px;
       }
       .kenzo-popup-body {
         font-size: 14px;
         line-height: 1.5;
-        color: #a6adc8;
-        margin-bottom: 20px;
+        color: #cbd5e1;
+        margin-bottom: 24px;
       }
       .kenzo-popup-actions {
         display: flex;
@@ -82,24 +87,38 @@ export class PopupManager {
         gap: 12px;
       }
       .kenzo-popup-btn {
-        padding: 10px 20px;
-        border-radius: 8px;
-        font-weight: 600;
+        padding: 11px 22px;
+        border-radius: 12px;
+        font-weight: 700;
         font-size: 13px;
         cursor: pointer;
         border: none;
+        transition: all 0.2s ease;
       }
       .kenzo-popup-btn-primary {
-        background: linear-gradient(135deg, #6366f1, #4f46e5);
-        color: #fff;
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        color: #ffffff;
+        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+      }
+      .kenzo-popup-btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
       }
       .kenzo-popup-btn-secondary {
-        background: rgba(255,255,255,0.08);
-        color: #cdd6f4;
+        background: rgba(255, 255, 255, 0.08);
+        color: #cbd5e1;
       }
-      @keyframes kenzo-popup-fade {
-        from { opacity: 0; transform: scale(0.96); }
-        to { opacity: 1; transform: scale(1); }
+      .kenzo-popup-btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.15);
+        color: #ffffff;
+      }
+      @keyframes kenzo-popup-backdrop-fade {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes kenzo-popup-card-scale {
+        from { opacity: 0; transform: scale(0.92) translateY(10px); }
+        to { opacity: 1; transform: scale(1) translateY(0); }
       }
     `;
     this.shadowRoot.appendChild(style);

@@ -1,7 +1,8 @@
 import { Search, Bell, Sparkles, Command } from 'lucide-react';
+import type { TabType } from './sidebar';
 
 interface TopNavProps {
-  activeTab: 'dashboard' | 'insights' | 'walkthroughs' | 'integration';
+  activeTab: TabType;
   onSearchClick: () => void;
   flowsCount: number;
 }
@@ -9,14 +10,30 @@ interface TopNavProps {
 export default function TopNav({ activeTab, onSearchClick, flowsCount }: TopNavProps) {
   const getTabLabel = () => {
     switch (activeTab) {
+      case 'all_content':
+        return 'All content';
+      case 'my_content':
+        return 'My content';
+      case 'repositories':
+        return 'Repositories';
+      case 'widget':
+        return 'Widget';
+      case 'users':
+        return 'Users';
+      case 'tags':
+        return 'Tags';
       case 'dashboard':
-        return 'Analytics Dashboard';
-      case 'insights':
-        return 'Insights Builder';
-      case 'walkthroughs':
-        return 'Walkthrough Tours';
+        return 'Analytics';
       case 'integration':
-        return 'Snippet Install';
+        return 'Integrations';
+      case 'auto_testing':
+        return 'Auto testing';
+      case 'insights':
+        return 'Insights';
+      case 'feedback':
+        return 'Feedback';
+      case 'community':
+        return 'Community';
       default:
         return 'Overview';
     }

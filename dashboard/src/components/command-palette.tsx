@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Command, Layout, Code, BarChart2, Play, RefreshCw, Sparkles, X } from 'lucide-react';
+import type { TabType } from './sidebar';
 
 interface CommandPaletteProps {
   isOpen: boolean;
   onClose: () => void;
-  setActiveTab: (tab: 'dashboard' | 'walkthroughs' | 'integration') => void;
+  setActiveTab: (tab: TabType) => void;
   loadData: () => void;
   flows: Array<{ id: string; name: string }>;
 }
@@ -31,7 +32,7 @@ export default function CommandPalette({ isOpen, onClose, setActiveTab, loadData
       title: 'Go to Walkthrough Tours', 
       category: 'Navigation', 
       icon: Layout, 
-      action: () => setActiveTab('walkthroughs'),
+      action: () => setActiveTab('all_content'),
       shortcut: '↵'
     },
     { 

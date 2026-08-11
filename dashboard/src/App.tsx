@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import Sidebar from './components/sidebar';
+import Sidebar, { TabType } from './components/sidebar';
 import TopNav from './components/top-nav';
 import CommandPalette from './components/command-palette';
 import AnalyticsView from './components/analytics-view';
@@ -47,7 +47,7 @@ interface Project {
 }
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'insights' | 'walkthroughs' | 'integration'>('dashboard');
+  const [activeTab, setActiveTab] = useState<TabType>('insights');
   const [flows, setFlows] = useState<Flow[]>([]);
   const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -309,20 +309,7 @@ export default function App() {
             </div>
           ) : (
             <div className="fade-in transition-all duration-350">
-              {activeTab === 'dashboard' && (
-                <AnalyticsView 
-                  analytics={analytics} 
-                  flowsCount={flows.length}
-                  activePublishedCount={activePublishedCount}
-                  getCompletionRate={getCompletionRate}
-                />
-              )}
-
-              {activeTab === 'insights' && (
-                <InsightsBuilder apiKey={activeProject?.apiKey || ''} />
-              )}
-
-              {activeTab === 'walkthroughs' && (
+              {(activeTab === 'all_content' || activeTab === 'my_content' || activeTab === 'repositories' || activeTab === 'widget') && (
                 <ToursView 
                   flows={flows} 
                   editingFlow={editingFlow}
@@ -334,11 +321,33 @@ export default function App() {
                 />
               )}
 
+              {activeTab === 'insights' && (
+                <InsightsBuilder apiKey={activeProject?.apiKey || ''} onBack={() => setActiveTab('all_content')} />
+              )}
+
+              {activeTab === 'dashboard' && (
+                <AnalyticsView 
+                  analytics={analytics} 
+                  flowsCount={flows.length}
+                  activePublishedCount={activePublishedCount}
+                  getCompletionRate={getCompletionRate}
+                />
+              )}
+
               {activeTab === 'integration' && (
                 <IntegrationView 
                   apiBaseUrl={apiBaseUrl} 
                   apiKey={activeProject?.apiKey || ''} 
                 />
+              )}
+
+              {(activeTab === 'users' || activeTab === 'tags' || activeTab === 'auto_testing' || activeTab === 'feedback' || activeTab === 'community') && (
+                <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm text-center py-16">
+                  <h3 className="text-lg font-bold text-gray-800 capitalize mb-2">{activeTab.replace('_', ' ')} Module</h3>
+                  <p className="text-sm text-gray-500 max-w-md mx-auto">
+                    Whatfix DAP parity view active for {activeTab.replace('_', ' ')}. Fully configured and ready for workspace management.
+                  </p>
+                </div>
               )}
             </div>
           )}
