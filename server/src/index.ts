@@ -40,23 +40,21 @@ app.post('/api/v1/auth/login', async (req: Request, res: Response) => {
       return;
     }
 
-    // Fetch projects accessible to this user
-    let accessibleProjects = [];
+    // Fetch ONLY projects that belong to this user — strict RBAC isolation
+    let accessibleProjects: any[] = [];
     if (user.role === 'SUPER_ADMIN') {
-      const projRes = await pool.query('SELECT id, name, api_key as "apiKey" FROM projects ORDER BY created_at ASC');
+      // Super Admin sees ALL projects
+      const projRes = await pool.query(
+        'SELECT id, name, api_key as "apiKey", client_email as "clientEmail" FROM projects ORDER BY created_at ASC'
+      );
       accessibleProjects = projRes.rows;
     } else {
-      const projRes = await pool.query('SELECT id, name, api_key as "apiKey" FROM projects WHERE name ILIKE $1 OR api_key ILIKE $2 LIMIT 5', [
-        `%${user.company_name}%`,
-        `%${user.company_id}%`
-      ]);
-      if (projRes.rows.length === 0) {
-        // Fallback to all projects if specific match isn't found
-        const fallbackRes = await pool.query('SELECT id, name, api_key as "apiKey" FROM projects LIMIT 1');
-        accessibleProjects = fallbackRes.rows;
-      } else {
-        accessibleProjects = projRes.rows;
-      }
+      // Client users ONLY see projects where client_email matches their email exactly
+      const projRes = await pool.query(
+        'SELECT id, name, api_key as "apiKey", client_email as "clientEmail" FROM projects WHERE LOWER(client_email) = LOWER($1) ORDER BY created_at ASC',
+        [user.email.trim()]
+      );
+      accessibleProjects = projRes.rows;
     }
 
     const token = jwt.sign(
@@ -651,48 +649,59 @@ app.post('/api/v1/progress/:flowId', authenticateSdk, async (req: AuthenticatedR
 
 // --- ADMIN API ROUTES ---
 
-// 0a. List projects (RBAC scoped: Super Admin sees all; Clients see only assigned projects)
+// 0a. List projects (RBAC scoped: Super Admin sees all; Clients see ONLY assigned projects)
 app.get('/api/v1/admin/projects', async (req: Request, res: Response) => {
   try {
+    // 1. Try to extract user identity from JWT Bearer token
     let authUser: any = null;
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
       try {
         authUser = jwt.verify(authHeader.split(' ')[1], JWT_SECRET);
-      } catch (_) {}
+      } catch (_) {
+        // Invalid token — reject
+        res.status(401).json({ message: 'Invalid or expired token' });
+        return;
+      }
     }
+
+    // 2. Fallback: trust x-user-email/role headers only if token was not present
     if (!authUser) {
       const emailHeader = req.headers['x-user-email'] as string;
       const roleHeader = req.headers['x-user-role'] as string;
       if (emailHeader) {
-        authUser = { email: emailHeader, role: roleHeader || 'CLIENT_CEO' };
+        // Verify this email actually exists in DB before trusting the header
+        const check = await pool.query('SELECT email, role FROM users WHERE LOWER(email) = LOWER($1)', [emailHeader]);
+        if (check.rows.length > 0) {
+          authUser = { email: check.rows[0].email, role: check.rows[0].role };
+        }
       }
     }
 
-    if (authUser && authUser.role === 'SUPER_ADMIN') {
-      const result = await pool.query('SELECT id, name, api_key as "apiKey", client_email as "clientEmail", created_at as "createdAt" FROM projects ORDER BY created_at ASC');
-      res.json(result.rows);
+    // 3. If we still have no identity, reject
+    if (!authUser) {
+      res.status(401).json({ message: 'Authentication required' });
       return;
     }
 
-    if (authUser && authUser.email) {
-      const userEmail = authUser.email.toLowerCase();
-      // Match by client_email OR mapped project name
+    // 4. SUPER_ADMIN sees all projects
+    if (authUser.role === 'SUPER_ADMIN') {
       const result = await pool.query(
-        `SELECT id, name, api_key as "apiKey", client_email as "clientEmail", created_at as "createdAt" 
-         FROM projects 
-         WHERE LOWER(client_email) = LOWER($1) 
-            OR ($1 = 'client1@kenzo.com' AND name ILIKE '%TruthBomb%')
-            OR ($1 = 'client2@kenzo.com' AND name ILIKE '%Kenzo-erp%')
-         ORDER BY created_at ASC`,
-        [userEmail]
+        'SELECT id, name, api_key as "apiKey", client_email as "clientEmail", created_at as "createdAt" FROM projects ORDER BY created_at ASC'
       );
       res.json(result.rows);
       return;
     }
 
-    // Default fallback
-    const result = await pool.query('SELECT id, name, api_key as "apiKey", client_email as "clientEmail", created_at as "createdAt" FROM projects ORDER BY created_at ASC');
+    // 5. All other roles: strictly filter to only projects assigned to their email
+    const userEmail = (authUser.email as string).toLowerCase().trim();
+    const result = await pool.query(
+      `SELECT id, name, api_key as "apiKey", client_email as "clientEmail", created_at as "createdAt"
+       FROM projects
+       WHERE LOWER(client_email) = $1
+       ORDER BY created_at ASC`,
+      [userEmail]
+    );
     res.json(result.rows);
   } catch (err: any) {
     res.status(500).json({ message: 'Server error', error: err.message });

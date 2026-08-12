@@ -135,7 +135,7 @@ export default function Sidebar({
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [workspaceMenuOpen, setWorkspaceMenuOpen] = useState(false);
 
-  const isSuperAdmin = !user || user.role === 'SUPER_ADMIN';
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
   // Super Admin Full Navigation Hierarchy
   const superAdminNav: NavGroup[] = [

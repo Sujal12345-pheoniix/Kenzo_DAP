@@ -168,20 +168,25 @@ export default function App() {
     user: UserSession;
     projects: Array<{ id: string; name: string; apiKey: string }>;
   }) => {
+    // Clear any stale project cache from a previous session
+    localStorage.removeItem('kenzo_active_project_id');
     localStorage.setItem('kenzo_jwt_token', data.token);
     localStorage.setItem('kenzo_user_session', JSON.stringify(data.user));
     setUser(data.user);
-    if (data.projects && data.projects.length > 0) {
-      setProjects(data.projects as any);
-      setActiveProjectId(data.projects[0].id);
-    }
+    // Use only the projects the server returned for THIS user
+    const userProjects = (data.projects || []) as any[];
+    setProjects(userProjects);
+    setActiveProjectId(userProjects.length > 0 ? userProjects[0].id : '');
     setActiveTab(data.user.role === 'SUPER_ADMIN' ? 'overview' : 'ceo_overview');
   };
 
   const handleLogout = () => {
     localStorage.removeItem('kenzo_jwt_token');
     localStorage.removeItem('kenzo_user_session');
+    localStorage.removeItem('kenzo_active_project_id');
     setUser(null);
+    setProjects([]);
+    setActiveProjectId('');
   };
 
   const handleCreateProject = async (name: string, url?: string, clientEmail?: string) => {
