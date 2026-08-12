@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ScrollText, Search, Filter, ChevronLeft, ChevronRight,
-  AlertCircle, Loader2, Shield, Globe
+  Loader2, Shield, Globe
 } from 'lucide-react';
 
 interface AuditLog {
