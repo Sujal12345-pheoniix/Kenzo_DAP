@@ -11,7 +11,7 @@ import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import { bootstrapDb, pool } from './db/connection';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'kenzo_dap_jwt_secret_key_2026';
 
 // Middleware
@@ -2464,13 +2464,15 @@ app.get('*', (req: Request, res: Response) => {
 });
 
 // Bootstrap Database and Start Server
-bootstrapDb()
-  .then(async () => {
-    app.listen(PORT, () => {
-      console.log(`[Server] Kenzo DAP API running on http://localhost:${PORT}`);
+const HOST = '0.0.0.0';
+
+app.listen(PORT, HOST, () => {
+  console.log(`[Server] Kenzo DAP API running on http://${HOST}:${PORT}`);
+  bootstrapDb()
+    .then(() => {
+      console.log('[Database] DB Bootstrap complete.');
+    })
+    .catch((err) => {
+      console.error('[Server] CRITICAL: DB Bootstrap failed:', err);
     });
-  })
-  .catch((err) => {
-    console.error('[Server] CRITICAL: DB Bootstrap failed. Server exiting.', err);
-    process.exit(1);
-  });
+});
