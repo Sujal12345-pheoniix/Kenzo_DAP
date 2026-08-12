@@ -133,6 +133,7 @@ app.use(express.static(path.join(__dirname, '../public/dashboard')));
 interface AuthenticatedRequest extends Request {
   projectId?: string;
   apiKey?: string;
+  user?: { email: string; role: string; id?: string };
 }
 
 function authenticateSdk(req: AuthenticatedRequest, res: Response, next: NextFunction) {
@@ -156,6 +157,21 @@ function authenticateSdk(req: AuthenticatedRequest, res: Response, next: NextFun
 
 // Simple auth check for admin dashboard (accepts a header or query param)
 function authenticateAdmin(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  // Extract user identity from JWT Bearer token (for audit logging)
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    try {
+      const decoded: any = jwt.verify(authHeader.split(' ')[1], JWT_SECRET);
+      req.user = { email: decoded.email, role: decoded.role, id: decoded.userId };
+    } catch (_) {}
+  }
+  // Also check x-user-email header as fallback identity
+  if (!req.user) {
+    const emailH = req.headers['x-user-email'] as string;
+    const roleH = req.headers['x-user-role'] as string;
+    if (emailH) req.user = { email: emailH, role: roleH || 'SUPER_ADMIN' };
+  }
+
   const projectIdHeader = req.headers['x-project-id'] as string;
   const apiKeyHeader = req.headers['x-api-key'] as string;
 
@@ -1833,7 +1849,616 @@ app.post('/api/v1/admin/flows/:id/rollback', authenticateAdmin, async (req: Auth
   }
 });
 
+
+// ─── PHASE 3: DAP GUIDANCE MODULE APIs ──────────────────────────────────────
+
+// Helper: write audit log entry
+async function writeAuditLog(params: {
+  projectId?: string | null;
+  userEmail?: string | null;
+  userRole?: string | null;
+  action: string;
+  resourceType: string;
+  resourceId?: string | null;
+  resourceName?: string | null;
+  details?: any;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+}) {
+  try {
+    await pool.query(
+      `INSERT INTO audit_logs (project_id, user_email, user_role, action, resource_type, resource_id, resource_name, details, ip_address, user_agent)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+      [
+        params.projectId || null,
+        params.userEmail || null,
+        params.userRole || null,
+        params.action,
+        params.resourceType,
+        params.resourceId || null,
+        params.resourceName || null,
+        JSON.stringify(params.details || {}),
+        params.ipAddress || null,
+        params.userAgent || null,
+      ]
+    );
+  } catch (_) {
+    // Audit log failures must never crash the main request
+  }
+}
+
+// ── Smart Tips ──────────────────────────────────────────────────────────────
+
+app.get('/api/v1/admin/smart-tips', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM smart_tips WHERE project_id = $1 ORDER BY created_at DESC',
+      [req.projectId]
+    );
+    res.json(result.rows);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+app.post('/api/v1/admin/smart-tips', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { name, content, selector, position, trigger_event, url_rules, segment_rules, status } = req.body;
+    if (!name || !content) { res.status(400).json({ message: 'name and content are required' }); return; }
+    const r = await pool.query(
+      `INSERT INTO smart_tips (project_id, name, content, selector, position, trigger_event, url_rules, segment_rules, status, created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
+      [req.projectId, name, content, JSON.stringify(selector || {}), position || 'bottom',
+       trigger_event || 'hover', JSON.stringify(url_rules || []), JSON.stringify(segment_rules || []),
+       status || 'draft', req.user?.email || null]
+    );
+    await writeAuditLog({ projectId: req.projectId, userEmail: req.user?.email, userRole: req.user?.role, action: 'CREATE', resourceType: 'smart_tip', resourceId: r.rows[0].id, resourceName: name });
+    res.status(201).json(r.rows[0]);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+app.put('/api/v1/admin/smart-tips/:id', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { name, content, selector, position, trigger_event, url_rules, segment_rules, status } = req.body;
+    const r = await pool.query(
+      `UPDATE smart_tips SET name=COALESCE($1,name), content=COALESCE($2,content), selector=COALESCE($3,selector),
+       position=COALESCE($4,position), trigger_event=COALESCE($5,trigger_event), url_rules=COALESCE($6,url_rules),
+       segment_rules=COALESCE($7,segment_rules), status=COALESCE($8,status), updated_at=CURRENT_TIMESTAMP
+       WHERE id=$9 AND project_id=$10 RETURNING *`,
+      [name, content, selector ? JSON.stringify(selector) : null, position, trigger_event,
+       url_rules ? JSON.stringify(url_rules) : null, segment_rules ? JSON.stringify(segment_rules) : null,
+       status, req.params.id, req.projectId]
+    );
+    if (r.rows.length === 0) { res.status(404).json({ message: 'Not found' }); return; }
+    await writeAuditLog({ projectId: req.projectId, userEmail: req.user?.email, userRole: req.user?.role, action: 'UPDATE', resourceType: 'smart_tip', resourceId: req.params.id, resourceName: r.rows[0].name });
+    res.json(r.rows[0]);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+app.delete('/api/v1/admin/smart-tips/:id', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const r = await pool.query('DELETE FROM smart_tips WHERE id=$1 AND project_id=$2 RETURNING name', [req.params.id, req.projectId]);
+    if (r.rows.length === 0) { res.status(404).json({ message: 'Not found' }); return; }
+    await writeAuditLog({ projectId: req.projectId, userEmail: req.user?.email, userRole: req.user?.role, action: 'DELETE', resourceType: 'smart_tip', resourceId: req.params.id, resourceName: r.rows[0].name });
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// ── Popups ──────────────────────────────────────────────────────────────────
+
+app.get('/api/v1/admin/popups', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const r = await pool.query('SELECT * FROM popups WHERE project_id=$1 ORDER BY created_at DESC', [req.projectId]);
+    res.json(r.rows);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+app.post('/api/v1/admin/popups', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { name, title, content, popup_type, position, theme, url_rules, segment_rules, trigger_event, trigger_delay, show_close_button, buttons, media_url, status } = req.body;
+    if (!name || !content) { res.status(400).json({ message: 'name and content are required' }); return; }
+    const r = await pool.query(
+      `INSERT INTO popups (project_id,name,title,content,popup_type,position,theme,url_rules,segment_rules,trigger_event,trigger_delay,show_close_button,buttons,media_url,status,created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING *`,
+      [req.projectId, name, title||null, content, popup_type||'modal', position||'center', theme||'light',
+       JSON.stringify(url_rules||[]), JSON.stringify(segment_rules||[]), trigger_event||'page_load',
+       trigger_delay||0, show_close_button!==false, JSON.stringify(buttons||[]), media_url||null,
+       status||'draft', req.user?.email||null]
+    );
+    await writeAuditLog({ projectId: req.projectId, userEmail: req.user?.email, userRole: req.user?.role, action: 'CREATE', resourceType: 'popup', resourceId: r.rows[0].id, resourceName: name });
+    res.status(201).json(r.rows[0]);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+app.put('/api/v1/admin/popups/:id', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { name, title, content, popup_type, position, theme, url_rules, segment_rules, trigger_event, trigger_delay, show_close_button, buttons, media_url, status } = req.body;
+    const r = await pool.query(
+      `UPDATE popups SET name=COALESCE($1,name),title=COALESCE($2,title),content=COALESCE($3,content),
+       popup_type=COALESCE($4,popup_type),position=COALESCE($5,position),theme=COALESCE($6,theme),
+       url_rules=COALESCE($7,url_rules),segment_rules=COALESCE($8,segment_rules),trigger_event=COALESCE($9,trigger_event),
+       trigger_delay=COALESCE($10,trigger_delay),show_close_button=COALESCE($11,show_close_button),
+       buttons=COALESCE($12,buttons),media_url=COALESCE($13,media_url),status=COALESCE($14,status),updated_at=CURRENT_TIMESTAMP
+       WHERE id=$15 AND project_id=$16 RETURNING *`,
+      [name,title,content,popup_type,position,theme,
+       url_rules?JSON.stringify(url_rules):null, segment_rules?JSON.stringify(segment_rules):null,
+       trigger_event, trigger_delay, show_close_button, buttons?JSON.stringify(buttons):null, media_url, status,
+       req.params.id, req.projectId]
+    );
+    if (r.rows.length === 0) { res.status(404).json({ message: 'Not found' }); return; }
+    await writeAuditLog({ projectId: req.projectId, userEmail: req.user?.email, userRole: req.user?.role, action: 'UPDATE', resourceType: 'popup', resourceId: req.params.id, resourceName: r.rows[0].name });
+    res.json(r.rows[0]);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+app.delete('/api/v1/admin/popups/:id', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const r = await pool.query('DELETE FROM popups WHERE id=$1 AND project_id=$2 RETURNING name', [req.params.id, req.projectId]);
+    if (r.rows.length === 0) { res.status(404).json({ message: 'Not found' }); return; }
+    await writeAuditLog({ projectId: req.projectId, userEmail: req.user?.email, userRole: req.user?.role, action: 'DELETE', resourceType: 'popup', resourceId: req.params.id, resourceName: r.rows[0].name });
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// ── Beacons ─────────────────────────────────────────────────────────────────
+
+app.get('/api/v1/admin/beacons', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const r = await pool.query('SELECT * FROM beacons WHERE project_id=$1 ORDER BY created_at DESC', [req.projectId]);
+    res.json(r.rows);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+app.post('/api/v1/admin/beacons', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { name, label, description, selector, color, size, pulse_animation, url_rules, segment_rules, on_click_action, linked_flow_id, status } = req.body;
+    if (!name) { res.status(400).json({ message: 'name is required' }); return; }
+    const r = await pool.query(
+      `INSERT INTO beacons (project_id,name,label,description,selector,color,size,pulse_animation,url_rules,segment_rules,on_click_action,linked_flow_id,status,created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
+      [req.projectId, name, label||null, description||null, JSON.stringify(selector||{}), color||'#6366f1', size||'medium',
+       pulse_animation!==false, JSON.stringify(url_rules||[]), JSON.stringify(segment_rules||[]),
+       on_click_action||'show_tooltip', linked_flow_id||null, status||'draft', req.user?.email||null]
+    );
+    await writeAuditLog({ projectId: req.projectId, userEmail: req.user?.email, userRole: req.user?.role, action: 'CREATE', resourceType: 'beacon', resourceId: r.rows[0].id, resourceName: name });
+    res.status(201).json(r.rows[0]);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+app.put('/api/v1/admin/beacons/:id', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { name, label, description, selector, color, size, pulse_animation, url_rules, segment_rules, on_click_action, linked_flow_id, status } = req.body;
+    const r = await pool.query(
+      `UPDATE beacons SET name=COALESCE($1,name),label=COALESCE($2,label),description=COALESCE($3,description),
+       selector=COALESCE($4,selector),color=COALESCE($5,color),size=COALESCE($6,size),pulse_animation=COALESCE($7,pulse_animation),
+       url_rules=COALESCE($8,url_rules),segment_rules=COALESCE($9,segment_rules),on_click_action=COALESCE($10,on_click_action),
+       linked_flow_id=COALESCE($11,linked_flow_id),status=COALESCE($12,status),updated_at=CURRENT_TIMESTAMP
+       WHERE id=$13 AND project_id=$14 RETURNING *`,
+      [name,label,description, selector?JSON.stringify(selector):null, color,size,pulse_animation,
+       url_rules?JSON.stringify(url_rules):null, segment_rules?JSON.stringify(segment_rules):null,
+       on_click_action, linked_flow_id, status, req.params.id, req.projectId]
+    );
+    if (r.rows.length === 0) { res.status(404).json({ message: 'Not found' }); return; }
+    await writeAuditLog({ projectId: req.projectId, userEmail: req.user?.email, userRole: req.user?.role, action: 'UPDATE', resourceType: 'beacon', resourceId: req.params.id, resourceName: r.rows[0].name });
+    res.json(r.rows[0]);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+app.delete('/api/v1/admin/beacons/:id', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const r = await pool.query('DELETE FROM beacons WHERE id=$1 AND project_id=$2 RETURNING name', [req.params.id, req.projectId]);
+    if (r.rows.length === 0) { res.status(404).json({ message: 'Not found' }); return; }
+    await writeAuditLog({ projectId: req.projectId, userEmail: req.user?.email, userRole: req.user?.role, action: 'DELETE', resourceType: 'beacon', resourceId: req.params.id, resourceName: r.rows[0].name });
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// ── Task Lists ───────────────────────────────────────────────────────────────
+
+app.get('/api/v1/admin/task-lists', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const lists = await pool.query('SELECT * FROM task_lists WHERE project_id=$1 ORDER BY created_at DESC', [req.projectId]);
+    const listsWithItems = await Promise.all(lists.rows.map(async (list: any) => {
+      const items = await pool.query('SELECT * FROM task_list_items WHERE task_list_id=$1 ORDER BY order_index ASC', [list.id]);
+      return { ...list, items: items.rows };
+    }));
+    res.json(listsWithItems);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+app.post('/api/v1/admin/task-lists', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { name, description, title, url_rules, segment_rules, theme, status, items } = req.body;
+    if (!name) { res.status(400).json({ message: 'name is required' }); return; }
+    const r = await pool.query(
+      `INSERT INTO task_lists (project_id,name,description,title,url_rules,segment_rules,theme,status,created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+      [req.projectId, name, description||null, title||null, JSON.stringify(url_rules||[]),
+       JSON.stringify(segment_rules||[]), theme||'light', status||'draft', req.user?.email||null]
+    );
+    const list = r.rows[0];
+    if (items && Array.isArray(items)) {
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        await pool.query(
+          `INSERT INTO task_list_items (task_list_id,order_index,title,description,linked_flow_id,completion_trigger,url_pattern,is_required)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+          [list.id, i, item.title, item.description||null, item.linked_flow_id||null, item.completion_trigger||'manual', item.url_pattern||null, item.is_required||false]
+        );
+      }
+    }
+    await writeAuditLog({ projectId: req.projectId, userEmail: req.user?.email, userRole: req.user?.role, action: 'CREATE', resourceType: 'task_list', resourceId: list.id, resourceName: name });
+    res.status(201).json(list);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+app.put('/api/v1/admin/task-lists/:id', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { name, description, title, url_rules, segment_rules, theme, status } = req.body;
+    const r = await pool.query(
+      `UPDATE task_lists SET name=COALESCE($1,name),description=COALESCE($2,description),title=COALESCE($3,title),
+       url_rules=COALESCE($4,url_rules),segment_rules=COALESCE($5,segment_rules),theme=COALESCE($6,theme),
+       status=COALESCE($7,status),updated_at=CURRENT_TIMESTAMP WHERE id=$8 AND project_id=$9 RETURNING *`,
+      [name,description,title, url_rules?JSON.stringify(url_rules):null, segment_rules?JSON.stringify(segment_rules):null,
+       theme, status, req.params.id, req.projectId]
+    );
+    if (r.rows.length === 0) { res.status(404).json({ message: 'Not found' }); return; }
+    await writeAuditLog({ projectId: req.projectId, userEmail: req.user?.email, userRole: req.user?.role, action: 'UPDATE', resourceType: 'task_list', resourceId: req.params.id, resourceName: r.rows[0].name });
+    res.json(r.rows[0]);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+app.delete('/api/v1/admin/task-lists/:id', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const r = await pool.query('DELETE FROM task_lists WHERE id=$1 AND project_id=$2 RETURNING name', [req.params.id, req.projectId]);
+    if (r.rows.length === 0) { res.status(404).json({ message: 'Not found' }); return; }
+    await writeAuditLog({ projectId: req.projectId, userEmail: req.user?.email, userRole: req.user?.role, action: 'DELETE', resourceType: 'task_list', resourceId: req.params.id, resourceName: r.rows[0].name });
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// ── Surveys ──────────────────────────────────────────────────────────────────
+
+app.get('/api/v1/admin/surveys', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const surveys = await pool.query('SELECT * FROM surveys WHERE project_id=$1 ORDER BY created_at DESC', [req.projectId]);
+    const withQuestions = await Promise.all(surveys.rows.map(async (s: any) => {
+      const qs = await pool.query('SELECT * FROM survey_questions WHERE survey_id=$1 ORDER BY order_index ASC', [s.id]);
+      const responses = await pool.query('SELECT COUNT(*) as count FROM survey_responses WHERE survey_id=$1', [s.id]);
+      return { ...s, questions: qs.rows, response_count: parseInt(responses.rows[0].count) };
+    }));
+    res.json(withQuestions);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+app.post('/api/v1/admin/surveys', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { name, title, description, survey_type, url_rules, segment_rules, trigger_event, trigger_delay, status, questions } = req.body;
+    if (!name) { res.status(400).json({ message: 'name is required' }); return; }
+    const r = await pool.query(
+      `INSERT INTO surveys (project_id,name,title,description,survey_type,url_rules,segment_rules,trigger_event,trigger_delay,status,created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
+      [req.projectId, name, title||null, description||null, survey_type||'nps', JSON.stringify(url_rules||[]),
+       JSON.stringify(segment_rules||[]), trigger_event||'page_load', trigger_delay||5, status||'draft', req.user?.email||null]
+    );
+    const survey = r.rows[0];
+    if (questions && Array.isArray(questions)) {
+      for (let i = 0; i < questions.length; i++) {
+        const q = questions[i];
+        await pool.query(
+          `INSERT INTO survey_questions (survey_id,order_index,question_type,question_text,options,is_required)
+           VALUES ($1,$2,$3,$4,$5,$6)`,
+          [survey.id, i, q.question_type||'rating', q.question_text, JSON.stringify(q.options||[]), q.is_required!==false]
+        );
+      }
+    }
+    await writeAuditLog({ projectId: req.projectId, userEmail: req.user?.email, userRole: req.user?.role, action: 'CREATE', resourceType: 'survey', resourceId: survey.id, resourceName: name });
+    res.status(201).json(survey);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+app.put('/api/v1/admin/surveys/:id', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { name, title, description, survey_type, url_rules, segment_rules, trigger_event, trigger_delay, status } = req.body;
+    const r = await pool.query(
+      `UPDATE surveys SET name=COALESCE($1,name),title=COALESCE($2,title),description=COALESCE($3,description),
+       survey_type=COALESCE($4,survey_type),url_rules=COALESCE($5,url_rules),segment_rules=COALESCE($6,segment_rules),
+       trigger_event=COALESCE($7,trigger_event),trigger_delay=COALESCE($8,trigger_delay),status=COALESCE($9,status),
+       updated_at=CURRENT_TIMESTAMP WHERE id=$10 AND project_id=$11 RETURNING *`,
+      [name,title,description,survey_type, url_rules?JSON.stringify(url_rules):null,
+       segment_rules?JSON.stringify(segment_rules):null, trigger_event, trigger_delay, status, req.params.id, req.projectId]
+    );
+    if (r.rows.length === 0) { res.status(404).json({ message: 'Not found' }); return; }
+    await writeAuditLog({ projectId: req.projectId, userEmail: req.user?.email, userRole: req.user?.role, action: 'UPDATE', resourceType: 'survey', resourceId: req.params.id, resourceName: r.rows[0].name });
+    res.json(r.rows[0]);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+app.delete('/api/v1/admin/surveys/:id', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const r = await pool.query('DELETE FROM surveys WHERE id=$1 AND project_id=$2 RETURNING name', [req.params.id, req.projectId]);
+    if (r.rows.length === 0) { res.status(404).json({ message: 'Not found' }); return; }
+    await writeAuditLog({ projectId: req.projectId, userEmail: req.user?.email, userRole: req.user?.role, action: 'DELETE', resourceType: 'survey', resourceId: req.params.id, resourceName: r.rows[0].name });
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Submit survey response (SDK-accessible)
+app.post('/api/v1/surveys/:id/respond', authenticateSdk, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { session_id, user_identifier, answers, url } = req.body;
+    if (!session_id || !answers) { res.status(400).json({ message: 'session_id and answers required' }); return; }
+    await pool.query(
+      'INSERT INTO survey_responses (survey_id,session_id,user_identifier,answers,url) VALUES ($1,$2,$3,$4,$5)',
+      [req.params.id, session_id, user_identifier||null, JSON.stringify(answers), url||null]
+    );
+    await pool.query('UPDATE surveys SET response_count=response_count+1, updated_at=CURRENT_TIMESTAMP WHERE id=$1', [req.params.id]);
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// ── Self Help Articles ───────────────────────────────────────────────────────
+
+app.get('/api/v1/admin/self-help', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const r = await pool.query('SELECT * FROM self_help_articles WHERE project_id=$1 ORDER BY created_at DESC', [req.projectId]);
+    res.json(r.rows);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+app.post('/api/v1/admin/self-help', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { title, content, category, tags, url_rules, linked_flow_id, status } = req.body;
+    if (!title || !content) { res.status(400).json({ message: 'title and content required' }); return; }
+    const r = await pool.query(
+      `INSERT INTO self_help_articles (project_id,title,content,category,tags,url_rules,linked_flow_id,status,created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+      [req.projectId, title, content, category||'General', JSON.stringify(tags||[]),
+       JSON.stringify(url_rules||[]), linked_flow_id||null, status||'draft', req.user?.email||null]
+    );
+    await writeAuditLog({ projectId: req.projectId, userEmail: req.user?.email, userRole: req.user?.role, action: 'CREATE', resourceType: 'self_help_article', resourceId: r.rows[0].id, resourceName: title });
+    res.status(201).json(r.rows[0]);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+app.put('/api/v1/admin/self-help/:id', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { title, content, category, tags, url_rules, linked_flow_id, status } = req.body;
+    const r = await pool.query(
+      `UPDATE self_help_articles SET title=COALESCE($1,title),content=COALESCE($2,content),category=COALESCE($3,category),
+       tags=COALESCE($4,tags),url_rules=COALESCE($5,url_rules),linked_flow_id=COALESCE($6,linked_flow_id),
+       status=COALESCE($7,status),updated_at=CURRENT_TIMESTAMP WHERE id=$8 AND project_id=$9 RETURNING *`,
+      [title,content,category, tags?JSON.stringify(tags):null, url_rules?JSON.stringify(url_rules):null,
+       linked_flow_id, status, req.params.id, req.projectId]
+    );
+    if (r.rows.length === 0) { res.status(404).json({ message: 'Not found' }); return; }
+    await writeAuditLog({ projectId: req.projectId, userEmail: req.user?.email, userRole: req.user?.role, action: 'UPDATE', resourceType: 'self_help_article', resourceId: req.params.id, resourceName: r.rows[0].title });
+    res.json(r.rows[0]);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+app.delete('/api/v1/admin/self-help/:id', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const r = await pool.query('DELETE FROM self_help_articles WHERE id=$1 AND project_id=$2 RETURNING title', [req.params.id, req.projectId]);
+    if (r.rows.length === 0) { res.status(404).json({ message: 'Not found' }); return; }
+    await writeAuditLog({ projectId: req.projectId, userEmail: req.user?.email, userRole: req.user?.role, action: 'DELETE', resourceType: 'self_help_article', resourceId: req.params.id, resourceName: r.rows[0].title });
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// ── Content Library ──────────────────────────────────────────────────────────
+
+app.get('/api/v1/admin/content-library', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const r = await pool.query(
+      'SELECT * FROM content_library_items WHERE project_id=$1 OR is_global=TRUE ORDER BY created_at DESC',
+      [req.projectId]
+    );
+    res.json(r.rows);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+app.post('/api/v1/admin/content-library', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { name, content_type, category, content, thumbnail_url, tags, is_global } = req.body;
+    if (!name || !content_type) { res.status(400).json({ message: 'name and content_type required' }); return; }
+    const r = await pool.query(
+      `INSERT INTO content_library_items (project_id,name,content_type,category,content,thumbnail_url,tags,is_global,created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+      [req.projectId, name, content_type, category||'General', JSON.stringify(content||{}),
+       thumbnail_url||null, JSON.stringify(tags||[]), !!is_global, req.user?.email||null]
+    );
+    await writeAuditLog({ projectId: req.projectId, userEmail: req.user?.email, userRole: req.user?.role, action: 'CREATE', resourceType: 'content_library_item', resourceId: r.rows[0].id, resourceName: name });
+    res.status(201).json(r.rows[0]);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+app.delete('/api/v1/admin/content-library/:id', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const r = await pool.query('DELETE FROM content_library_items WHERE id=$1 AND project_id=$2 RETURNING name', [req.params.id, req.projectId]);
+    if (r.rows.length === 0) { res.status(404).json({ message: 'Not found' }); return; }
+    await writeAuditLog({ projectId: req.projectId, userEmail: req.user?.email, userRole: req.user?.role, action: 'DELETE', resourceType: 'content_library_item', resourceId: req.params.id, resourceName: r.rows[0].name });
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// ── Tags ─────────────────────────────────────────────────────────────────────
+
+app.get('/api/v1/admin/tags', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const r = await pool.query('SELECT * FROM tags WHERE project_id=$1 ORDER BY name ASC', [req.projectId]);
+    res.json(r.rows);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+app.post('/api/v1/admin/tags', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { name, color } = req.body;
+    if (!name) { res.status(400).json({ message: 'name required' }); return; }
+    const r = await pool.query(
+      'INSERT INTO tags (project_id,name,color) VALUES ($1,$2,$3) ON CONFLICT (project_id,name) DO UPDATE SET color=$3 RETURNING *',
+      [req.projectId, name.trim(), color||'#6366f1']
+    );
+    res.status(201).json(r.rows[0]);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+app.delete('/api/v1/admin/tags/:id', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    await pool.query('DELETE FROM tags WHERE id=$1 AND project_id=$2', [req.params.id, req.projectId]);
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// ── Roles ────────────────────────────────────────────────────────────────────
+
+app.get('/api/v1/admin/roles', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const r = await pool.query('SELECT * FROM roles WHERE project_id=$1 ORDER BY name ASC', [req.projectId]);
+    res.json(r.rows);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+app.post('/api/v1/admin/roles', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { name, description, permissions } = req.body;
+    if (!name) { res.status(400).json({ message: 'name required' }); return; }
+    const r = await pool.query(
+      'INSERT INTO roles (project_id,name,description,permissions) VALUES ($1,$2,$3,$4) ON CONFLICT (project_id,name) DO UPDATE SET description=$3,permissions=$4 RETURNING *',
+      [req.projectId, name, description||null, JSON.stringify(permissions||[])]
+    );
+    await writeAuditLog({ projectId: req.projectId, userEmail: req.user?.email, userRole: req.user?.role, action: 'CREATE', resourceType: 'role', resourceId: r.rows[0].id, resourceName: name });
+    res.status(201).json(r.rows[0]);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+app.delete('/api/v1/admin/roles/:id', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const r = await pool.query('DELETE FROM roles WHERE id=$1 AND project_id=$2 AND is_system=FALSE RETURNING name', [req.params.id, req.projectId]);
+    if (r.rows.length === 0) { res.status(404).json({ message: 'Not found or system role' }); return; }
+    await writeAuditLog({ projectId: req.projectId, userEmail: req.user?.email, userRole: req.user?.role, action: 'DELETE', resourceType: 'role', resourceId: req.params.id, resourceName: r.rows[0].name });
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// ── Audit Logs ───────────────────────────────────────────────────────────────
+
+app.get('/api/v1/admin/audit-logs', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
+    const offset = parseInt(req.query.offset as string) || 0;
+    const r = await pool.query(
+      `SELECT * FROM audit_logs WHERE project_id=$1 OR project_id IS NULL ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
+      [req.projectId, limit, offset]
+    );
+    const total = await pool.query('SELECT COUNT(*) FROM audit_logs WHERE project_id=$1', [req.projectId]);
+    res.json({ logs: r.rows, total: parseInt(total.rows[0].count), limit, offset });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// ── Project Stats (for Overview Dashboard) ───────────────────────────────────
+
+app.get('/api/v1/admin/project-stats', authenticateAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const pid = req.projectId;
+    const [flows, tips, popups, beacons, surveys, articles, tags, events] = await Promise.all([
+      pool.query('SELECT COUNT(*) FROM flows WHERE project_id=$1', [pid]),
+      pool.query('SELECT COUNT(*) FROM smart_tips WHERE project_id=$1', [pid]),
+      pool.query('SELECT COUNT(*) FROM popups WHERE project_id=$1', [pid]),
+      pool.query('SELECT COUNT(*) FROM beacons WHERE project_id=$1', [pid]),
+      pool.query('SELECT COUNT(*) FROM surveys WHERE project_id=$1', [pid]),
+      pool.query('SELECT COUNT(*) FROM self_help_articles WHERE project_id=$1', [pid]),
+      pool.query('SELECT COUNT(*) FROM tags WHERE project_id=$1', [pid]),
+      pool.query('SELECT COUNT(*) FROM analytics_events WHERE project_id=$1', [pid]),
+    ]);
+    res.json({
+      flows: parseInt(flows.rows[0].count),
+      smartTips: parseInt(tips.rows[0].count),
+      popups: parseInt(popups.rows[0].count),
+      beacons: parseInt(beacons.rows[0].count),
+      surveys: parseInt(surveys.rows[0].count),
+      selfHelpArticles: parseInt(articles.rows[0].count),
+      tags: parseInt(tags.rows[0].count),
+      totalEvents: parseInt(events.rows[0].count),
+    });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// ── Create Project (Admin only) — update to return strict project info ───────
+// (already handled at top of admin routes; add audit log to existing CREATE route)
+
 // Fallback to serving index.html for dashboard single page app routes
+
 app.get('*', (req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, '../public/dashboard/index.html'));
 });
