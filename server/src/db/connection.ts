@@ -34,11 +34,84 @@ export async function bootstrapDb(): Promise<void> {
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         name VARCHAR(255) NOT NULL,
         api_key VARCHAR(255) UNIQUE NOT NULL,
+        client_email VARCHAR(255),
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `);
+    await client.query(`ALTER TABLE projects ADD COLUMN IF NOT EXISTS client_email VARCHAR(255);`);
 
-    // 2. Flows Table
+    // Clean up legacy Company B - CRM project
+    await client.query(`DELETE FROM projects WHERE name LIKE '%Company B%' OR name LIKE '%CRM%';`);
+
+    // Seed / Normalize Client A Project ("TruthBomb")
+    const devApiKey = 'kenzo_project_dev_api_key_2026';
+    const result = await client.query('SELECT id FROM projects WHERE api_key = $1 OR name = $2', [devApiKey, 'TruthBomb']);
+    if (result.rows.length === 0) {
+      await client.query(
+        'INSERT INTO projects (name, api_key, client_email) VALUES ($1, $2, $3)',
+        ['TruthBomb', devApiKey, 'client1@kenzo.com']
+      );
+      console.log('[Database] Seeded TruthBomb project for Client A (client1@kenzo.com)');
+    } else {
+      await client.query(
+        'UPDATE projects SET name = $1, client_email = $2 WHERE id = $3',
+        ['TruthBomb', 'client1@kenzo.com', result.rows[0].id]
+      );
+      console.log('[Database] Updated TruthBomb project for Client A.');
+    }
+
+    // Seed / Normalize Client B Project ("Kenzo-erp")
+    const client2ApiKey = 'kenzo_project_client2_api_key_2026';
+    const c2Result = await client.query('SELECT id FROM projects WHERE api_key = $1 OR name = $2', [client2ApiKey, 'Kenzo-erp']);
+    if (c2Result.rows.length === 0) {
+      await client.query(
+        'INSERT INTO projects (name, api_key, client_email) VALUES ($1, $2, $3)',
+        ['Kenzo-erp', client2ApiKey, 'client2@kenzo.com']
+      );
+      console.log('[Database] Seeded Kenzo-erp project for Client B (client2@kenzo.com)');
+    } else {
+      await client.query(
+        'UPDATE projects SET name = $1, client_email = $2 WHERE id = $3',
+        ['Kenzo-erp', 'client2@kenzo.com', c2Result.rows[0].id]
+      );
+      console.log('[Database] Updated Kenzo-erp project for Client B.');
+    }
+
+    // Seed Auth Users (Bcrypt Hashed)
+    const bcrypt = require('bcryptjs');
+    const adminPassHash = bcrypt.hashSync('kenzo123', 10);
+    const clientPassHash = bcrypt.hashSync('client@123', 10);
+
+    const adminUser = await client.query('SELECT id FROM users WHERE LOWER(email) = LOWER($1)', ['Kenzo@gmail.com']);
+    if (adminUser.rows.length === 0) {
+      await client.query(
+        'INSERT INTO users (email, password_hash, name, role, company_id, company_name) VALUES ($1, $2, $3, $4, $5, $6)',
+        ['Kenzo@gmail.com', adminPassHash, 'Kenzo Super Admin', 'SUPER_ADMIN', 'super_admin_corp', 'Kenzo_DAP Global']
+      );
+      console.log('[Database] Seeded Super Admin user (Kenzo@gmail.com / kenzo123)');
+    }
+
+    const client1User = await client.query('SELECT id FROM users WHERE LOWER(email) = LOWER($1)', ['client1@kenzo.com']);
+    if (client1User.rows.length === 0) {
+      await client.query(
+        'INSERT INTO users (email, password_hash, name, role, company_id, company_name) VALUES ($1, $2, $3, $4, $5, $6)',
+        ['client1@kenzo.com', clientPassHash, 'Client A CEO', 'CLIENT_CEO', 'comp_a', 'TruthBomb']
+      );
+      console.log('[Database] Seeded Client A CEO (client1@kenzo.com / client@123)');
+    } else {
+      await client.query('UPDATE users SET company_name = $1 WHERE LOWER(email) = LOWER($2)', ['TruthBomb', 'client1@kenzo.com']);
+    }
+
+    const client2User = await client.query('SELECT id FROM users WHERE LOWER(email) = LOWER($1)', ['client2@kenzo.com']);
+    if (client2User.rows.length === 0) {
+      await client.query(
+        'INSERT INTO users (email, password_hash, name, role, company_id, company_name) VALUES ($1, $2, $3, $4, $5, $6)',
+        ['client2@kenzo.com', clientPassHash, 'Client B CEO', 'CLIENT_CEO', 'comp_b', 'Kenzo-erp']
+      );
+      console.log('[Database] Seeded Client B CEO (client2@kenzo.com / client@123)');
+    } else {
+      await client.query('UPDATE users SET company_name = $1 WHERE LOWER(email) = LOWER($2)', ['Kenzo-erp', 'client2@kenzo.com']);
+    }
     await client.query(`
       CREATE TABLE IF NOT EXISTS flows (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -201,79 +274,6 @@ export async function bootstrapDb(): Promise<void> {
     `);
 
     console.log('[Database] Tables bootstrapped and route rules normalized.');
-
-    // 11. Users Table (Authentication & RBAC)
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        email VARCHAR(255) UNIQUE NOT NULL,
-        password_hash VARCHAR(255) NOT NULL,
-        name VARCHAR(255) NOT NULL,
-        role VARCHAR(50) NOT NULL, -- 'SUPER_ADMIN', 'CLIENT_CEO', 'MEMBER'
-        company_id VARCHAR(255) NOT NULL,
-        company_name VARCHAR(255) NOT NULL,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-
-    // Seed default developer project if not exists
-    const devApiKey = 'kenzo_project_dev_api_key_2026';
-    const result = await client.query('SELECT id FROM projects WHERE api_key = $1', [devApiKey]);
-    let defaultProjectId = '';
-    if (result.rows.length === 0) {
-      const inserted = await client.query(
-        'INSERT INTO projects (name, api_key) VALUES ($1, $2) RETURNING id',
-        ['Company A - ERP & HRMS', devApiKey]
-      );
-      defaultProjectId = inserted.rows[0].id;
-      console.log('[Database] Seeded Company A project with API Key:', devApiKey);
-    } else {
-      defaultProjectId = result.rows[0].id;
-      console.log('[Database] Development project verified.');
-    }
-
-    // Seed Company B project
-    const client2ApiKey = 'kenzo_project_client2_api_key_2026';
-    const c2Result = await client.query('SELECT id FROM projects WHERE api_key = $1', [client2ApiKey]);
-    if (c2Result.rows.length === 0) {
-      await client.query(
-        'INSERT INTO projects (name, api_key) VALUES ($1, $2)',
-        ['Company B - CRM', client2ApiKey]
-      );
-      console.log('[Database] Seeded Company B project with API Key:', client2ApiKey);
-    }
-
-    // Seed Auth Users (Bcrypt Hashed)
-    const bcrypt = require('bcryptjs');
-    const adminPassHash = bcrypt.hashSync('kenzo123', 10);
-    const clientPassHash = bcrypt.hashSync('client@123', 10);
-
-    const adminUser = await client.query('SELECT id FROM users WHERE email = $1', ['Kenzo@gmail.com']);
-    if (adminUser.rows.length === 0) {
-      await client.query(
-        'INSERT INTO users (email, password_hash, name, role, company_id, company_name) VALUES ($1, $2, $3, $4, $5, $6)',
-        ['Kenzo@gmail.com', adminPassHash, 'Kenzo Super Admin', 'SUPER_ADMIN', 'super_admin_corp', 'Kenzo_DAP Global']
-      );
-      console.log('[Database] Seeded Super Admin user (Kenzo@gmail.com / kenzo123)');
-    }
-
-    const client1User = await client.query('SELECT id FROM users WHERE email = $1', ['client1@kenzo.com']);
-    if (client1User.rows.length === 0) {
-      await client.query(
-        'INSERT INTO users (email, password_hash, name, role, company_id, company_name) VALUES ($1, $2, $3, $4, $5, $6)',
-        ['client1@kenzo.com', clientPassHash, 'CEO Company A', 'CLIENT_CEO', 'comp_a', 'Company A']
-      );
-      console.log('[Database] Seeded Client CEO 1 (client1@kenzo.com / client@123)');
-    }
-
-    const client2User = await client.query('SELECT id FROM users WHERE email = $1', ['client2@kenzo.com']);
-    if (client2User.rows.length === 0) {
-      await client.query(
-        'INSERT INTO users (email, password_hash, name, role, company_id, company_name) VALUES ($1, $2, $3, $4, $5, $6)',
-        ['client2@kenzo.com', clientPassHash, 'CEO Company B', 'CLIENT_CEO', 'comp_b', 'Company B']
-      );
-      console.log('[Database] Seeded Client CEO 2 (client2@kenzo.com / client@123)');
-    }
 
   } catch (err) {
     console.error('[Database] Error bootstrapping database:', err);

@@ -79,6 +79,7 @@ export default function App() {
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
   const [newProjectUrl, setNewProjectUrl] = useState('');
+  const [newClientEmail, setNewClientEmail] = useState('');
 
   const fetchBaseUrl = () => {
     const url = window.location.origin;
@@ -87,7 +88,15 @@ export default function App() {
 
   const loadProjects = async () => {
     try {
-      const res = await fetch('/api/v1/admin/projects');
+      const headers: Record<string, string> = {};
+      const token = localStorage.getItem('kenzo_jwt_token');
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      if (user) {
+        headers['x-user-email'] = user.email;
+        headers['x-user-role'] = user.role;
+      }
+
+      const res = await fetch('/api/v1/admin/projects', { headers });
       if (res.ok) {
         const data = await res.json();
         setProjects(data);
@@ -97,14 +106,11 @@ export default function App() {
           const defaultId = exists && savedId ? savedId : data[0].id;
           setActiveProjectId(defaultId);
         } else {
-          setActiveProjectId('default-project');
+          setActiveProjectId('');
         }
-      } else {
-        setActiveProjectId('default-project');
       }
     } catch (err) {
       console.error('Failed to fetch projects list:', err);
-      setActiveProjectId('default-project');
     }
   };
 
@@ -178,13 +184,13 @@ export default function App() {
     setUser(null);
   };
 
-  const handleCreateProject = async (name: string, url?: string) => {
+  const handleCreateProject = async (name: string, url?: string, clientEmail?: string) => {
     try {
       const apiKey = `kenzo_project_${Date.now()}_key_${Math.random().toString(36).substring(2, 8)}`;
       const res = await fetch('/api/v1/admin/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, apiKey, domainUrl: url }),
+        body: JSON.stringify({ name, apiKey, domainUrl: url, clientEmail }),
       });
 
       if (res.ok) {
@@ -194,6 +200,7 @@ export default function App() {
         setIsRegisterModalOpen(false);
         setNewProjectName('');
         setNewProjectUrl('');
+        setNewClientEmail('');
       }
     } catch (err) {
       console.error('Failed to create project:', err);
@@ -448,6 +455,17 @@ export default function App() {
                   />
                 </div>
 
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">Assigned Client Email (Optional)</label>
+                  <input
+                    type="email"
+                    value={newClientEmail}
+                    onChange={(e) => setNewClientEmail(e.target.value)}
+                    placeholder="e.g. client1@kenzo.com"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 outline-none focus:border-indigo-500"
+                  />
+                </div>
+
                 <div className="flex justify-end gap-2 pt-2">
                   <button
                     onClick={() => setIsRegisterModalOpen(false)}
@@ -456,7 +474,7 @@ export default function App() {
                     Cancel
                   </button>
                   <button
-                    onClick={() => handleCreateProject(newProjectName, newProjectUrl)}
+                    onClick={() => handleCreateProject(newProjectName, newProjectUrl, newClientEmail)}
                     disabled={!newProjectName.trim()}
                     className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold disabled:opacity-50"
                   >

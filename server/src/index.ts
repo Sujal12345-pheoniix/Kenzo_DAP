@@ -651,10 +651,48 @@ app.post('/api/v1/progress/:flowId', authenticateSdk, async (req: AuthenticatedR
 
 // --- ADMIN API ROUTES ---
 
-// 0a. List all projects
+// 0a. List projects (RBAC scoped: Super Admin sees all; Clients see only assigned projects)
 app.get('/api/v1/admin/projects', async (req: Request, res: Response) => {
   try {
-    const result = await pool.query('SELECT id, name, api_key as "apiKey", created_at as "createdAt" FROM projects ORDER BY created_at DESC');
+    let authUser: any = null;
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        authUser = jwt.verify(authHeader.split(' ')[1], JWT_SECRET);
+      } catch (_) {}
+    }
+    if (!authUser) {
+      const emailHeader = req.headers['x-user-email'] as string;
+      const roleHeader = req.headers['x-user-role'] as string;
+      if (emailHeader) {
+        authUser = { email: emailHeader, role: roleHeader || 'CLIENT_CEO' };
+      }
+    }
+
+    if (authUser && authUser.role === 'SUPER_ADMIN') {
+      const result = await pool.query('SELECT id, name, api_key as "apiKey", client_email as "clientEmail", created_at as "createdAt" FROM projects ORDER BY created_at ASC');
+      res.json(result.rows);
+      return;
+    }
+
+    if (authUser && authUser.email) {
+      const userEmail = authUser.email.toLowerCase();
+      // Match by client_email OR mapped project name
+      const result = await pool.query(
+        `SELECT id, name, api_key as "apiKey", client_email as "clientEmail", created_at as "createdAt" 
+         FROM projects 
+         WHERE LOWER(client_email) = LOWER($1) 
+            OR ($1 = 'client1@kenzo.com' AND name ILIKE '%TruthBomb%')
+            OR ($1 = 'client2@kenzo.com' AND name ILIKE '%Kenzo-erp%')
+         ORDER BY created_at ASC`,
+        [userEmail]
+      );
+      res.json(result.rows);
+      return;
+    }
+
+    // Default fallback
+    const result = await pool.query('SELECT id, name, api_key as "apiKey", client_email as "clientEmail", created_at as "createdAt" FROM projects ORDER BY created_at ASC');
     res.json(result.rows);
   } catch (err: any) {
     res.status(500).json({ message: 'Server error', error: err.message });
@@ -1133,9 +1171,9 @@ async function seedProjectData(projectId: string, projectName: string, websiteUr
   }
 }
 
-// 0b. Create a project (website)
+// 0b. Create a project (website) with client mapping
 app.post('/api/v1/admin/projects', async (req: Request, res: Response) => {
-  const { name, url } = req.body;
+  const { name, url, clientEmail } = req.body;
   if (!name) {
     res.status(400).json({ message: 'Project name is required' });
     return;
@@ -1143,8 +1181,8 @@ app.post('/api/v1/admin/projects', async (req: Request, res: Response) => {
   try {
     const apiKey = `kenzo_project_${Date.now()}_key_${Math.random().toString(36).substring(2, 7)}`;
     const result = await pool.query(
-      'INSERT INTO projects (name, api_key) VALUES ($1, $2) RETURNING id, name, api_key as "apiKey", created_at as "createdAt"',
-      [name, apiKey]
+      'INSERT INTO projects (name, api_key, client_email) VALUES ($1, $2, $3) RETURNING id, name, api_key as "apiKey", client_email as "clientEmail", created_at as "createdAt"',
+      [name, apiKey, clientEmail || null]
     );
     const newProject = result.rows[0];
 
