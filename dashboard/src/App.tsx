@@ -16,6 +16,7 @@ import SurveysView from './components/surveys-view';
 import SelfHelpView from './components/self-help-view';
 import ContentLibraryView from './components/content-library-view';
 import AuditLogsView from './components/audit-logs-view';
+import OrganizationsView from './components/organizations-view';
 import { X } from 'lucide-react';
 
 interface Flow {
@@ -392,6 +393,11 @@ export default function App() {
                 <AuditLogsView projectId={activeProjectId} headers={{ ...getAuthHeaders(), 'x-project-id': activeProjectId }} />
               )}
 
+              {/* Organizations & Client Sites */}
+              {(activeTab === 'organizations' || activeTab === 'ceo_orgs') && (
+                <OrganizationsView userRole={user.role} headers={getAuthHeaders()} />
+              )}
+
               {/* Trends & Insights */}
               {(activeTab === 'trends' || activeTab === 'ceo_growth') && (
                 <InsightsBuilder apiKey={activeProject?.apiKey || ''} onBack={() => setActiveTab('overview')} />
@@ -403,7 +409,7 @@ export default function App() {
               )}
 
               {/* Generic fallback for unimplemented tabs */}
-              {!['overview','analytics_overview','ceo_overview','ceo_analytics','guidance_flows','ceo_walkthroughs','smart_tips','guidance_tips','ceo_smart_tips','popups','guidance_popups','ceo_popups','beacons','guidance_beacons','ceo_beacons','task_lists','guidance_tasks','ceo_task_lists','surveys','guidance_surveys','ceo_surveys','self_help','ceo_self_help','guidance_selfhelp','ceo_selfhelp','content_library','audit_logs','ceo_audit','trends','ceo_growth','integrations'].includes(activeTab) && (
+              {!['overview','analytics_overview','ceo_overview','ceo_analytics','organizations','ceo_orgs','guidance_flows','ceo_walkthroughs','smart_tips','guidance_tips','ceo_smart_tips','popups','guidance_popups','ceo_popups','beacons','guidance_beacons','ceo_beacons','task_lists','guidance_tasks','ceo_task_lists','surveys','guidance_surveys','ceo_surveys','self_help','ceo_self_help','guidance_selfhelp','ceo_selfhelp','content_library','audit_logs','ceo_audit','trends','ceo_growth','integrations'].includes(activeTab) && (
                 <div className="p-8">
                   <div className="bg-[#11131f] p-12 rounded-2xl border border-[#1e2238] text-center py-20 space-y-3">
                     <h3 className="text-xl font-bold text-white capitalize">Kenzo_DAP — {activeTab.replace(/_/g, ' ')}</h3>

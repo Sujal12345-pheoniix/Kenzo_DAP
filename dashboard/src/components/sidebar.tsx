@@ -97,7 +97,8 @@ export type TabType =
   | 'ceo_popups'
   | 'ceo_beacons'
   | 'ceo_task_lists'
-  | 'ceo_surveys';
+  | 'ceo_surveys'
+  | 'ceo_orgs';
 
 interface UserSession {
   id: string;
@@ -210,6 +211,7 @@ export default function Sidebar({
       category: 'Company Portal',
       items: [
         { id: 'ceo_overview', label: 'Company Overview', icon: Home },
+        { id: 'ceo_orgs', label: 'Company Organization', icon: Building },
         { id: 'ceo_apps', label: 'My Applications', icon: Boxes },
         { id: 'ceo_walkthroughs', label: 'My Walkthroughs', icon: Layers, badge: flowsCount > 0 ? flowsCount : undefined },
         { id: 'ceo_selfhelp', label: 'Self Help Content', icon: User },

@@ -723,6 +723,125 @@ app.get('/api/v1/admin/projects', async (req: Request, res: Response) => {
   }
 });
 
+// 0b. Organizations Management API (Read-only for Client CEO, Full CRUD for Super Admin)
+app.get('/api/v1/admin/organizations', async (req: Request, res: Response) => {
+  try {
+    const authHeader = req.headers.authorization;
+    let authUser: any = null;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try { authUser = jwt.verify(authHeader.split(' ')[1], JWT_SECRET); } catch (_) {}
+    }
+
+    if (authUser && authUser.role === 'SUPER_ADMIN') {
+      const r = await pool.query(
+        `SELECT id, name, website_url as "websiteUrl", description, domain, industry, plan, owner_email as "ownerEmail", expires_at as "expiresAt", created_at as "createdAt"
+         FROM organizations ORDER BY created_at ASC`
+      );
+      res.json(r.rows);
+      return;
+    }
+
+    // Scoped for Client CEO or specific email
+    const email = authUser ? authUser.email : (req.headers['x-user-email'] as string || '');
+    const r = await pool.query(
+      `SELECT id, name, website_url as "websiteUrl", description, domain, industry, plan, owner_email as "ownerEmail", expires_at as "expiresAt", created_at as "createdAt"
+       FROM organizations WHERE LOWER(owner_email) = LOWER($1) ORDER BY created_at ASC`,
+      [email]
+    );
+    res.json(r.rows);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+app.post('/api/v1/admin/organizations', async (req: Request, res: Response) => {
+  try {
+    const authHeader = req.headers.authorization;
+    let authUser: any = null;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try { authUser = jwt.verify(authHeader.split(' ')[1], JWT_SECRET); } catch (_) {}
+    }
+    if (!authUser || authUser.role !== 'SUPER_ADMIN') {
+      res.status(403).json({ message: 'Only Super Admin can create organizations' });
+      return;
+    }
+
+    const { name, websiteUrl, description, ownerEmail, plan, expiresAt, industry, domain } = req.body;
+    if (!name) {
+      res.status(400).json({ message: 'Organization name is required' });
+      return;
+    }
+
+    const r = await pool.query(
+      `INSERT INTO organizations (name, website_url, description, owner_email, plan, expires_at, industry, domain)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING id, name, website_url as "websiteUrl", description, owner_email as "ownerEmail", plan, expires_at as "expiresAt", created_at as "createdAt"`,
+      [name, websiteUrl || '', description || '', ownerEmail || '', plan || 'Enterprise Tier', expiresAt || '2027-12-31', industry || 'Technology', domain || '']
+    );
+    res.json(r.rows[0]);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+app.put('/api/v1/admin/organizations/:id', async (req: Request, res: Response) => {
+  try {
+    const authHeader = req.headers.authorization;
+    let authUser: any = null;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try { authUser = jwt.verify(authHeader.split(' ')[1], JWT_SECRET); } catch (_) {}
+    }
+    if (!authUser || authUser.role !== 'SUPER_ADMIN') {
+      res.status(403).json({ message: 'Only Super Admin can edit organizations' });
+      return;
+    }
+
+    const { id } = req.params;
+    const { name, websiteUrl, description, ownerEmail, plan, expiresAt } = req.body;
+
+    const r = await pool.query(
+      `UPDATE organizations
+       SET name = COALESCE($1, name),
+           website_url = COALESCE($2, website_url),
+           description = COALESCE($3, description),
+           owner_email = COALESCE($4, owner_email),
+           plan = COALESCE($5, plan),
+           expires_at = COALESCE($6, expires_at),
+           updated_at = NOW()
+       WHERE id = $7
+       RETURNING id, name, website_url as "websiteUrl", description, owner_email as "ownerEmail", plan, expires_at as "expiresAt", created_at as "createdAt"`,
+      [name, websiteUrl, description, ownerEmail, plan, expiresAt, id]
+    );
+    if (r.rows.length === 0) {
+      res.status(404).json({ message: 'Organization not found' });
+      return;
+    }
+    res.json(r.rows[0]);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+app.delete('/api/v1/admin/organizations/:id', async (req: Request, res: Response) => {
+  try {
+    const authHeader = req.headers.authorization;
+    let authUser: any = null;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try { authUser = jwt.verify(authHeader.split(' ')[1], JWT_SECRET); } catch (_) {}
+    }
+    if (!authUser || authUser.role !== 'SUPER_ADMIN') {
+      res.status(403).json({ message: 'Only Super Admin can delete organizations' });
+      return;
+    }
+
+    const { id } = req.params;
+    await pool.query('DELETE FROM organizations WHERE id = $1', [id]);
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
 // Helper to request URL contents asynchronously using Node's standard libraries
 function fetchHtml(urlStr: string): Promise<string> {
   return new Promise((resolve) => {

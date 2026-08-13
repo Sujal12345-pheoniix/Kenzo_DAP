@@ -210,16 +210,22 @@ export async function bootstrapDb(): Promise<void> {
       CREATE TABLE IF NOT EXISTS organizations (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         name VARCHAR(255) NOT NULL,
+        website_url TEXT,
+        description TEXT,
         domain VARCHAR(255),
         industry VARCHAR(100),
-        plan VARCHAR(50) DEFAULT 'starter',
+        plan VARCHAR(50) DEFAULT 'Enterprise',
         owner_email VARCHAR(255),
         logo_url TEXT,
+        expires_at DATE DEFAULT (CURRENT_DATE + INTERVAL '1 year'),
         settings JSONB DEFAULT '{}'::jsonb,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `);
+    await client.query(`ALTER TABLE organizations ADD COLUMN IF NOT EXISTS website_url TEXT;`);
+    await client.query(`ALTER TABLE organizations ADD COLUMN IF NOT EXISTS description TEXT;`);
+    await client.query(`ALTER TABLE organizations ADD COLUMN IF NOT EXISTS expires_at DATE DEFAULT (CURRENT_DATE + INTERVAL '1 year');`);
 
     // 13. Smart Tips
     await client.query(`
@@ -535,6 +541,34 @@ export async function bootstrapDb(): Promise<void> {
       );
     } else {
       await client.query('UPDATE users SET company_name=$1 WHERE LOWER(email)=LOWER($2)', ['Kenzo-erp', 'client2@kenzo.com']);
+    }
+    // Seed Organizations
+    const o1 = await client.query('SELECT id FROM organizations WHERE LOWER(owner_email) = LOWER($1)', ['client1@kenzo.com']);
+    if (o1.rows.length === 0) {
+      await client.query(
+        `INSERT INTO organizations (name, website_url, description, domain, industry, plan, owner_email, expires_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_DATE + INTERVAL '1 year')`,
+        ['TruthBomb Fact Verification', 'https://truth-bomb-eight.vercel.app/', 'AI Fact Verification & GEO Intelligence Platform by Kenzo Infosystems', 'truth-bomb-eight.vercel.app', 'Artificial Intelligence', 'Enterprise Tier', 'client1@kenzo.com']
+      );
+    } else {
+      await client.query(
+        `UPDATE organizations SET name=$1, website_url=$2, description=$3, plan=$4 WHERE LOWER(owner_email)=LOWER($5)`,
+        ['TruthBomb Fact Verification', 'https://truth-bomb-eight.vercel.app/', 'AI Fact Verification & GEO Intelligence Platform by Kenzo Infosystems', 'Enterprise Tier', 'client1@kenzo.com']
+      );
+    }
+
+    const o2 = await client.query('SELECT id FROM organizations WHERE LOWER(owner_email) = LOWER($1)', ['client2@kenzo.com']);
+    if (o2.rows.length === 0) {
+      await client.query(
+        `INSERT INTO organizations (name, website_url, description, domain, industry, plan, owner_email, expires_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_DATE + INTERVAL '1 year')`,
+        ['Kenzo OneERP SaaS Platform', 'https://kenzo-one-erp.vercel.app/', 'Flagship Multi-tenant Cloud ERP with HRMS, CRM, Finance, and AI Copilot', 'kenzo-one-erp.vercel.app', 'Enterprise Software', 'Enterprise Tier', 'client2@kenzo.com']
+      );
+    } else {
+      await client.query(
+        `UPDATE organizations SET name=$1, website_url=$2, description=$3, plan=$4 WHERE LOWER(owner_email)=LOWER($5)`,
+        ['Kenzo OneERP SaaS Platform', 'https://kenzo-one-erp.vercel.app/', 'Flagship Multi-tenant Cloud ERP with HRMS, CRM, Finance, and AI Copilot', 'Enterprise Tier', 'client2@kenzo.com']
+      );
     }
 
     // Route pattern normalization for legacy seeded flows
