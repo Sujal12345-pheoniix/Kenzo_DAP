@@ -7,7 +7,7 @@ import type { IConfigService, ILogger } from '@/core/interfaces';
 import type { KenzoConfig, KenzoInitOptions } from '@/types';
 import { deepMerge } from '@/utils/deep-merge';
 
-const DEFAULT_API_BASE_URL = 'https://api.kenzo.ai/v1';
+const DEFAULT_API_BASE_URL = typeof window !== 'undefined' ? `${window.location.origin}/api/v1` : '/api/v1';
 const DEFAULT_LOCALE = 'en';
 const DEFAULT_Z_INDEX_BASE = 2147483000;
 const DEFAULT_ELEMENT_WAIT_RETRIES = 30;
@@ -36,10 +36,6 @@ export class ConfigService implements IConfigService {
   init(options: KenzoInitOptions): KenzoConfig {
     if (!options.apiKey || options.apiKey.trim() === '') {
       throw new Error('[Kenzo] apiKey is required for initialization');
-    }
-
-    if (options.apiBaseUrl && !options.apiBaseUrl.startsWith('https://')) {
-      throw new Error('[Kenzo] apiBaseUrl must use HTTPS');
     }
 
     const merged = deepMerge(

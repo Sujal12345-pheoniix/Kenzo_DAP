@@ -116,7 +116,7 @@ export class KenzoSDK implements KenzoPublicAPI {
 
     // Initialize the point-and-click Visual Tour Builder if on browser
     if (typeof window !== 'undefined') {
-      const apiBaseUrl = options.apiBaseUrl || 'http://localhost:3000/api/v1';
+      const apiBaseUrl = options.apiBaseUrl || `${window.location.origin}/api/v1`;
       new BuilderOverlay(apiBaseUrl, options.apiKey);
     }
   }
