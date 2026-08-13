@@ -129,7 +129,9 @@ export class ApiClient implements IApiClient {
     }
 
     try {
-      const url = `${this.baseUrl}${path}`;
+      const cleanBase = this.baseUrl.replace(/\/+$/, '');
+      const cleanPath = path.startsWith('/') ? path : `/${path}`;
+      const url = `${cleanBase}${cleanPath}`;
       return await fetch(url, {
         method,
         headers,

@@ -22,7 +22,10 @@ export class AuthService implements IAuthService {
   }
 
   async authenticate(apiKey: string): Promise<AuthResponse> {
-    this.logger.info('Authenticating project');
+    this.logger.info('Authenticating project', { apiKey });
+    
+    // Clear any stale cached auth token to guarantee fresh authentication for current API key
+    this.clear();
 
     const response = await this.apiClient.post<AuthResponse>('/auth/sdk', {
       apiKey,
