@@ -74,12 +74,12 @@ export type TabType =
   | 'notifications'
   | 'audit_logs'
   | 'settings'
-  | 'smart_tips'
-  | 'popups'
-  | 'beacons'
-  | 'task_lists'
-  | 'surveys'
-  | 'self_help'
+  | 'smart_tips' | 'guidance_tips'
+  | 'popups' | 'guidance_popups'
+  | 'beacons' | 'guidance_beacons'
+  | 'task_lists' | 'guidance_tasks'
+  | 'surveys' | 'guidance_surveys'
+  | 'self_help' | 'guidance_selfhelp'
   // Client CEO Tabs
   | 'ceo_overview'
   | 'ceo_apps'
@@ -92,7 +92,12 @@ export type TabType =
   | 'ceo_ai'
   | 'ceo_reports'
   | 'ceo_settings'
-  | 'ceo_audit';
+  | 'ceo_audit'
+  | 'ceo_smart_tips'
+  | 'ceo_popups'
+  | 'ceo_beacons'
+  | 'ceo_task_lists'
+  | 'ceo_surveys';
 
 interface UserSession {
   id: string;
@@ -208,6 +213,16 @@ export default function Sidebar({
         { id: 'ceo_apps', label: 'My Applications', icon: Boxes },
         { id: 'ceo_walkthroughs', label: 'My Walkthroughs', icon: Layers, badge: flowsCount > 0 ? flowsCount : undefined },
         { id: 'ceo_selfhelp', label: 'Self Help Content', icon: User },
+      ]
+    },
+    {
+      category: 'Guidance Suite',
+      items: [
+        { id: 'ceo_smart_tips', label: 'Smart Tips', icon: Tag },
+        { id: 'ceo_popups', label: 'Pop-ups', icon: MessageSquare },
+        { id: 'ceo_beacons', label: 'Beacons', icon: Sparkles },
+        { id: 'ceo_task_lists', label: 'Task Lists', icon: FolderKanban },
+        { id: 'ceo_surveys', label: 'Surveys', icon: TestTube },
       ]
     },
     {

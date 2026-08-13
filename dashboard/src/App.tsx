@@ -353,32 +353,32 @@ export default function App() {
               )}
 
               {/* Smart Tips */}
-              {activeTab === 'smart_tips' && (
+              {(activeTab === 'smart_tips' || activeTab === 'guidance_tips' || activeTab === 'ceo_smart_tips') && (
                 <SmartTipsView projectId={activeProjectId} headers={{ ...getAuthHeaders(), 'x-project-id': activeProjectId }} />
               )}
 
               {/* Popups */}
-              {activeTab === 'popups' && (
+              {(activeTab === 'popups' || activeTab === 'guidance_popups' || activeTab === 'ceo_popups') && (
                 <PopupsView projectId={activeProjectId} headers={{ ...getAuthHeaders(), 'x-project-id': activeProjectId }} />
               )}
 
               {/* Beacons */}
-              {activeTab === 'beacons' && (
+              {(activeTab === 'beacons' || activeTab === 'guidance_beacons' || activeTab === 'ceo_beacons') && (
                 <BeaconsView projectId={activeProjectId} headers={{ ...getAuthHeaders(), 'x-project-id': activeProjectId }} />
               )}
 
               {/* Task Lists */}
-              {activeTab === 'task_lists' && (
+              {(activeTab === 'task_lists' || activeTab === 'guidance_tasks' || activeTab === 'ceo_task_lists') && (
                 <TaskListsView projectId={activeProjectId} headers={{ ...getAuthHeaders(), 'x-project-id': activeProjectId }} />
               )}
 
               {/* Surveys */}
-              {activeTab === 'surveys' && (
+              {(activeTab === 'surveys' || activeTab === 'guidance_surveys' || activeTab === 'ceo_surveys') && (
                 <SurveysView projectId={activeProjectId} headers={{ ...getAuthHeaders(), 'x-project-id': activeProjectId }} />
               )}
 
               {/* Self Help */}
-              {(activeTab === 'self_help' || activeTab === 'ceo_self_help') && (
+              {(activeTab === 'self_help' || activeTab === 'ceo_self_help' || activeTab === 'guidance_selfhelp' || activeTab === 'ceo_selfhelp') && (
                 <SelfHelpView projectId={activeProjectId} headers={{ ...getAuthHeaders(), 'x-project-id': activeProjectId }} />
               )}
 
@@ -403,7 +403,7 @@ export default function App() {
               )}
 
               {/* Generic fallback for unimplemented tabs */}
-              {!['overview','analytics_overview','ceo_overview','ceo_analytics','guidance_flows','ceo_walkthroughs','smart_tips','popups','beacons','task_lists','surveys','self_help','ceo_self_help','content_library','audit_logs','ceo_audit','trends','ceo_growth','integrations'].includes(activeTab) && (
+              {!['overview','analytics_overview','ceo_overview','ceo_analytics','guidance_flows','ceo_walkthroughs','smart_tips','guidance_tips','ceo_smart_tips','popups','guidance_popups','ceo_popups','beacons','guidance_beacons','ceo_beacons','task_lists','guidance_tasks','ceo_task_lists','surveys','guidance_surveys','ceo_surveys','self_help','ceo_self_help','guidance_selfhelp','ceo_selfhelp','content_library','audit_logs','ceo_audit','trends','ceo_growth','integrations'].includes(activeTab) && (
                 <div className="p-8">
                   <div className="bg-[#11131f] p-12 rounded-2xl border border-[#1e2238] text-center py-20 space-y-3">
                     <h3 className="text-xl font-bold text-white capitalize">Kenzo_DAP — {activeTab.replace(/_/g, ' ')}</h3>
