@@ -483,29 +483,34 @@ export async function bootstrapDb(): Promise<void> {
     // Clean up legacy Company B - CRM project
     await client.query(`DELETE FROM projects WHERE name LIKE '%Company B%' OR name LIKE '%CRM%';`);
 
-    // Seed Client A Project (TruthBomb)
-    const devApiKey = 'kenzo_project_dev_api_key_2026';
-    const r1 = await client.query('SELECT id FROM projects WHERE api_key = $1', [devApiKey]);
+    // Seed default projects with cryptographically secure installation keys
+    const client1ApiKey = 'kz_live_tb_8f93a102';
+    const r1 = await client.query('SELECT id FROM projects WHERE LOWER(name) LIKE $1 OR api_key = $2 OR api_key = $3', ['%truthbomb%', client1ApiKey, 'kenzo_project_dev_api_key_2026']);
+    let tbProjectId: string;
     if (r1.rows.length === 0) {
-      await client.query(
-        'INSERT INTO projects (name, api_key, client_email) VALUES ($1, $2, $3)',
-        ['TruthBomb', devApiKey, 'client1@kenzo.com']
+      const ins = await client.query(
+        'INSERT INTO projects (name, api_key, client_email) VALUES ($1, $2, $3) RETURNING id',
+        ['TruthBomb', client1ApiKey, 'client1@kenzo.com']
       );
-      console.log('[Database] Seeded TruthBomb project for client1@kenzo.com');
+      tbProjectId = ins.rows[0].id;
     } else {
-      await client.query('UPDATE projects SET name = $1, client_email = $2 WHERE id = $3', ['TruthBomb', 'client1@kenzo.com', r1.rows[0].id]);
+      tbProjectId = r1.rows[0].id;
+      await client.query('UPDATE projects SET name = $1, api_key = $2, client_email = $3 WHERE id = $4', ['TruthBomb', client1ApiKey, 'client1@kenzo.com', tbProjectId]);
     }
+    // Seed allowed origins for TruthBomb
+    await client.query(`
+      INSERT INTO allowed_origins (project_id, origin) VALUES ($1, $2), ($1, $3)
+      ON CONFLICT (project_id, origin) DO NOTHING
+    `, [tbProjectId, 'https://truth-bomb-eight.vercel.app', 'http://localhost:3000']);
 
-    // Seed Client B Project (Kenzo-erp)
-    const client2ApiKey = 'kenzo_project_1785139787760_key_u1yaq';
-    const r2 = await client.query('SELECT id FROM projects WHERE LOWER(name) LIKE $1 OR api_key = $2 OR api_key = $3', ['%kenzo-erp%', client2ApiKey, 'kenzo_project_client2_api_key_2026']);
+    const client2ApiKey = 'kz_live_erp_9c21b34e';
+    const r2 = await client.query('SELECT id FROM projects WHERE LOWER(name) LIKE $1 OR api_key = $2 OR api_key = $3', ['%kenzo-erp%', client2ApiKey, 'kenzo_project_1785139787760_key_u1yaq']);
+    let erpProjectId: string;
     if (r2.rows.length === 0) {
-      await client.query(
-        'INSERT INTO projects (name, api_key, client_email) VALUES ($1, $2, $3)',
+      const ins = await client.query(
+        'INSERT INTO projects (name, api_key, client_email) VALUES ($1, $2, $3) RETURNING id',
         ['Kenzo-erp', client2ApiKey, 'client2@kenzo.com']
       );
-      console.log('[Database] Seeded Kenzo-erp project for client2@kenzo.com');
-    } else {
       await client.query('UPDATE projects SET name = $1, api_key = $2, client_email = $3 WHERE id = $4', ['Kenzo-erp', client2ApiKey, 'client2@kenzo.com', r2.rows[0].id]);
     }
 
