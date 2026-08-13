@@ -8,6 +8,14 @@ import ToursView from './components/tours-view';
 import IntegrationView from './components/integration-view';
 import InsightsBuilder from './components/insights-builder';
 import LoginView from './components/login-view';
+import SmartTipsView from './components/smart-tips-view';
+import PopupsView from './components/popups-view';
+import BeaconsView from './components/beacons-view';
+import TaskListsView from './components/task-lists-view';
+import SurveysView from './components/surveys-view';
+import SelfHelpView from './components/self-help-view';
+import ContentLibraryView from './components/content-library-view';
+import AuditLogsView from './components/audit-logs-view';
 import { X } from 'lucide-react';
 
 interface Flow {
@@ -81,30 +89,25 @@ export default function App() {
   const [newProjectUrl, setNewProjectUrl] = useState('');
   const [newClientEmail, setNewClientEmail] = useState('');
 
-  const fetchBaseUrl = () => {
-    const url = window.location.origin;
-    setApiBaseUrl(url);
+  const getAuthHeaders = (): Record<string, string> => {
+    const headers: Record<string, string> = {};
+    const token = localStorage.getItem('kenzo_jwt_token');
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    return headers;
   };
+
+  useEffect(() => { setApiBaseUrl(window.location.origin); }, []);
 
   const loadProjects = async () => {
     try {
-      const headers: Record<string, string> = {};
-      const token = localStorage.getItem('kenzo_jwt_token');
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-      if (user) {
-        headers['x-user-email'] = user.email;
-        headers['x-user-role'] = user.role;
-      }
-
-      const res = await fetch('/api/v1/admin/projects', { headers });
+      const res = await fetch('/api/v1/admin/projects', { headers: getAuthHeaders() });
       if (res.ok) {
         const data = await res.json();
         setProjects(data);
         if (data.length > 0) {
           const savedId = localStorage.getItem('kenzo_active_project_id');
           const exists = data.some((p: any) => p.id === savedId);
-          const defaultId = exists && savedId ? savedId : data[0].id;
-          setActiveProjectId(defaultId);
+          setActiveProjectId(exists && savedId ? savedId : data[0].id);
         } else {
           setActiveProjectId('');
         }
@@ -117,22 +120,11 @@ export default function App() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const headers = { 'x-project-id': activeProjectId || 'default-project' };
+      const headers = { ...getAuthHeaders(), 'x-project-id': activeProjectId || 'default-project' };
       const flowsRes = await fetch('/api/v1/admin/flows', { headers });
-      if (flowsRes.ok) {
-        const flowsData = await flowsRes.json();
-        setFlows(Array.isArray(flowsData) ? flowsData : []);
-      } else {
-        setFlows([]);
-      }
-
+      setFlows(flowsRes.ok ? (await flowsRes.json()) : []);
       const analyticsRes = await fetch('/api/v1/admin/analytics/summary', { headers });
-      if (analyticsRes.ok) {
-        const analyticsData = await analyticsRes.json();
-        setAnalytics(analyticsData);
-      } else {
-        setAnalytics(null);
-      }
+      setAnalytics(analyticsRes.ok ? await analyticsRes.json() : null);
     } catch (err) {
       console.error('Error loading admin portal data:', err);
     } finally {
@@ -141,19 +133,12 @@ export default function App() {
   };
 
   useEffect(() => {
-    fetchBaseUrl();
-    if (user) {
-      loadProjects();
-    }
-
-    const handleGlobalKeydown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        setIsCommandPaletteOpen(prev => !prev);
-      }
+    if (user) loadProjects();
+    const handleKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setIsCommandPaletteOpen(p => !p); }
     };
-    window.addEventListener('keydown', handleGlobalKeydown);
-    return () => window.removeEventListener('keydown', handleGlobalKeydown);
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
   }, [user]);
 
   useEffect(() => {
@@ -353,19 +338,58 @@ export default function App() {
             </div>
           ) : (
             <div className="fade-in transition-all duration-350">
-              {/* Guidance / Tours Views */}
-              {(activeTab === 'guidance_flows' || activeTab === 'ceo_walkthroughs' || activeTab === 'content_library') && (
+              {/* Analytics / Overview */}
+              {(activeTab === 'overview' || activeTab === 'analytics_overview' || activeTab === 'ceo_overview' || activeTab === 'ceo_analytics') && (
                 <div className="p-8">
-                  <ToursView 
-                    flows={flows} 
-                    editingFlow={editingFlow}
-                    setEditingFlow={setEditingFlow}
-                    handleDeleteFlow={handleDeleteFlow}
-                    handleUpdateFlowStatus={handleUpdateFlowStatus}
-                    handleSaveFlowDetails={handleSaveFlowDetails}
-                    apiKey={activeProject?.apiKey || ''}
-                  />
+                  <AnalyticsView analytics={analytics} flowsCount={flows.length} activePublishedCount={activePublishedCount} getCompletionRate={getCompletionRate} />
                 </div>
+              )}
+
+              {/* Flows / Walkthroughs */}
+              {(activeTab === 'guidance_flows' || activeTab === 'ceo_walkthroughs') && (
+                <div className="p-8">
+                  <ToursView flows={flows} editingFlow={editingFlow} setEditingFlow={setEditingFlow} handleDeleteFlow={handleDeleteFlow} handleUpdateFlowStatus={handleUpdateFlowStatus} handleSaveFlowDetails={handleSaveFlowDetails} apiKey={activeProject?.apiKey || ''} />
+                </div>
+              )}
+
+              {/* Smart Tips */}
+              {activeTab === 'smart_tips' && (
+                <SmartTipsView projectId={activeProjectId} headers={{ ...getAuthHeaders(), 'x-project-id': activeProjectId }} />
+              )}
+
+              {/* Popups */}
+              {activeTab === 'popups' && (
+                <PopupsView projectId={activeProjectId} headers={{ ...getAuthHeaders(), 'x-project-id': activeProjectId }} />
+              )}
+
+              {/* Beacons */}
+              {activeTab === 'beacons' && (
+                <BeaconsView projectId={activeProjectId} headers={{ ...getAuthHeaders(), 'x-project-id': activeProjectId }} />
+              )}
+
+              {/* Task Lists */}
+              {activeTab === 'task_lists' && (
+                <TaskListsView projectId={activeProjectId} headers={{ ...getAuthHeaders(), 'x-project-id': activeProjectId }} />
+              )}
+
+              {/* Surveys */}
+              {activeTab === 'surveys' && (
+                <SurveysView projectId={activeProjectId} headers={{ ...getAuthHeaders(), 'x-project-id': activeProjectId }} />
+              )}
+
+              {/* Self Help */}
+              {(activeTab === 'self_help' || activeTab === 'ceo_self_help') && (
+                <SelfHelpView projectId={activeProjectId} headers={{ ...getAuthHeaders(), 'x-project-id': activeProjectId }} />
+              )}
+
+              {/* Content Library */}
+              {activeTab === 'content_library' && (
+                <ContentLibraryView projectId={activeProjectId} headers={{ ...getAuthHeaders(), 'x-project-id': activeProjectId }} />
+              )}
+
+              {/* Audit Logs */}
+              {(activeTab === 'audit_logs' || activeTab === 'ceo_audit') && (
+                <AuditLogsView projectId={activeProjectId} headers={{ ...getAuthHeaders(), 'x-project-id': activeProjectId }} />
               )}
 
               {/* Trends & Insights */}
@@ -373,35 +397,18 @@ export default function App() {
                 <InsightsBuilder apiKey={activeProject?.apiKey || ''} onBack={() => setActiveTab('overview')} />
               )}
 
-              {/* Analytics Dashboards */}
-              {(activeTab === 'overview' || activeTab === 'analytics_overview' || activeTab === 'ceo_overview' || activeTab === 'ceo_analytics') && (
-                <div className="p-8">
-                  <AnalyticsView 
-                    analytics={analytics} 
-                    flowsCount={flows.length}
-                    activePublishedCount={activePublishedCount}
-                    getCompletionRate={getCompletionRate}
-                  />
-                </div>
-              )}
-
               {/* Integrations */}
               {activeTab === 'integrations' && (
-                <IntegrationView 
-                  apiBaseUrl={apiBaseUrl} 
-                  apiKey={activeProject?.apiKey || ''} 
-                />
+                <IntegrationView apiBaseUrl={apiBaseUrl} apiKey={activeProject?.apiKey || ''} />
               )}
 
-              {/* Generic Module Placeholder Views for full hierarchy */}
-              {!['guidance_flows', 'ceo_walkthroughs', 'content_library', 'trends', 'ceo_growth', 'overview', 'analytics_overview', 'ceo_overview', 'ceo_analytics', 'integrations'].includes(activeTab) && (
+              {/* Generic fallback for unimplemented tabs */}
+              {!['overview','analytics_overview','ceo_overview','ceo_analytics','guidance_flows','ceo_walkthroughs','smart_tips','popups','beacons','task_lists','surveys','self_help','ceo_self_help','content_library','audit_logs','ceo_audit','trends','ceo_growth','integrations'].includes(activeTab) && (
                 <div className="p-8">
-                  <div className="bg-white p-12 rounded-2xl border border-slate-200 shadow-sm text-center py-20 space-y-3">
-                    <h3 className="text-xl font-bold text-slate-900 capitalize">
-                      Kenzo_DAP — {activeTab.replace(/_/g, ' ')}
-                    </h3>
-                    <p className="text-sm text-slate-500 max-w-md mx-auto">
-                      Module active under role <span className="font-bold text-indigo-600">{user.role}</span> ({user.companyName}). Scoped to workspace: <span className="font-bold text-slate-800">{activeProject?.name || 'Default Project'}</span>.
+                  <div className="bg-[#11131f] p-12 rounded-2xl border border-[#1e2238] text-center py-20 space-y-3">
+                    <h3 className="text-xl font-bold text-white capitalize">Kenzo_DAP — {activeTab.replace(/_/g, ' ')}</h3>
+                    <p className="text-sm text-zinc-400 max-w-md mx-auto">
+                      Module active under role <span className="font-bold text-indigo-400">{user.role}</span>. Scoped to workspace: <span className="font-bold text-white">{activeProject?.name || 'Default Project'}</span>.
                     </p>
                   </div>
                 </div>

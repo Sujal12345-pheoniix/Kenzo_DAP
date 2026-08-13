@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: kenzo-dap
+    runtime: node
+    buildCommand: npm install --legacy-peer-deps && npm run build:all && npm --prefix server run build
+    startCommand: npm --prefix server start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: PORT
+        value: 3000

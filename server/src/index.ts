@@ -155,21 +155,14 @@ function authenticateSdk(req: AuthenticatedRequest, res: Response, next: NextFun
   }
 }
 
-// Simple auth check for admin dashboard (accepts a header or query param)
+// Admin auth: extract user from JWT, then resolve projectId from x-project-id header or JWT claim
 function authenticateAdmin(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-  // Extract user identity from JWT Bearer token (for audit logging)
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
     try {
       const decoded: any = jwt.verify(authHeader.split(' ')[1], JWT_SECRET);
       req.user = { email: decoded.email, role: decoded.role, id: decoded.userId };
     } catch (_) {}
-  }
-  // Also check x-user-email header as fallback identity
-  if (!req.user) {
-    const emailH = req.headers['x-user-email'] as string;
-    const roleH = req.headers['x-user-role'] as string;
-    if (emailH) req.user = { email: emailH, role: roleH || 'SUPER_ADMIN' };
   }
 
   const projectIdHeader = req.headers['x-project-id'] as string;
@@ -180,32 +173,15 @@ function authenticateAdmin(req: AuthenticatedRequest, res: Response, next: NextF
     next();
     return;
   }
-
   if (apiKeyHeader) {
     pool.query('SELECT id FROM projects WHERE api_key = $1', [apiKeyHeader])
-      .then((result) => {
-        if (result.rows.length > 0) {
-          req.projectId = result.rows[0].id;
-          next();
-        } else {
-          res.status(401).json({ message: 'Invalid API key' });
-        }
-      })
-      .catch((err) => res.status(500).json({ message: 'DB error', error: err.message }));
+      .then((r) => { if (r.rows.length > 0) { req.projectId = r.rows[0].id; next(); } else res.status(401).json({ message: 'Invalid API key' }); })
+      .catch((e) => res.status(500).json({ message: 'DB error', error: e.message }));
     return;
   }
-
-  // fallback to looking up first project
   pool.query('SELECT id FROM projects ORDER BY created_at ASC LIMIT 1')
-    .then((result) => {
-      if (result.rows.length > 0) {
-        req.projectId = result.rows[0].id;
-        next();
-      } else {
-        res.status(500).json({ message: 'No project found. Bootstrap first.' });
-      }
-    })
-    .catch((err) => res.status(500).json({ message: 'DB error', error: err.message }));
+    .then((r) => { if (r.rows.length > 0) { req.projectId = r.rows[0].id; next(); } else res.status(500).json({ message: 'No project found' }); })
+    .catch((e) => res.status(500).json({ message: 'DB error', error: e.message }));
 }
 
 // --- SDK ROUTES ---
@@ -665,60 +641,31 @@ app.post('/api/v1/progress/:flowId', authenticateSdk, async (req: AuthenticatedR
 
 // --- ADMIN API ROUTES ---
 
-// 0a. List projects (RBAC scoped: Super Admin sees all; Clients see ONLY assigned projects)
+// 0a. List projects — JWT-only RBAC. Super Admin = all. Others = own only.
 app.get('/api/v1/admin/projects', async (req: Request, res: Response) => {
   try {
-    // 1. Try to extract user identity from JWT Bearer token
-    let authUser: any = null;
     const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      try {
-        authUser = jwt.verify(authHeader.split(' ')[1], JWT_SECRET);
-      } catch (_) {
-        // Invalid token — reject
-        res.status(401).json({ message: 'Invalid or expired token' });
-        return;
-      }
-    }
-
-    // 2. Fallback: trust x-user-email/role headers only if token was not present
-    if (!authUser) {
-      const emailHeader = req.headers['x-user-email'] as string;
-      const roleHeader = req.headers['x-user-role'] as string;
-      if (emailHeader) {
-        // Verify this email actually exists in DB before trusting the header
-        const check = await pool.query('SELECT email, role FROM users WHERE LOWER(email) = LOWER($1)', [emailHeader]);
-        if (check.rows.length > 0) {
-          authUser = { email: check.rows[0].email, role: check.rows[0].role };
-        }
-      }
-    }
-
-    // 3. If we still have no identity, reject
-    if (!authUser) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       res.status(401).json({ message: 'Authentication required' });
       return;
     }
-
-    // 4. SUPER_ADMIN sees all projects
-    if (authUser.role === 'SUPER_ADMIN') {
-      const result = await pool.query(
-        'SELECT id, name, api_key as "apiKey", client_email as "clientEmail", created_at as "createdAt" FROM projects ORDER BY created_at ASC'
-      );
-      res.json(result.rows);
+    let authUser: any;
+    try {
+      authUser = jwt.verify(authHeader.split(' ')[1], JWT_SECRET);
+    } catch (_) {
+      res.status(401).json({ message: 'Invalid or expired token' });
       return;
     }
-
-    // 5. All other roles: strictly filter to only projects assigned to their email
-    const userEmail = (authUser.email as string).toLowerCase().trim();
-    const result = await pool.query(
-      `SELECT id, name, api_key as "apiKey", client_email as "clientEmail", created_at as "createdAt"
-       FROM projects
-       WHERE LOWER(client_email) = $1
-       ORDER BY created_at ASC`,
-      [userEmail]
+    if (authUser.role === 'SUPER_ADMIN') {
+      const r = await pool.query('SELECT id, name, api_key as "apiKey", client_email as "clientEmail", created_at as "createdAt" FROM projects ORDER BY created_at ASC');
+      res.json(r.rows);
+      return;
+    }
+    const r = await pool.query(
+      'SELECT id, name, api_key as "apiKey", client_email as "clientEmail", created_at as "createdAt" FROM projects WHERE LOWER(client_email) = LOWER($1) ORDER BY created_at ASC',
+      [authUser.email]
     );
-    res.json(result.rows);
+    res.json(r.rows);
   } catch (err: any) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }

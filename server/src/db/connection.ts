@@ -198,6 +198,10 @@ export async function bootstrapDb(): Promise<void> {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `);
+    await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS company_id VARCHAR(255);`);
+    await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS company_name VARCHAR(255);`);
+    await client.query(`ALTER TABLE users ALTER COLUMN id SET DEFAULT gen_random_uuid();`);
+    await client.query(`ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;`);
 
     // ─── PHASE 2: DAP GUIDANCE MODULE TABLES ────────────────────────────────────
 
@@ -507,7 +511,7 @@ export async function bootstrapDb(): Promise<void> {
     const u1 = await client.query('SELECT id FROM users WHERE LOWER(email) = LOWER($1)', ['Kenzo@gmail.com']);
     if (u1.rows.length === 0) {
       await client.query(
-        'INSERT INTO users (email, password_hash, name, role, company_id, company_name) VALUES ($1,$2,$3,$4,$5,$6)',
+        'INSERT INTO users (id, email, password_hash, name, role, company_id, company_name) VALUES (gen_random_uuid(), $1,$2,$3,$4,$5,$6)',
         ['Kenzo@gmail.com', adminHash, 'Kenzo Super Admin', 'SUPER_ADMIN', 'super_admin_corp', 'Kenzo_DAP Global']
       );
       console.log('[Database] Seeded Super Admin: Kenzo@gmail.com / kenzo123');
@@ -516,7 +520,7 @@ export async function bootstrapDb(): Promise<void> {
     const u2 = await client.query('SELECT id FROM users WHERE LOWER(email) = LOWER($1)', ['client1@kenzo.com']);
     if (u2.rows.length === 0) {
       await client.query(
-        'INSERT INTO users (email, password_hash, name, role, company_id, company_name) VALUES ($1,$2,$3,$4,$5,$6)',
+        'INSERT INTO users (id, email, password_hash, name, role, company_id, company_name) VALUES (gen_random_uuid(), $1,$2,$3,$4,$5,$6)',
         ['client1@kenzo.com', clientHash, 'Client A CEO', 'CLIENT_CEO', 'comp_a', 'TruthBomb']
       );
     } else {
@@ -526,7 +530,7 @@ export async function bootstrapDb(): Promise<void> {
     const u3 = await client.query('SELECT id FROM users WHERE LOWER(email) = LOWER($1)', ['client2@kenzo.com']);
     if (u3.rows.length === 0) {
       await client.query(
-        'INSERT INTO users (email, password_hash, name, role, company_id, company_name) VALUES ($1,$2,$3,$4,$5,$6)',
+        'INSERT INTO users (id, email, password_hash, name, role, company_id, company_name) VALUES (gen_random_uuid(), $1,$2,$3,$4,$5,$6)',
         ['client2@kenzo.com', clientHash, 'Client B CEO', 'CLIENT_CEO', 'comp_b', 'Kenzo-erp']
       );
     } else {

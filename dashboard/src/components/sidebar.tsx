@@ -74,17 +74,25 @@ export type TabType =
   | 'notifications'
   | 'audit_logs'
   | 'settings'
+  | 'smart_tips'
+  | 'popups'
+  | 'beacons'
+  | 'task_lists'
+  | 'surveys'
+  | 'self_help'
   // Client CEO Tabs
   | 'ceo_overview'
   | 'ceo_apps'
   | 'ceo_walkthroughs'
   | 'ceo_selfhelp'
+  | 'ceo_self_help'
   | 'ceo_growth'
   | 'ceo_analytics'
   | 'ceo_users'
   | 'ceo_ai'
   | 'ceo_reports'
-  | 'ceo_settings';
+  | 'ceo_settings'
+  | 'ceo_audit';
 
 interface UserSession {
   id: string;
