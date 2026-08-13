@@ -200,17 +200,9 @@ export class StepEngine implements IStepEngine {
           });
         }
       } else {
-        // Targeted element not found on page — skip safely to next step if available
-        this.logger.warn(`[Kenzo] Step element not found for step: "${step.title}". Skipping...`, { stepId: step.id, selector: step.selector });
-        const sorted = this.getSortedSteps();
-        if (this.currentIndex < sorted.length - 1) {
-          await this.goToStep(this.currentIndex + 1);
-          return;
-        } else {
-          // End of flow reached
-          this.onFlowEnd('finish');
-          return;
-        }
+        // Targeted element not found on DOM — fall back gracefully to centered card/modal mode on document.body so user always sees the step content
+        this.logger.info(`[Kenzo] Step element not found for step: "${step.title}". Rendering in centered card mode...`, { stepId: step.id, selector: step.selector });
+        targetElement = document.body;
       }
     } else {
       this.overlayManager.hide();
