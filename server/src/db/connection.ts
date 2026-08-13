@@ -492,7 +492,7 @@ export async function bootstrapDb(): Promise<void> {
 
     // Seed Client B Project (Kenzo-erp)
     const client2ApiKey = 'kenzo_project_client2_api_key_2026';
-    const r2 = await client.query('SELECT id FROM projects WHERE api_key = $1', [client2ApiKey]);
+    const r2 = await client.query('SELECT id FROM projects WHERE LOWER(name) LIKE $1 OR api_key = $2', ['%kenzo-erp%', client2ApiKey]);
     if (r2.rows.length === 0) {
       await client.query(
         'INSERT INTO projects (name, api_key, client_email) VALUES ($1, $2, $3)',
@@ -500,7 +500,7 @@ export async function bootstrapDb(): Promise<void> {
       );
       console.log('[Database] Seeded Kenzo-erp project for client2@kenzo.com');
     } else {
-      await client.query('UPDATE projects SET name = $1, client_email = $2 WHERE id = $3', ['Kenzo-erp', 'client2@kenzo.com', r2.rows[0].id]);
+      await client.query('UPDATE projects SET name = $1, api_key = $2, client_email = $3 WHERE id = $4', ['Kenzo-erp', client2ApiKey, 'client2@kenzo.com', r2.rows[0].id]);
     }
 
     // Seed Users
