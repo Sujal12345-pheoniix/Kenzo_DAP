@@ -4,7 +4,7 @@
  */
 
 import type { IApiClient, IFlowLoader, ILogger, IStorageService } from '@/core/interfaces';
-import type { Flow, FlowsResponse } from '@/types';
+import type { Flow } from '@/types';
 
 const FLOWS_CACHE_KEY = 'flows_cache';
 const FLOWS_CACHE_TTL = 5 * 1000; // 5 seconds fast TTL for fast website synchronization
@@ -17,6 +17,27 @@ export class FlowLoader implements IFlowLoader {
     private readonly storage: IStorageService,
     private readonly logger: ILogger,
   ) {}
+
+  private fullExperiencesCache: any = null;
+
+  async loadFullExperiences(forceRefresh = false): Promise<any> {
+    if (!forceRefresh && this.fullExperiencesCache) {
+      return this.fullExperiencesCache;
+    }
+
+    const response = await this.apiClient.get<any>('/flows/published', {
+      cache: !forceRefresh,
+      cacheTtl: FLOWS_CACHE_TTL,
+    });
+
+    this.fullExperiencesCache = response || { flows: [] };
+    if (response && response.flows) {
+      const flows = response.flows.filter((f: any) => f.status === 'published');
+      this.memoryCache = flows;
+      this.storage.set(FLOWS_CACHE_KEY, flows, FLOWS_CACHE_TTL);
+    }
+    return this.fullExperiencesCache;
+  }
 
   async loadAll(forceRefresh = false): Promise<Flow[]> {
     if (forceRefresh) {
@@ -35,12 +56,8 @@ export class FlowLoader implements IFlowLoader {
 
     this.logger.info('Loading published flows');
 
-    const response = await this.apiClient.get<FlowsResponse>('/flows/published', {
-      cache: !forceRefresh,
-      cacheTtl: FLOWS_CACHE_TTL,
-    });
-
-    const flows = response.flows.filter((f) => f.status === 'published');
+    const response = await this.loadFullExperiences(forceRefresh);
+    const flows = (response.flows || []).filter((f: any) => f.status === 'published');
     this.memoryCache = flows;
     this.storage.set(FLOWS_CACHE_KEY, flows, FLOWS_CACHE_TTL);
 

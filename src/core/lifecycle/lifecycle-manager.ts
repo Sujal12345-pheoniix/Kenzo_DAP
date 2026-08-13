@@ -18,6 +18,9 @@ import type {
   IProgressManager,
 } from '@/core/interfaces';
 import type { KenzoInitOptions, SdkState } from '@/types';
+import { PopupManager } from '@/popup/popup-manager';
+import { SmartTipManager } from '@/smart-tip/smart-tip-manager';
+import { BeaconManager } from '@/beacon/beacon-manager';
 
 export class LifecycleManager implements ILifecycleManager {
   private state: SdkState = 'uninitialized';
@@ -27,6 +30,10 @@ export class LifecycleManager implements ILifecycleManager {
   private lastAutoTriggeredPath: string = '';
   // Delay timer for auto-trigger after navigation (lets the new page DOM settle)
   private autoTriggerTimer: ReturnType<typeof setTimeout> | null = null;
+
+  private popupManager: PopupManager;
+  private smartTipManager: SmartTipManager;
+  private beaconManager: BeaconManager;
 
   constructor(
     private readonly config: IConfigService,
@@ -41,7 +48,9 @@ export class LifecycleManager implements ILifecycleManager {
     private readonly conditionEvaluator: IConditionEvaluator,
     private readonly progressManager: IProgressManager,
   ) {
-    // No sessionFlowEnded blocking — walkthroughs auto-trigger per page visit
+    this.popupManager = new PopupManager();
+    this.smartTipManager = new SmartTipManager();
+    this.beaconManager = new BeaconManager();
   }
 
   getState(): SdkState {
@@ -74,8 +83,68 @@ export class LifecycleManager implements ILifecycleManager {
 
       try {
         await this.auth.authenticate(config.apiKey);
-        const flows = await this.flowLoader.loadAll();
+        const fullData = await (this.flowLoader as any).loadFullExperiences();
+        const flows = (fullData?.flows || []).filter((f: any) => f.status === 'published');
         this.logger.info(`Loaded ${flows.length} published experience(s)`);
+
+        // Render Popups
+        if (fullData?.popups && fullData.popups.length > 0) {
+          for (const pop of fullData.popups) {
+            if (pop.status === 'published' || pop.status === 'active') {
+              const item = {
+                id: pop.id,
+                title: pop.title || pop.name,
+                body: pop.content || '',
+                primaryButtonLabel: 'Got it',
+                triggerType: pop.triggerEvent || 'page_load',
+                idleDelayMs: (pop.triggerDelay || 2) * 1000,
+              };
+              if (item.triggerType === 'page_load') {
+                setTimeout(() => this.popupManager.showPopup(item), item.idleDelayMs || 1000);
+              } else if (item.triggerType === 'exit_intent') {
+                this.popupManager.setupExitIntent(() => this.popupManager.showPopup(item));
+              } else if (item.triggerType === 'idle') {
+                this.popupManager.setupIdleTrigger(item.idleDelayMs || 4000, () => this.popupManager.showPopup(item));
+              }
+            }
+          }
+        }
+
+        // Render Smart Tips
+        if (fullData?.smartTips && fullData.smartTips.length > 0) {
+          for (const tip of fullData.smartTips) {
+            if (tip.selector) {
+              const sel = typeof tip.selector === 'string' ? { css: tip.selector } : tip.selector;
+              this.smartTipManager.registerTip({
+                id: tip.id,
+                selector: sel,
+                title: tip.name,
+                content: tip.content || '',
+                type: 'info'
+              });
+            }
+          }
+        }
+
+        // Render Beacons
+        if (fullData?.beacons && fullData.beacons.length > 0) {
+          for (const beacon of fullData.beacons) {
+            if (beacon.selector) {
+              const sel = typeof beacon.selector === 'string' ? { css: beacon.selector } : beacon.selector;
+              this.beaconManager.renderBeacon({
+                id: beacon.id,
+                selector: sel,
+                title: beacon.label || beacon.name,
+                flowId: beacon.flowId
+              }, (b) => {
+                if (b.flowId) {
+                  const targetFlow = flows.find((f: any) => f.id === b.flowId);
+                  if (targetFlow) this.flowRunner.start(targetFlow);
+                }
+              });
+            }
+          }
+        }
       } catch (authErr) {
         this.logger.warn('Remote experience sync warning:', { error: String(authErr) });
       }
@@ -203,6 +272,11 @@ export class LifecycleManager implements ILifecycleManager {
           bestFlow = flow;
         }
       }
+    }
+
+    // Fallback: If no flow specifically matched URL rules, return the primary published flow
+    if (!bestFlow && flows.length > 0) {
+      bestFlow = flows[0];
     }
 
     return bestFlow;
