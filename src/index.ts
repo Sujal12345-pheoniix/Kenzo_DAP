@@ -59,10 +59,10 @@ const Kenzo: KenzoPublicAPI = {
 function autoBootstrap(): void {
   if (typeof document === 'undefined' || typeof window === 'undefined') return;
 
+  const scripts = Array.from(document.getElementsByTagName('script'));
   const script = (document.currentScript as HTMLScriptElement | null) ||
-    document.querySelector<HTMLScriptElement>('script[data-kenzo-key]') ||
-    document.querySelector<HTMLScriptElement>('script[data-api-key]') ||
-    document.querySelector<HTMLScriptElement>('script[src*="sdk.js"]');
+    scripts.find(s => s.hasAttribute('data-kenzo-key') || s.hasAttribute('data-api-key') || (s.dataset && (s.dataset.kenzoKey || s.dataset.apiKey))) ||
+    scripts.find(s => s.src && s.src.includes('sdk.js'));
 
   let apiKey = script ? (
     script.getAttribute('data-kenzo-key') ||
@@ -71,12 +71,12 @@ function autoBootstrap(): void {
     (script.dataset ? script.dataset.kenzoKey || script.dataset.apiKey || script.dataset.key : null)
   ) : null;
 
-  // Smart domain-based auto-detection fallback for TruthBomb and Kenzo-ERP
+  // Domain-based auto-detection fallback for TruthBomb and Kenzo-ERP
   if (!apiKey) {
     const host = window.location.hostname.toLowerCase();
     if (host.includes('truth-bomb') || host.includes('truthbomb')) {
       apiKey = 'kenzo_project_dev_api_key_2026';
-    } else if (host.includes('kenzo-one-erp') || host.includes('one-erp') || host.includes('erp')) {
+    } else if (host.includes('kenzo-one-erp') || host.includes('one-erp') || host.includes('erp') || host.includes('vercel')) {
       apiKey = 'kenzo_project_1785139787760_key_u1yaq';
     }
   }
@@ -94,27 +94,19 @@ function autoBootstrap(): void {
   const apiBaseUrl = (script && (script.getAttribute('data-api-base') || script.getAttribute('data-api-url'))) ||
     defaultApiBase;
 
-  const debug = true;
-  const environment = 'production';
-  const darkMode = true;
-
   const run = () => {
     sdk.init({
       apiKey: apiKey!,
       apiBaseUrl,
-      debug,
-      darkMode,
-      userTraits: { environment }
+      debug: true,
+      darkMode: true,
+      userTraits: { environment: 'production' }
     }).catch(err => {
       console.warn('[Kenzo SDK] Auto-bootstrap notice:', err);
     });
   };
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', run, { once: true });
-  } else {
-    run();
-  }
+  run();
 }
 
 if (typeof window !== 'undefined') {
