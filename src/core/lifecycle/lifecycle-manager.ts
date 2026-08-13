@@ -69,9 +69,16 @@ export class LifecycleManager implements ILifecycleManager {
         this.logger.setLevel('debug');
       }
 
-      await this.auth.authenticate(config.apiKey);
-      const flows = await this.flowLoader.loadAll();
-      this.logger.info(`Loaded ${flows.length} published experience(s)`);
+      // Render the floating "Start Guide" launcher widget ("ken") immediately
+      this.renderKenLauncher();
+
+      try {
+        await this.auth.authenticate(config.apiKey);
+        const flows = await this.flowLoader.loadAll();
+        this.logger.info(`Loaded ${flows.length} published experience(s)`);
+      } catch (authErr) {
+        this.logger.warn('Remote experience sync warning:', { error: String(authErr) });
+      }
 
       // Progress is preserved per user/session based on targeting & frequency rules
       // Register session heartbeat with server
@@ -91,9 +98,6 @@ export class LifecycleManager implements ILifecycleManager {
       this.state = 'ready';
       this.eventBus.emit('sdk:initialized', undefined);
       this.logger.info('Kenzo SDK initialized successfully');
-
-      // Render the floating "Start Guide" launcher widget ("ken")
-      this.renderKenLauncher();
 
       // Auto-trigger matching flow & perform background DOM intelligence scan
       void this.triggerMatchingFlow();

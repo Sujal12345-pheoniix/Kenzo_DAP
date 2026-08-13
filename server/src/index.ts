@@ -109,6 +109,16 @@ const storage = new CloudinaryStorage({
 const upload = multer({ storage });
 
 // Enable CORS and JSON parsing
+app.use((req: Request, res: Response, next: NextFunction) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-api-key, x-project-id, x-user-email');
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+    return;
+  }
+  next();
+});
 app.use(cors());
 app.use(express.json());
 
