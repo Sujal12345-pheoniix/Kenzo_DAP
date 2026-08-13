@@ -525,7 +525,51 @@ app.get('/api/v1/flows/published', authenticateSdk, async (req: AuthenticatedReq
       }));
     }
 
-    res.json({ flows });
+    // Load published Smart Tips
+    const smartTipsRes = await pool.query(
+      `SELECT id, name, content, position, trigger, selector, status FROM smart_tips WHERE project_id = $1 AND status != 'archived'`,
+      [req.projectId]
+    );
+
+    // Load published Popups
+    const popupsRes = await pool.query(
+      `SELECT id, name, title, content, popup_type as "popupType", position, trigger_event as "triggerEvent", trigger_delay as "triggerDelay", theme, show_close_button as "showCloseButton", status FROM popups WHERE project_id = $1 AND status != 'archived'`,
+      [req.projectId]
+    );
+
+    // Load Beacons
+    const beaconsRes = await pool.query(
+      `SELECT id, name, label, description, color, size, pulse_animation as "pulseAnimation", on_click_action as "onClickAction", selector FROM beacons WHERE project_id = $1`,
+      [req.projectId]
+    );
+
+    // Load published Task Lists
+    const taskListsRes = await pool.query(
+      `SELECT id, name, title, items, status FROM task_lists WHERE project_id = $1 AND status != 'archived'`,
+      [req.projectId]
+    );
+
+    // Load published Surveys
+    const surveysRes = await pool.query(
+      `SELECT id, name, title, survey_type as "surveyType", questions, status FROM surveys WHERE project_id = $1 AND status != 'archived'`,
+      [req.projectId]
+    );
+
+    // Load published Self Help Articles
+    const selfHelpRes = await pool.query(
+      `SELECT id, title, content, category, tags, status, view_count as "viewCount", helpful_count as "helpfulCount" FROM self_help_articles WHERE project_id = $1 AND status = 'published'`,
+      [req.projectId]
+    );
+
+    res.json({
+      flows,
+      smartTips: smartTipsRes.rows,
+      popups: popupsRes.rows,
+      beacons: beaconsRes.rows,
+      taskLists: taskListsRes.rows,
+      surveys: surveysRes.rows,
+      selfHelpArticles: selfHelpRes.rows
+    });
   } catch (err: any) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
