@@ -64,41 +64,49 @@ function autoBootstrap(): void {
     document.querySelector<HTMLScriptElement>('script[data-api-key]') ||
     document.querySelector<HTMLScriptElement>('script[src*="sdk.js"]');
 
-  if (!script) return;
-
-  const apiKey = script.getAttribute('data-kenzo-key') ||
+  let apiKey = script ? (
+    script.getAttribute('data-kenzo-key') ||
     script.getAttribute('data-api-key') ||
-    script.getAttribute('data-key');
+    script.getAttribute('data-key') ||
+    (script.dataset ? script.dataset.kenzoKey || script.dataset.apiKey || script.dataset.key : null)
+  ) : null;
+
+  // Smart domain-based auto-detection fallback for TruthBomb and Kenzo-ERP
+  if (!apiKey) {
+    const host = window.location.hostname.toLowerCase();
+    if (host.includes('truth-bomb') || host.includes('truthbomb')) {
+      apiKey = 'kenzo_project_dev_api_key_2026';
+    } else if (host.includes('kenzo-one-erp') || host.includes('one-erp') || host.includes('erp')) {
+      apiKey = 'kenzo_project_1785139787760_key_u1yaq';
+    }
+  }
 
   if (!apiKey) return;
 
-  let defaultApiBase = '/api/v1';
-  if (script.src) {
+  let defaultApiBase = 'https://kenzo-dap.onrender.com/api/v1';
+  if (script && script.src) {
     try {
       const scriptUrl = new URL(script.src, window.location.href);
       defaultApiBase = `${scriptUrl.origin}/api/v1`;
     } catch (_) {}
   }
 
-  const apiBaseUrl = script.getAttribute('data-api-base') ||
-    script.getAttribute('data-api-url') ||
+  const apiBaseUrl = (script && (script.getAttribute('data-api-base') || script.getAttribute('data-api-url'))) ||
     defaultApiBase;
 
-  const debug = script.getAttribute('data-debug') === 'true' || true; // enable debug logs for visibility
-  const environment = script.getAttribute('data-environment') || 'production';
-  const darkMode = script.getAttribute('data-dark-mode') !== 'false';
+  const debug = true;
+  const environment = 'production';
+  const darkMode = true;
 
   const run = () => {
     sdk.init({
-      apiKey,
+      apiKey: apiKey!,
       apiBaseUrl,
       debug,
       darkMode,
       userTraits: { environment }
     }).catch(err => {
-      if (debug) {
-        console.warn('[Kenzo SDK] Auto-bootstrap error:', err);
-      }
+      console.warn('[Kenzo SDK] Auto-bootstrap notice:', err);
     });
   };
 
