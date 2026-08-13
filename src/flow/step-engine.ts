@@ -200,12 +200,14 @@ export class StepEngine implements IStepEngine {
           });
         }
       } else {
-        // Targeted element not found on DOM — fall back gracefully to centered card/modal mode on document.body so user always sees the step content
-        this.logger.info(`[Kenzo] Step element not found for step: "${step.title}". Rendering in centered card mode...`, { stepId: step.id, selector: step.selector });
+        // Targeted element not found on DOM — fall back gracefully to centered modal mode on document.body so user always sees the step content
+        this.logger.info(`[Kenzo] Step element not found for step: "${step.title}". Rendering in centered modal mode...`, { stepId: step.id, selector: step.selector });
         targetElement = document.body;
+        step = { ...step, displayMode: 'modal' };
       }
     } else {
       this.overlayManager.hide();
+      step = { ...step, displayMode: 'modal' };
     }
 
     const config = this.config.get();
