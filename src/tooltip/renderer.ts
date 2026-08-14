@@ -134,22 +134,22 @@ const CSS = `
   /* ── Tooltip root (shared by both tooltip + modal modes) ── */
   #${TOOLTIP_ROOT_ID} {
     --kenzo-radius: 16px;
-    --kenzo-header-h: 46px;
+    --kenzo-header-h: 48px;
     --kenzo-shadow:
-      0 0 0 1px rgba(129,140,248,0.35),
-      0 20px 50px -10px rgba(79, 70, 229, 0.45),
-      0 12px 32px rgba(0,0,0,0.65);
-    --kenzo-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #9333ea 100%);
-    --kenzo-glass-bg: rgba(14, 16, 28, 0.96);
-    --kenzo-border: rgba(255,255,255,0.16);
+      0 0 0 1px rgba(59,130,246,0.35),
+      0 20px 50px -10px rgba(15, 23, 42, 0.85),
+      0 12px 32px rgba(0,0,0,0.7);
+    --kenzo-gradient: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #2563eb 100%);
+    --kenzo-glass-bg: linear-gradient(145deg, rgba(11, 19, 43, 0.98) 0%, rgba(15, 23, 42, 0.98) 100%);
+    --kenzo-border: rgba(59, 130, 246, 0.35);
     --kenzo-text: #ffffff;
     --kenzo-subtext: #f1f5f9;
     --kenzo-btn-ghost-bg: rgba(255,255,255,0.08);
     --kenzo-btn-ghost-hover: rgba(255,255,255,0.18);
-    --kenzo-btn-primary-bg: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
-    --kenzo-btn-primary-hover: linear-gradient(135deg, #4338ca 0%, #7e22ce 50%, #c026d3 100%);
+    --kenzo-btn-primary-bg: linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #1e40af 100%);
+    --kenzo-btn-primary-hover: linear-gradient(135deg, #1d4ed8 0%, #1e40af 50%, #1e3a8a 100%);
     --kenzo-progress-track: rgba(255,255,255,0.14);
-    --kenzo-progress-fill: linear-gradient(90deg, #6366f1, #a855f7, #ec4899);
+    --kenzo-progress-fill: linear-gradient(90deg, #38bdf8 0%, #2563eb 50%, #1d4ed8 100%);
 
     position: fixed;
     top: 0;
@@ -190,7 +190,7 @@ const CSS = `
     animation: kenzo-modal-in 300ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
 
-  /* ── Gradient header strip ── */
+  /* ── Gradient header strip (Corporate Navy-Blue) ── */
   .kenzo-tooltip__header {
     background: var(--kenzo-gradient) !important;
     padding: 0 16px !important;
@@ -201,12 +201,13 @@ const CSS = `
     flex-shrink: 0 !important;
     position: relative !important;
     overflow: hidden !important;
+    border-bottom: 1px solid rgba(59, 130, 246, 0.25) !important;
   }
   .kenzo-tooltip__header::after {
     content: '';
     position: absolute;
     inset: 0;
-    background: radial-gradient(ellipse at 80% 50%, rgba(255,255,255,0.18) 0%, transparent 70%);
+    background: radial-gradient(ellipse at 80% 50%, rgba(59, 130, 246, 0.25) 0%, transparent 70%);
     pointer-events: none;
   }
 
@@ -220,14 +221,14 @@ const CSS = `
     letter-spacing: 0.06em !important;
     text-transform: uppercase !important;
     color: #ffffff !important;
-    background: rgba(255,255,255,0.20) !important;
-    border: 1px solid rgba(255,255,255,0.30) !important;
+    background: rgba(255,255,255,0.18) !important;
+    border: 1px solid rgba(255,255,255,0.28) !important;
     border-radius: 999px !important;
     padding: 4px 12px !important;
     line-height: 1 !important;
     position: relative !important;
     z-index: 1 !important;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.3) !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.4) !important;
   }
   .kenzo-tooltip__step-dot {
     width: 6px !important;
@@ -236,7 +237,7 @@ const CSS = `
     background: #38bdf8 !important;
     display: inline-block !important;
     flex-shrink: 0 !important;
-    box-shadow: 0 0 6px #38bdf8 !important;
+    box-shadow: 0 0 8px #38bdf8 !important;
   }
 
   /* ── Close button ── */
@@ -277,8 +278,9 @@ const CSS = `
     overscroll-behavior: contain;
   }
 
-  /* ── Title ── */
-  .kenzo-tooltip__title {
+  /* ── Title (Forced Bright White Contrast) ── */
+  .kenzo-tooltip__title,
+  .kenzo-tooltip__title * {
     margin: 0 0 10px 0 !important;
     font-size: 17px !important;
     font-weight: 700 !important;
@@ -286,10 +288,10 @@ const CSS = `
     letter-spacing: -0.015em !important;
     line-height: 1.35 !important;
     word-break: break-word !important;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.4) !important;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.8) !important;
   }
 
-  /* ── Content ── */
+  /* ── Content (Forced Slate-100 Contrast) ── */
   .kenzo-tooltip__content,
   .kenzo-tooltip__content * {
     color: #f1f5f9 !important;
@@ -300,7 +302,7 @@ const CSS = `
   }
   .kenzo-tooltip__content p { margin: 0 0 10px !important; }
   .kenzo-tooltip__content p:last-child { margin-bottom: 0 !important; }
-  .kenzo-tooltip__content a { color: #818cf8 !important; text-decoration: underline !important; font-weight: 600 !important; }
+  .kenzo-tooltip__content a { color: #60a5fa !important; text-decoration: underline !important; font-weight: 600 !important; }
   .kenzo-tooltip__content strong { color: #ffffff !important; font-weight: 700 !important; }
   .kenzo-tooltip__content code {
     font-family: 'JetBrains Mono', 'Fira Code', monospace !important;
@@ -309,7 +311,7 @@ const CSS = `
     border: 1px solid rgba(255,255,255,0.15) !important;
     border-radius: 5px !important;
     padding: 2px 6px !important;
-    color: #c4b5fd !important;
+    color: #93c5fd !important;
   }
 
   /* ── Progress bar track ── */

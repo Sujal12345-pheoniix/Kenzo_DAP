@@ -145,6 +145,25 @@ interface AuthenticatedRequest extends Request {
   user?: { email: string; role: string; id?: string };
 }
 
+// Helper: resolve project ID from apiKey or origin/referer header fallback
+async function resolveProjectId(apiKey?: string, originOrReferer?: string): Promise<string | null> {
+  if (!apiKey && !originOrReferer) return null;
+  if (apiKey) {
+    const res = await pool.query('SELECT id FROM projects WHERE api_key = $1', [apiKey]);
+    if (res.rows.length > 0) return res.rows[0].id;
+  }
+  const str = ((originOrReferer || '') + ' ' + (apiKey || '')).toLowerCase();
+  if (str.includes('erp') || str.includes('1785139787760') || str.includes('u1yaq') || str.includes('client2') || str.includes('9c21b34e')) {
+    const r = await pool.query('SELECT id FROM projects WHERE LOWER(name) LIKE $1 LIMIT 1', ['%kenzo-erp%']);
+    if (r.rows.length > 0) return r.rows[0].id;
+  }
+  if (str.includes('truth') || str.includes('client1') || str.includes('8f93a102') || str.includes('dev')) {
+    const r = await pool.query('SELECT id FROM projects WHERE LOWER(name) LIKE $1 LIMIT 1', ['%truthbomb%']);
+    if (r.rows.length > 0) return r.rows[0].id;
+  }
+  return null;
+}
+
 function authenticateSdk(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   // Primary auth: JWT Bearer token set by the SDK after /auth/sdk exchange
   const authHeader = req.headers.authorization;
@@ -160,28 +179,15 @@ function authenticateSdk(req: AuthenticatedRequest, res: Response, next: NextFun
     }
   }
 
-  // Fallback auth: x-api-key header — allows SDK to make requests even before
+  // Fallback auth: x-api-key header or body apiKey — allows SDK to make requests even before
   // the JWT exchange completes (race condition on cold starts / page load)
   const apiKeyHeader = (req.headers['x-api-key'] as string) || (req.body && req.body.apiKey);
-  if (apiKeyHeader) {
-    pool.query('SELECT id FROM projects WHERE api_key = $1', [apiKeyHeader])
-      .then(async (r) => {
-        if (r.rows.length > 0) {
-          req.projectId = r.rows[0].id;
-          req.apiKey = apiKeyHeader;
-          return next();
-        }
-        // Fallback match using origin/referer header & apiKey substring
-        const originStr = ((req.headers.origin as string) || (req.headers.referer as string) || '' + ' ' + apiKeyHeader).toLowerCase();
-        let fallbackRes;
-        if (originStr.includes('erp') || originStr.includes('1785139787760') || originStr.includes('u1yaq') || originStr.includes('client2') || originStr.includes('9c21b34e')) {
-          fallbackRes = await pool.query('SELECT id FROM projects WHERE LOWER(name) LIKE $1 LIMIT 1', ['%kenzo-erp%']);
-        } else if (originStr.includes('truth') || originStr.includes('client1') || originStr.includes('8f93a102')) {
-          fallbackRes = await pool.query('SELECT id FROM projects WHERE LOWER(name) LIKE $1 LIMIT 1', ['%truthbomb%']);
-        }
-        if (fallbackRes && fallbackRes.rows.length > 0) {
-          req.projectId = fallbackRes.rows[0].id;
-          req.apiKey = apiKeyHeader;
+  if (apiKeyHeader || req.headers.origin || req.headers.referer) {
+    resolveProjectId(apiKeyHeader, (req.headers.origin as string) || (req.headers.referer as string))
+      .then((projectId) => {
+        if (projectId) {
+          req.projectId = projectId;
+          req.apiKey = apiKeyHeader || 'resolved';
           return next();
         }
         res.status(401).json({ message: '[Kenzo SDK API] Unauthorized: Invalid API key' });
@@ -338,17 +344,12 @@ app.post('/api/v1/auth/sdk', async (req: Request, res: Response) => {
 // 1b. SDK Heartbeat
 app.post('/api/v1/sdk/heartbeat', async (req: Request, res: Response) => {
   const { apiKey, url, domain, userAgent, sdkVersion, environment } = req.body;
-  if (!apiKey) {
-    res.status(400).json({ message: 'apiKey is required' });
-    return;
-  }
   try {
-    const projectRes = await pool.query('SELECT id FROM projects WHERE api_key = $1', [apiKey]);
-    if (projectRes.rows.length === 0) {
+    const projectId = await resolveProjectId(apiKey, (req.headers.origin as string) || (req.headers.referer as string));
+    if (!projectId) {
       res.status(401).json({ message: 'Invalid API Key' });
       return;
     }
-    const projectId = projectRes.rows[0].id;
     const host = domain || (url ? new URL(url).hostname : 'localhost');
 
     await pool.query(`
@@ -389,18 +390,17 @@ app.get('/api/v1/admin/sdk-status', authenticateAdmin, async (req: Authenticated
 // 1d. SDK Page Model Scan submission
 app.post('/api/v1/sdk/pages/scan', async (req: Request, res: Response) => {
   const { apiKey, pageModel } = req.body;
-  if (!apiKey || !pageModel) {
-    res.status(400).json({ message: 'apiKey and pageModel are required' });
+  if (!pageModel) {
+    res.status(400).json({ message: 'pageModel is required' });
     return;
   }
 
   try {
-    const projectRes = await pool.query('SELECT id FROM projects WHERE api_key = $1', [apiKey]);
-    if (projectRes.rows.length === 0) {
+    const projectId = await resolveProjectId(apiKey, (req.headers.origin as string) || (req.headers.referer as string));
+    if (!projectId) {
       res.status(401).json({ message: 'Invalid API Key' });
       return;
     }
-    const projectId = projectRes.rows[0].id;
     const pathname = pageModel.pathname || '/';
     const title = pageModel.title || 'Untitled';
 
