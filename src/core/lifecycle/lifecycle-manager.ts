@@ -242,13 +242,15 @@ export class LifecycleManager implements ILifecycleManager {
   private selectBestMatchingFlow(flows: any[], ignoreProgress = false): any | null {
     if (!flows || flows.length === 0) return null;
     const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/';
-    const isForceRun = typeof window !== 'undefined' && 
+    const isForceRun = typeof window !== 'undefined' &&
       (window.location.search.includes('kenzo_force=true') || window.location.search.includes('kenzo_builder=true'));
 
     let bestFlow: any | null = null;
     let highestScore = -1;
 
     for (const flow of flows) {
+      // When auto-triggering (ignoreProgress=false), skip flows the user already
+      // completed or dismissed so we never replay a finished walkthrough automatically.
       if (!ignoreProgress) {
         const progress = this.progressManager.getProgress(flow.id);
         if ((progress?.completed || progress?.dismissed) && !isForceRun) {
@@ -286,9 +288,13 @@ export class LifecycleManager implements ILifecycleManager {
       }
     }
 
-    // Fallback: If no flow specifically matched URL rules, return the primary published flow
-    if (!bestFlow && flows.length > 0) {
-      bestFlow = flows[0];
+    // Fallback: only when manually triggered (ignoreProgress=true / Start Guide button).
+    // For auto-trigger we intentionally return null if nothing matches the current page
+    // — no flow is better than a wrong-page flow firing unexpectedly.
+    if (!bestFlow && ignoreProgress && flows.length > 0) {
+      // Pick the highest-priority non-URL-restricted flow as a sensible fallback
+      const universalFlow = flows.find(f => !f.urlRules || f.urlRules.length === 0);
+      bestFlow = universalFlow ?? flows[0];
     }
 
     return bestFlow;
@@ -312,7 +318,8 @@ export class LifecycleManager implements ILifecycleManager {
     }
 
     try {
-      const flows = await this.flowLoader.loadAll();
+      // Always fetch fresh flows on auto-trigger — cache was invalidated on navigation
+      const flows = await this.flowLoader.loadAll(true);
       if (flows.length === 0) {
         this.logger.info('No published flows found for this project.');
         return;
@@ -329,9 +336,9 @@ export class LifecycleManager implements ILifecycleManager {
         }
       }
 
-      // Respect progress: ignoreProgress = false
-      // Walkthroughs auto-trigger on the first page visit ONLY. Once completed or dismissed,
-      // coming back to the page will NOT auto-trigger the walkthrough again.
+      // AUTO-TRIGGER: respect progress (ignoreProgress = false).
+      // Walkthroughs fire on the first page visit ONLY per route.
+      // Once completed or dismissed, revisiting the page does NOT re-trigger.
       // Users can always manually replay via the "Start Guide" button.
       const flowToStart = this.selectBestMatchingFlow(flows, false);
 
@@ -339,6 +346,8 @@ export class LifecycleManager implements ILifecycleManager {
         this.lastAutoTriggeredPath = currentPath;
         this.logger.info(`Auto-starting matching flow: ${flowToStart.name} (${flowToStart.id})`);
         await this.flowRunner.start(flowToStart);
+      } else {
+        this.logger.info(`No unseen flow matched for path: ${currentPath}`);
       }
     } catch (error) {
       this.logger.error('Error during auto-triggering matching flow', error as Error);
@@ -501,23 +510,26 @@ export class LifecycleManager implements ILifecycleManager {
       <span class="ken-label">Start Guide</span>
     `;
 
-    // Click handler to run best matching flow
+    // Click handler — Start Guide button triggers the current page's walkthrough
     btn.addEventListener('click', async () => {
       try {
-        // Invalidate cache and fetch live flows from server so admin changes apply fast
+        // Always fetch fresh flows so admin-published guides appear immediately
         const flows = await this.flowLoader.loadAll(true);
+
+        // Find the best flow for the current page/route (ignores prior completion)
         const matchedFlow = this.selectBestMatchingFlow(flows, true);
 
         if (matchedFlow) {
-          // If a flow is already running, stop it first
           if (this.flowRunner.isRunning()) {
             this.flowRunner.stop();
           }
-          // Force reset the flow progress so it plays from the beginning
+          // Reset progress so the walkthrough plays from Step 1
           this.progressManager.reset(matchedFlow.id);
+          // Reset the auto-trigger path guard so the flow can fire again after the button
+          this.lastAutoTriggeredPath = '';
           await this.flowRunner.start(matchedFlow);
         } else {
-          this.showToast('No onboarding guides available for this page.');
+          this.showToast('No guide is available for this page yet.');
         }
       } catch (err) {
         this.logger.error('Failed to trigger flow via launcher', err as Error);
