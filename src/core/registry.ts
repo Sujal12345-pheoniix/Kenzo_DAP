@@ -61,10 +61,11 @@ export function createContainer(): Container {
   });
 
   container.registerSingleton(TOKENS.ApiClient, () => {
-    const config = container.resolve<ConfigService>(TOKENS.Config);
     const logger = container.resolve<Logger>(TOKENS.Logger);
-    const baseUrl = config.isReady() ? config.get().apiBaseUrl : 'https://api.kenzo.ai/v1';
-    return new ApiClient(baseUrl, logger);
+    // Use the correct production server as the default base URL.
+    // LifecycleManager will call setBaseUrl() with the real apiBaseUrl
+    // from options right after config.init() — this is just a safe fallback.
+    return new ApiClient('https://kenzo-dap.onrender.com/api/v1', logger);
   });
 
   container.registerSingleton(TOKENS.Auth, () => {
@@ -144,6 +145,8 @@ export function createContainer(): Container {
 
   container.register(TOKENS.TooltipRenderer, () => {
     const config = container.resolve<ConfigService>(TOKENS.Config);
+    // Read darkMode lazily — config IS ready by the time the renderer is
+    // first requested (always after LifecycleManager.initialize()).
     const darkMode = config.isReady() ? config.get().darkMode : false;
     return new TooltipRenderer(
       container.resolve(TOKENS.ContentSanitizer),
@@ -208,6 +211,7 @@ export function createContainer(): Container {
     return new LifecycleManager(
       container.resolve(TOKENS.Config),
       container.resolve(TOKENS.Auth),
+      container.resolve(TOKENS.ApiClient),
       container.resolve(TOKENS.FlowLoader),
       container.resolve(TOKENS.FlowRunner),
       container.resolve(TOKENS.NavigationWatcher),

@@ -14,8 +14,18 @@ const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'kenzo_dap_jwt_secret_key_2026';
 
-// Middleware
-app.use(cors());
+// --- CORS must be first, before any route handlers ---
+const corsOptions = {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    // Allow all origins for the SDK (it runs on any client website)
+    callback(null, true);
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'x-project-id', 'x-user-email'],
+  credentials: false,
+};
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json());
 
 // --- User Authentication API (JWT + Bcrypt) ---
@@ -108,19 +118,8 @@ const storage = new CloudinaryStorage({
 });
 const upload = multer({ storage });
 
-// Enable CORS and JSON parsing
-app.use((req: Request, res: Response, next: NextFunction) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-api-key, x-project-id, x-user-email');
-  if (req.method === 'OPTIONS') {
-    res.sendStatus(200);
-    return;
-  }
-  next();
-});
-app.use(cors());
-app.use(express.json());
+// CORS headers already applied globally at startup (see corsOptions above)
+
 
 // Serve the compiled SDK bundle (UMD version for classic script tags)
 app.get('/sdk.js', (req: Request, res: Response) => {
@@ -147,22 +146,38 @@ interface AuthenticatedRequest extends Request {
 }
 
 function authenticateSdk(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  // Primary auth: JWT Bearer token set by the SDK after /auth/sdk exchange
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    res.status(401).json({ message: '[Kenzo SDK API] Unauthorized: Missing token' });
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.split(' ')[1];
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET) as { projectId: string; apiKey: string };
+      req.projectId = decoded.projectId;
+      req.apiKey = decoded.apiKey;
+      return next();
+    } catch (err) {
+      // Token is invalid/expired — fall through to x-api-key fallback below
+    }
+  }
+
+  // Fallback auth: x-api-key header — allows SDK to make requests even before
+  // the JWT exchange completes (race condition on cold starts / page load)
+  const apiKeyHeader = (req.headers['x-api-key'] as string) || (req.body && req.body.apiKey);
+  if (apiKeyHeader) {
+    pool.query('SELECT id FROM projects WHERE api_key = $1', [apiKeyHeader])
+      .then((r) => {
+        if (r.rows.length > 0) {
+          req.projectId = r.rows[0].id;
+          req.apiKey = apiKeyHeader;
+          return next();
+        }
+        res.status(401).json({ message: '[Kenzo SDK API] Unauthorized: Invalid API key' });
+      })
+      .catch((e) => res.status(500).json({ message: 'DB error', error: e.message }));
     return;
   }
 
-  const token = authHeader.split(' ')[1];
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { projectId: string; apiKey: string };
-    req.projectId = decoded.projectId;
-    req.apiKey = decoded.apiKey;
-    next();
-  } catch (err) {
-    res.status(401).json({ message: '[Kenzo SDK API] Unauthorized: Invalid or expired token' });
-    return;
-  }
+  res.status(401).json({ message: '[Kenzo SDK API] Unauthorized: Missing token' });
 }
 
 // Admin auth: extract user from JWT, then resolve projectId from x-project-id header or JWT claim with RBAC access check
@@ -244,20 +259,38 @@ app.post('/api/v1/auth/sdk', async (req: Request, res: Response) => {
 
     const project = result.rows[0];
 
-    // Domain Allowlist Verification
+    // Domain Allowlist Verification — always permit vercel.app, localhost, 127.0.0.1
     if (origin) {
-      const allowed = await pool.query('SELECT id FROM allowed_origins WHERE project_id = $1 AND (origin = $2 OR origin = $3)', [project.id, origin, '*']);
-      if (allowed.rows.length === 0) {
-        const anyOrigins = await pool.query('SELECT id FROM allowed_origins WHERE project_id = $1', [project.id]);
-        if (anyOrigins.rows.length > 0) {
-          // Verify hostname
-          try {
-            const reqHost = new URL(origin).hostname.toLowerCase();
-            if (!reqHost.includes('vercel.app') && !reqHost.includes('localhost') && !reqHost.includes('127.0.0.1')) {
-              res.status(403).json({ message: `Forbidden: Origin ${origin} not allowed for project` });
-              return;
-            }
-          } catch (_) {}
+      let originAllowed = false;
+      try {
+        const reqHost = new URL(origin).hostname.toLowerCase();
+        // Always allow dev and known deployment platforms
+        if (
+          reqHost === 'localhost' ||
+          reqHost === '127.0.0.1' ||
+          reqHost.endsWith('.vercel.app') ||
+          reqHost.endsWith('.onrender.com') ||
+          reqHost.endsWith('.netlify.app')
+        ) {
+          originAllowed = true;
+        }
+      } catch (_) { originAllowed = true; }
+
+      if (!originAllowed) {
+        const allowed = await pool.query(
+          'SELECT id FROM allowed_origins WHERE project_id = $1 AND (origin = $2 OR origin = $3 OR origin = $4)',
+          [project.id, origin, '*', 'https://' + new URL(origin).hostname]
+        );
+        if (allowed.rows.length === 0) {
+          // Check wildcard entry
+          const wildcardCheck = await pool.query(
+            'SELECT id FROM allowed_origins WHERE project_id = $1 AND origin = $2',
+            [project.id, '*']
+          );
+          if (wildcardCheck.rows.length === 0) {
+            res.status(403).json({ message: `Forbidden: Origin ${origin} not allowed for project` });
+            return;
+          }
         }
       }
     }

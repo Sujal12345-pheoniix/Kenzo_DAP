@@ -85,6 +85,7 @@ export class FlowLoader implements IFlowLoader {
 
   invalidate(): void {
     this.memoryCache = null;
+    this.fullExperiencesCache = null;
     this.storage.remove(FLOWS_CACHE_KEY);
     this.apiClient.clearCache('/flows/published');
   }

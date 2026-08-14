@@ -76,6 +76,10 @@ export interface IApiClient {
   setAuthToken(token: string): void;
   clearAuthToken(): void;
   clearCache(path?: string): void;
+  /** Update the base URL at runtime after config is initialized. */
+  setBaseUrl(url: string): void;
+  /** Store apiKey for x-api-key fallback header on all requests. */
+  setApiKey(key: string): void;
 }
 
 /** Storage abstraction contract. */

@@ -38,6 +38,7 @@ export class LifecycleManager implements ILifecycleManager {
   constructor(
     private readonly config: IConfigService,
     private readonly auth: IAuthService,
+    private readonly apiClient: import('@/core/interfaces').IApiClient,
     private readonly flowLoader: IFlowLoader,
     private readonly flowRunner: IFlowRunner,
     private readonly navigationWatcher: INavigationWatcher,
@@ -74,6 +75,15 @@ export class LifecycleManager implements ILifecycleManager {
     try {
       const config = this.config.init(options);
 
+      // CRITICAL FIX: Update ApiClient base URL to the real apiBaseUrl from options.
+      // The ApiClient singleton is created before config.init() runs, so it
+      // starts with a default URL. We must update it here before any API calls.
+      const apiBaseUrl = options.apiBaseUrl || `${window.location.origin}/api/v1`;
+      this.apiClient.setBaseUrl(apiBaseUrl);
+      // Also set the raw API key so it goes as x-api-key fallback header on every request.
+      // This allows the server to authenticate even when the JWT exchange hasn't completed.
+      this.apiClient.setApiKey(config.apiKey);
+      this.logger.debug('[Kenzo] ApiClient base URL configured', { apiBaseUrl });
       if (config.debug) {
         this.logger.setLevel('debug');
       }
@@ -181,6 +191,8 @@ export class LifecycleManager implements ILifecycleManager {
         if (this.flowRunner.isRunning()) {
           this.flowRunner.stop();
         }
+        // Invalidate cached flows so admin changes show up immediately after nav
+        this.flowLoader.invalidate();
         // Debounce: wait 700ms for Next.js page DOM to settle before triggering
         if (this.autoTriggerTimer) clearTimeout(this.autoTriggerTimer);
         this.autoTriggerTimer = setTimeout(() => {

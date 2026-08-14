@@ -15,12 +15,33 @@ const RETRY_BASE_DELAY = 500;
 
 export class ApiClient implements IApiClient {
   private authToken: string | null = null;
+  private apiKey: string | null = null;
   private readonly cache = new MemoryCache();
+  private _baseUrl: string;
 
   constructor(
-    private readonly baseUrl: string,
+    baseUrl: string,
     private readonly logger: ILogger,
-  ) {}
+  ) {
+    this._baseUrl = baseUrl;
+  }
+
+  /**
+   * Update the base URL at runtime — called by LifecycleManager after
+   * config.init() so the correct apiBaseUrl is always used.
+   */
+  setBaseUrl(url: string): void {
+    this._baseUrl = url.replace(/\/+$/, '');
+    this.logger.debug('ApiClient base URL updated', { url: this._baseUrl });
+  }
+
+  /**
+   * Store the project API key so it can be sent as x-api-key fallback header
+   * when the JWT bearer token is not yet available.
+   */
+  setApiKey(key: string): void {
+    this.apiKey = key;
+  }
 
   setAuthToken(token: string): void {
     this.authToken = token;
@@ -121,6 +142,12 @@ export class ApiClient implements IApiClient {
       headers['Authorization'] = `Bearer ${this.authToken}`;
     }
 
+    // Always send x-api-key as fallback so the server can authenticate
+    // even if JWT hasn't been obtained yet (race condition on page load)
+    if (this.apiKey) {
+      headers['x-api-key'] = this.apiKey;
+    }
+
     if (options?.cache) {
       const cached = this.cache.get(path);
       if (cached?.etag) {
@@ -129,7 +156,7 @@ export class ApiClient implements IApiClient {
     }
 
     try {
-      const cleanBase = this.baseUrl.replace(/\/+$/, '');
+      const cleanBase = this._baseUrl.replace(/\/+$/, '');
       const cleanPath = path.startsWith('/') ? path : `/${path}`;
       const url = `${cleanBase}${cleanPath}`;
       return await fetch(url, {
