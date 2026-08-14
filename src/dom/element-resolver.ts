@@ -87,7 +87,7 @@ export class ElementResolver implements IElementResolver {
     selector: ElementSelector,
     options?: { retries?: number; interval?: number; maxTimeoutMs?: number },
   ): Promise<ResolvedElement | null> {
-    const maxTimeoutMs = options?.maxTimeoutMs ?? (options?.retries && options?.interval ? options.retries * options.interval : 1200);
+    const maxTimeoutMs = options?.maxTimeoutMs ?? (options?.retries && options?.interval ? options.retries * options.interval : 3500);
     const startTime = Date.now();
     const interval = options?.interval ?? 50;
 
