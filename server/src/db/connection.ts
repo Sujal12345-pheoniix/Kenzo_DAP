@@ -458,7 +458,19 @@ export async function bootstrapDb(): Promise<void> {
       );
     `);
 
+    // ─── Allowed Origins table (must exist before seed inserts) ──────────────
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS allowed_origins (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+        origin VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (project_id, origin)
+      );
+    `);
+
     // ─── INDEXES ─────────────────────────────────────────────────────────────────
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_allowed_origins_project ON allowed_origins(project_id);`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_flows_project ON flows(project_id);`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_steps_flow ON steps(flow_id);`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_analytics_events_project ON analytics_events(project_id);`);
@@ -511,8 +523,16 @@ export async function bootstrapDb(): Promise<void> {
         'INSERT INTO projects (name, api_key, client_email) VALUES ($1, $2, $3) RETURNING id',
         ['Kenzo-erp', client2ApiKey, 'client2@kenzo.com']
       );
-      await client.query('UPDATE projects SET name = $1, api_key = $2, client_email = $3 WHERE id = $4', ['Kenzo-erp', client2ApiKey, 'client2@kenzo.com', r2.rows[0].id]);
+      erpProjectId = ins.rows[0].id;
+    } else {
+      erpProjectId = r2.rows[0].id;
+      await client.query('UPDATE projects SET name = $1, api_key = $2, client_email = $3 WHERE id = $4', ['Kenzo-erp', client2ApiKey, 'client2@kenzo.com', erpProjectId]);
     }
+    // Seed allowed origins for ERP
+    await client.query(`
+      INSERT INTO allowed_origins (project_id, origin) VALUES ($1, $2), ($1, $3)
+      ON CONFLICT (project_id, origin) DO NOTHING
+    `, [erpProjectId, 'https://kenzo-one-erp.vercel.app', 'http://localhost:3001']);
 
     // Seed Users
     const bcrypt = require('bcryptjs');

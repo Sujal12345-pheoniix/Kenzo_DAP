@@ -42,6 +42,16 @@ export class StepEngine implements IStepEngine {
   ) {}
 
   init(flow: Flow, startIndex = 0): void {
+    // Clean up any leftover state from a previous run
+    if (this.autoAdvanceTimer) {
+      clearTimeout(this.autoAdvanceTimer);
+      this.autoAdvanceTimer = null;
+    }
+    for (const cleanup of this.activeCleanups) {
+      try { cleanup(); } catch (_) {}
+    }
+    this.activeCleanups = [];
+    this.isActionProcessing = false;
     this.flow = flow;
     this.currentIndex = startIndex;
   }
@@ -56,25 +66,33 @@ export class StepEngine implements IStepEngine {
     return this.currentIndex;
   }
 
-  async goToStep(index: number): Promise<void> {
+  async goToStep(index: number, direction: 'forward' | 'backward' = 'forward'): Promise<void> {
     if (!this.flow) return;
 
     const sorted = this.getSortedSteps();
     if (index < 0 || index >= sorted.length) return;
 
-    await this.teardownCurrentStep();
-
-    this.currentIndex = index;
     const step = sorted[index];
 
     if (step.conditions && !this.conditionEvaluator.evaluateConditions(step.conditions)) {
       this.logger.debug('Step conditions not met, skipping', { stepId: step.id });
-      if (index < sorted.length - 1) {
-        await this.goToStep(index + 1);
+      if (direction === 'forward') {
+        if (index < sorted.length - 1) {
+          await this.goToStep(index + 1, 'forward');
+        } else {
+          this.onFlowEnd('finish'); // Last step condition failed — end the flow
+        }
+      } else {
+        if (index > 0) {
+          await this.goToStep(index - 1, 'backward');
+        }
+        // Already at step 0 and conditions fail — just stay, do nothing
       }
       return;
     }
 
+    await this.teardownCurrentStep();
+    this.currentIndex = index;
     await this.renderStep(step);
   }
 
@@ -86,7 +104,7 @@ export class StepEngine implements IStepEngine {
 
   async previous(): Promise<boolean> {
     if (!this.canGoPrevious()) return false;
-    await this.goToStep(this.currentIndex - 1);
+    await this.goToStep(this.currentIndex - 1, 'backward');
     return true;
   }
 
@@ -152,11 +170,19 @@ export class StepEngine implements IStepEngine {
     if (step.buttons && step.buttons.length > 0) {
       step = {
         ...step,
-        buttons: step.buttons.map((btn: any) => ({
-          label: btn.label ?? btn.text ?? 'Next',
-          action: btn.action === 'prev' ? 'previous' : btn.action,
-          primary: btn.primary ?? btn.style === 'primary',
-        }))
+        buttons: step.buttons.map((btn: any) => {
+          const action = btn.action === 'prev' ? 'previous' : (btn.action ?? 'next');
+          // Derive a sensible default label per action type so Skip/Back buttons don't say "Next"
+          const defaultLabel = action === 'previous' ? '\u2190 Back'
+            : action === 'skip' ? 'Skip tour'
+            : action === 'finish' ? 'Finish'
+            : 'Next';
+          return {
+            label: btn.label ?? btn.text ?? defaultLabel,
+            action,
+            primary: btn.primary ?? btn.style === 'primary',
+          };
+        })
       };
     }
 
@@ -187,8 +213,8 @@ export class StepEngine implements IStepEngine {
           this.overlayManager.showHighlight(targetElement);
         }
 
-        // Click-to-Advance: Support autoAdvanceOnClick so clicking targeted element advances flow
-        const autoAdvance = step.autoAdvanceOnClick ?? true;
+        // Click-to-Advance: only advance on click if step explicitly opts in
+        const autoAdvance = step.autoAdvanceOnClick === true; // default is false — don't hijack element clicks
         if (autoAdvance) {
           const clickHandler = () => {
             targetElement.removeEventListener('click', clickHandler);

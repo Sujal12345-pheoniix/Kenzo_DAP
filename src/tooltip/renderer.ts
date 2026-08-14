@@ -912,6 +912,16 @@ export class TooltipRenderer implements ITooltipRenderer {
 
   private attachKeyboard(onAction: (action: StepAction) => void): void {
     this.keydownHandler = (e: KeyboardEvent) => {
+      // Don't intercept keys when user is typing in a form field
+      const target = e.target as HTMLElement | null;
+      const isTyping = target && (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.tagName === 'SELECT' ||
+        target.isContentEditable
+      );
+      if (isTyping) return;
+
       switch (e.key) {
         case 'Escape':
           e.preventDefault();
@@ -996,7 +1006,8 @@ export class TooltipRenderer implements ITooltipRenderer {
     if (!existing) {
       const meta = document.createElement('meta');
       meta.name = 'viewport';
-      meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+      // IMPORTANT: Do NOT add maximum-scale or user-scalable=no — violates WCAG 1.4.4
+      meta.content = 'width=device-width, initial-scale=1.0';
       document.head.appendChild(meta);
     }
   }

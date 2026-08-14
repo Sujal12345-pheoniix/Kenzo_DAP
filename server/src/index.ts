@@ -20,7 +20,7 @@ const corsOptions = {
     // Allow all origins for the SDK (it runs on any client website)
     callback(null, true);
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'x-project-id', 'x-user-email'],
   credentials: false,
 };
@@ -598,54 +598,83 @@ app.get('/api/v1/flows/published', authenticateSdk, async (req: AuthenticatedReq
 
     const flows = flowsResult.rows;
 
-    // Load steps for each flow
-    for (const flow of flows) {
-      const stepsResult = await pool.query(
-        `SELECT id, order_index, title, content, selector, placement, 
+    // FIX: Load ALL steps in a SINGLE query (prevents N+1 performance issue)
+    if (flows.length > 0) {
+      const flowIds = flows.map(f => f.id);
+      const placeholders = flowIds.map((_: any, i: number) => `$${i + 1}`).join(',');
+      const allStepsResult = await pool.query(
+        `SELECT id, flow_id as "flowId", order_index, title, content, selector, placement, 
                 display_mode as "displayMode", buttons, auto_advance_delay as "autoAdvanceDelay", 
                 auto_scroll as "autoScroll", block_interaction as "blockInteraction", 
                 spotlight_padding as "spotlightPadding", css_class as "cssClass", conditions
          FROM steps 
-         WHERE flow_id = $1 
-         ORDER BY order_index ASC`,
-        [flow.id]
+         WHERE flow_id = ANY($1::uuid[])
+         ORDER BY flow_id, order_index ASC`,
+        [flowIds]
       );
-      // Map order_index to 1-based order expected by SDK
-      flow.steps = stepsResult.rows.map((step, idx) => ({
-        ...step,
-        order: idx + 1
-      }));
+      // Group steps by flowId and map order_index to 1-based order expected by SDK
+      const stepsByFlow: Record<string, any[]> = {};
+      for (const step of allStepsResult.rows) {
+        const fid = step.flowId;
+        if (!stepsByFlow[fid]) stepsByFlow[fid] = [];
+        stepsByFlow[fid].push(step);
+      }
+      for (const flow of flows) {
+        const steps = stepsByFlow[flow.id] || [];
+        flow.steps = steps.map((step, idx) => ({ ...step, order: idx + 1 }));
+      }
+    } else {
+      for (const flow of flows) flow.steps = [];
     }
 
-    // Load published Smart Tips
+    // Load published Smart Tips (non-archived)
     const smartTipsRes = await pool.query(
-      `SELECT id, name, content, position, trigger, selector, status FROM smart_tips WHERE project_id = $1 AND status != 'archived'`,
+      `SELECT id, name, content, position, trigger_event as "triggerEvent", selector, url_rules as "urlRules", status 
+       FROM smart_tips WHERE project_id = $1 AND status = 'published'`,
       [req.projectId]
     );
 
-    // Load published Popups
+    // Load published Popups (non-archived)
     const popupsRes = await pool.query(
-      `SELECT id, name, title, content, popup_type as "popupType", position, trigger_event as "triggerEvent", trigger_delay as "triggerDelay", theme, show_close_button as "showCloseButton", status FROM popups WHERE project_id = $1 AND status != 'archived'`,
+      `SELECT id, name, title, content, popup_type as "popupType", position, trigger_event as "triggerEvent", trigger_delay as "triggerDelay", theme, show_close_button as "showCloseButton", buttons, url_rules as "urlRules", status 
+       FROM popups WHERE project_id = $1 AND status = 'published'`,
       [req.projectId]
     );
 
-    // Load Beacons
+    // Load active Beacons (non-archived, published only)
     const beaconsRes = await pool.query(
-      `SELECT id, name, label, description, color, size, pulse_animation as "pulseAnimation", on_click_action as "onClickAction", selector FROM beacons WHERE project_id = $1`,
+      `SELECT id, name, label, description, color, size, pulse_animation as "pulseAnimation", on_click_action as "onClickAction", selector, url_rules as "urlRules", linked_flow_id as "linkedFlowId" 
+       FROM beacons WHERE project_id = $1 AND status = 'published'`,
       [req.projectId]
     );
 
-    // Load published Task Lists
-    const taskListsRes = await pool.query(
-      `SELECT id, name, title, items, status FROM task_lists WHERE project_id = $1 AND status != 'archived'`,
+    // Load published Task Lists with their items
+    const taskListsResult = await pool.query(
+      `SELECT tl.id, tl.name, tl.title, tl.theme, tl.url_rules as "urlRules", tl.status 
+       FROM task_lists tl WHERE tl.project_id = $1 AND tl.status = 'published'`,
       [req.projectId]
     );
+    for (const tl of taskListsResult.rows) {
+      const itemsRes = await pool.query(
+        'SELECT id, title, description, linked_flow_id as "linkedFlowId", completion_trigger as "completionTrigger", url_pattern as "urlPattern", is_required as "isRequired", order_index as "order" FROM task_list_items WHERE task_list_id = $1 ORDER BY order_index ASC',
+        [tl.id]
+      );
+      tl.items = itemsRes.rows;
+    }
 
-    // Load published Surveys
-    const surveysRes = await pool.query(
-      `SELECT id, name, title, survey_type as "surveyType", questions, status FROM surveys WHERE project_id = $1 AND status != 'archived'`,
+    // Load published Surveys with questions
+    const surveysResult = await pool.query(
+      `SELECT id, name, title, survey_type as "surveyType", trigger_event as "triggerEvent", trigger_delay as "triggerDelay", url_rules as "urlRules", status 
+       FROM surveys WHERE project_id = $1 AND status = 'published'`,
       [req.projectId]
     );
+    for (const survey of surveysResult.rows) {
+      const qRes = await pool.query(
+        'SELECT id, question_type as "questionType", question_text as "questionText", options, is_required as "isRequired", order_index as "order" FROM survey_questions WHERE survey_id = $1 ORDER BY order_index ASC',
+        [survey.id]
+      );
+      survey.questions = qRes.rows;
+    }
 
     // Load published Self Help Articles
     const selfHelpRes = await pool.query(
@@ -658,10 +687,39 @@ app.get('/api/v1/flows/published', authenticateSdk, async (req: AuthenticatedReq
       smartTips: smartTipsRes.rows,
       popups: popupsRes.rows,
       beacons: beaconsRes.rows,
-      taskLists: taskListsRes.rows,
-      surveys: surveysRes.rows,
+      taskLists: taskListsResult.rows,
+      surveys: surveysResult.rows,
       selfHelpArticles: selfHelpRes.rows
     });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// SDK: Get single published flow by ID (used by FlowLoader.loadById)
+app.get('/api/v1/flows/:flowId', authenticateSdk, async (req: AuthenticatedRequest, res: Response) => {
+  const { flowId } = req.params;
+  try {
+    const flowResult = await pool.query(
+      `SELECT id, name, description, version, status, url_rules as "urlRules", conditions, priority, created_at as "createdAt", updated_at as "updatedAt"
+       FROM flows WHERE id = $1 AND project_id = $2 AND status = 'published'`,
+      [flowId, req.projectId]
+    );
+    if (flowResult.rows.length === 0) {
+      res.status(404).json({ message: 'Flow not found' });
+      return;
+    }
+    const flow = flowResult.rows[0];
+    const stepsResult = await pool.query(
+      `SELECT id, order_index, title, content, selector, placement, display_mode as "displayMode",
+              buttons, auto_advance_delay as "autoAdvanceDelay", auto_scroll as "autoScroll",
+              block_interaction as "blockInteraction", spotlight_padding as "spotlightPadding",
+              css_class as "cssClass", conditions
+       FROM steps WHERE flow_id = $1 ORDER BY order_index ASC`,
+      [flowId]
+    );
+    flow.steps = stepsResult.rows.map((step: any, idx: number) => ({ ...step, order: idx + 1 }));
+    res.json(flow);
   } catch (err: any) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
@@ -1720,6 +1778,14 @@ app.patch('/api/v1/admin/flows/:flowId/steps/reorder', authenticateAdmin, async 
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+    // Verify flow ownership before reordering
+    const flowCheck = await client.query('SELECT id FROM flows WHERE id = $1 AND project_id = $2', [flowId, req.projectId]);
+    if (flowCheck.rows.length === 0) {
+      await client.query('ROLLBACK');
+      client.release();
+      res.status(404).json({ message: 'Flow not found' });
+      return;
+    }
     for (const item of order) {
       await client.query('UPDATE steps SET order_index = $1 WHERE id = $2 AND flow_id = $3', [item.order, item.id, flowId]);
     }
@@ -1751,6 +1817,8 @@ app.post('/api/v1/admin/flows/:flowId/steps/sync', authenticateAdmin, async (req
       [flowId, req.projectId]
     );
     if (flowCheck.rows.length === 0) {
+      await client.query('ROLLBACK');
+      client.release();
       res.status(404).json({ message: 'Flow not found' });
       return;
     }
@@ -2013,12 +2081,19 @@ app.post('/api/v1/admin/flows/:id/publish', authenticateAdmin, async (req: Authe
       ['published', newVersion, flowId]
     );
 
-    // Record audit log entry
-    await client.query(
-      `INSERT INTO selector_repairs (project_id, original_selector, repaired_selector, confidence, strategy, url)
-       VALUES ($1, $2, $3, 1.0, 'PUBLISH_SNAPSHOT', $4)`,
-      [req.projectId, JSON.stringify({ flowId, version: newVersion }), `Published Version ${newVersion}`, 'admin_governance']
-    );
+    // Record audit log entry (correctly in audit_logs, not selector_repairs)
+    await writeAuditLog({
+      projectId: req.projectId,
+      userEmail: req.user?.email,
+      userRole: req.user?.role,
+      action: 'PUBLISH',
+      resourceType: 'flow',
+      resourceId: flowId,
+      resourceName: currentFlow.name,
+      details: { version: newVersion },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
 
     await client.query('COMMIT');
     res.json({ message: 'Flow published successfully', version: newVersion, status: 'published' });
@@ -2616,7 +2691,8 @@ app.get('/api/v1/admin/audit-logs', authenticateAdmin, async (req: Authenticated
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
     const offset = parseInt(req.query.offset as string) || 0;
     const r = await pool.query(
-      `SELECT * FROM audit_logs WHERE project_id=$1 OR project_id IS NULL ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
+      // Security fix: only return logs for THIS project, not NULL project logs
+      `SELECT * FROM audit_logs WHERE project_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
       [req.projectId, limit, offset]
     );
     const total = await pool.query('SELECT COUNT(*) FROM audit_logs WHERE project_id=$1', [req.projectId]);
@@ -2659,8 +2735,12 @@ app.get('/api/v1/admin/project-stats', authenticateAdmin, async (req: Authentica
 // ── Create Project (Admin only) — update to return strict project info ───────
 // (already handled at top of admin routes; add audit log to existing CREATE route)
 
-// Fallback to serving index.html for dashboard single page app routes
+// Catch-all: return 404 JSON for unmatched /api/* routes (prevents HTML bleed-through)
+app.all('/api/*', (req: Request, res: Response) => {
+  res.status(404).json({ message: `API route ${req.method} ${req.path} not found` });
+});
 
+// Fallback to serving index.html for dashboard single page app routes
 app.get('*', (req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, '../public/dashboard/index.html'));
 });

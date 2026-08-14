@@ -197,7 +197,8 @@ export class LifecycleManager implements ILifecycleManager {
         if (this.autoTriggerTimer) clearTimeout(this.autoTriggerTimer);
         this.autoTriggerTimer = setTimeout(() => {
           this.autoTriggerTimer = null;
-          void this.triggerMatchingFlow();
+          // Trigger auto-flow on initial page load (use cached flows if available)
+        void this.triggerMatchingFlow(false);
         }, 700);
         void url; // consumed by watcher
       });
@@ -300,7 +301,7 @@ export class LifecycleManager implements ILifecycleManager {
     return bestFlow;
   }
 
-  private async triggerMatchingFlow(): Promise<void> {
+  private async triggerMatchingFlow(forceRefresh = false): Promise<void> {
     // Don't interrupt a flow that is already running
     if (this.flowRunner.isRunning()) {
       return;
@@ -318,8 +319,9 @@ export class LifecycleManager implements ILifecycleManager {
     }
 
     try {
-      // Always fetch fresh flows on auto-trigger — cache was invalidated on navigation
-      const flows = await this.flowLoader.loadAll(true);
+      // forceRefresh=true after navigation (cache was just invalidated);
+      // forceRefresh=false on initial page load (uses the short-TTL cache for speed).
+      const flows = await this.flowLoader.loadAll(forceRefresh);
       if (flows.length === 0) {
         this.logger.info('No published flows found for this project.');
         return;

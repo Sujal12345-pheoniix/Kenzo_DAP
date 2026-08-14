@@ -19,26 +19,22 @@ export class TooltipPositioner implements ITooltipPositioner {
   ): Promise<void> {
     this.destroyAutoUpdate();
 
-    // Detect mobile viewport
-    const isMobile = typeof window !== 'undefined' && window.innerWidth <= 480;
-
     const update = async (): Promise<void> => {
-      // On mobile (≤480px), tooltip becomes a bottom sheet — skip floating-ui positioning
+      // Re-evaluate mobile viewport dynamically on every position update
+      const isMobile = typeof window !== 'undefined' && window.innerWidth <= 480;
       if (isMobile) {
-        // Bottom sheet mode: positioned by CSS media queries
         return;
       }
+
+      // floating-ui throws an error if placement is 'auto'; default to 'bottom' if auto or empty
+      const targetPlacement = (!placement || placement === 'auto') ? 'bottom' : placement;
 
       const { x, y, placement: resolvedPlacement } = await computePosition(
         referenceEl,
         tooltipEl,
         {
           strategy: 'fixed',
-          placement: placement as Parameters<typeof computePosition>[2] extends infer O
-            ? O extends { placement?: infer P }
-              ? P
-              : never
-            : never,
+          placement: targetPlacement as any,
           middleware: [
             offset(TOOLTIP_OFFSET),
             flip({ padding: 8 }),
@@ -64,6 +60,12 @@ export class TooltipPositioner implements ITooltipPositioner {
       });
 
       tooltipEl.setAttribute('data-placement', resolvedPlacement);
+
+      // Crucial: Update data-placement on arrow element so CSS arrow rotation matches flipped placement
+      const arrowEl = tooltipEl.querySelector<HTMLElement>('.kenzo-tooltip__arrow');
+      if (arrowEl) {
+        arrowEl.setAttribute('data-placement', resolvedPlacement);
+      }
     };
 
     await update();
