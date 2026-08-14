@@ -142,7 +142,7 @@ export default function PopupsView({ projectId, headers }: GuidanceModuleProps) 
             <Layers size={18} className="text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-white">Popups</h2>
+            <h2 className="text-lg font-bold text-slate-900">Popups</h2>
             <p className="text-xs text-zinc-500">Modals, banners and tooltip overlays</p>
           </div>
         </div>

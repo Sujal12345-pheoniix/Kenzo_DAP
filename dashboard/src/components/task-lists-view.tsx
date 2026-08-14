@@ -145,7 +145,7 @@ export default function TaskListsView({ projectId, headers }: GuidanceModuleProp
             <CheckSquare size={18} className="text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-white">Task Lists</h2>
+            <h2 className="text-lg font-bold text-slate-900">Task Lists</h2>
             <p className="text-xs text-zinc-500">Onboarding checklists and guided workflows</p>
           </div>
         </div>

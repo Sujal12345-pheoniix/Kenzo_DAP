@@ -139,7 +139,7 @@ export default function SelfHelpView({ projectId, headers }: GuidanceModuleProps
             <BookOpen size={18} className="text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-white">Self Help</h2>
+            <h2 className="text-lg font-bold text-slate-900">Self Help</h2>
             <p className="text-xs text-zinc-500">Knowledge base articles and help content</p>
           </div>
         </div>

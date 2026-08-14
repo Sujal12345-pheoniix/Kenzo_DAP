@@ -91,7 +91,7 @@ export default function AuditLogsView({ projectId, headers }: GuidanceModuleProp
             <ScrollText size={18} className="text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-white">Audit Logs</h2>
+            <h2 className="text-lg font-bold text-slate-900">Audit Logs</h2>
             <p className="text-xs text-zinc-500">Immutable activity trail for your workspace</p>
           </div>
         </div>

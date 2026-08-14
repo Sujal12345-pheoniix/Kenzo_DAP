@@ -177,7 +177,7 @@ export default function SmartTipsView({ projectId, headers }: GuidanceModuleProp
             <Lightbulb size={18} className="text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-white">Smart Tips</h2>
+            <h2 className="text-lg font-bold text-slate-900">Smart Tips</h2>
             <p className="text-xs text-zinc-500">Contextual tooltips and inline guidance</p>
           </div>
         </div>

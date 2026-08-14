@@ -130,7 +130,7 @@ export default function BeaconsView({ projectId, headers }: GuidanceModuleProps)
             <Radio size={18} className="text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-white">Beacons</h2>
+            <h2 className="text-lg font-bold text-slate-900">Beacons</h2>
             <p className="text-xs text-zinc-500">Color-coded pulsing attention markers</p>
           </div>
         </div>

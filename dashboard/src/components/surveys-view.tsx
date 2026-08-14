@@ -166,7 +166,7 @@ export default function SurveysView({ projectId, headers }: GuidanceModuleProps)
             <BarChart2 size={18} className="text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-white">Surveys</h2>
+            <h2 className="text-lg font-bold text-slate-900">Surveys</h2>
             <p className="text-xs text-zinc-500">NPS, ratings and feedback collection</p>
           </div>
         </div>

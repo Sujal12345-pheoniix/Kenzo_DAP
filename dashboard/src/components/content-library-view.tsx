@@ -126,7 +126,7 @@ export default function ContentLibraryView({ projectId, headers }: GuidanceModul
             <Library size={18} className="text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-white">Content Library</h2>
+            <h2 className="text-lg font-bold text-slate-900">Content Library</h2>
             <p className="text-xs text-zinc-500">Templates, images, videos and scripts</p>
           </div>
         </div>
