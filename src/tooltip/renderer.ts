@@ -278,32 +278,44 @@ const CSS = `
     overscroll-behavior: contain;
   }
 
-  /* ── Title (Forced Bright White Contrast) ── */
+  /* ── Title (Forced 100% Bright White Contrast) ── */
+  h3.kenzo-tooltip__title,
+  #kenzo-tooltip-title,
   .kenzo-tooltip__title,
-  .kenzo-tooltip__title * {
+  .kenzo-tooltip__title *,
+  .kenzo-tooltip__title span,
+  .kenzo-tooltip__title div {
     margin: 0 0 10px 0 !important;
     font-size: 17px !important;
     font-weight: 700 !important;
     color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
     letter-spacing: -0.015em !important;
     line-height: 1.35 !important;
     word-break: break-word !important;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.8) !important;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.9) !important;
+    opacity: 1 !important;
   }
 
   /* ── Content (Forced Slate-100 Contrast) ── */
+  div.kenzo-tooltip__content,
   .kenzo-tooltip__content,
-  .kenzo-tooltip__content * {
+  .kenzo-tooltip__content *,
+  .kenzo-tooltip__content p,
+  .kenzo-tooltip__content span,
+  .kenzo-tooltip__content div {
     color: #f1f5f9 !important;
+    -webkit-text-fill-color: #f1f5f9 !important;
     font-size: 14px !important;
     line-height: 1.65 !important;
     word-break: break-word !important;
     overflow-wrap: break-word !important;
+    opacity: 1 !important;
   }
   .kenzo-tooltip__content p { margin: 0 0 10px !important; }
   .kenzo-tooltip__content p:last-child { margin-bottom: 0 !important; }
-  .kenzo-tooltip__content a { color: #60a5fa !important; text-decoration: underline !important; font-weight: 600 !important; }
-  .kenzo-tooltip__content strong { color: #ffffff !important; font-weight: 700 !important; }
+  .kenzo-tooltip__content a { color: #60a5fa !important; -webkit-text-fill-color: #60a5fa !important; text-decoration: underline !important; font-weight: 600 !important; }
+  .kenzo-tooltip__content strong { color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; font-weight: 700 !important; }
   .kenzo-tooltip__content code {
     font-family: 'JetBrains Mono', 'Fira Code', monospace !important;
     font-size: 12px !important;
@@ -312,6 +324,7 @@ const CSS = `
     border-radius: 5px !important;
     padding: 2px 6px !important;
     color: #93c5fd !important;
+    -webkit-text-fill-color: #93c5fd !important;
   }
 
   /* ── Progress bar track ── */
@@ -716,8 +729,14 @@ export class TooltipRenderer implements ITooltipRenderer {
     const fillEl    = this.element.querySelector<HTMLElement>('.kenzo-tooltip__progress-bar-fill');
     const pillEl    = this.element.querySelector<HTMLElement>('.kenzo-tooltip__step-pill');
 
-    if (titleEl)   titleEl.textContent  = options.step.title;
-    if (contentEl) contentEl.innerHTML  = this.sanitizer.sanitizeHtml(options.step.content);
+    if (titleEl) {
+      titleEl.innerHTML = this.sanitizer.escapeText(options.step.title);
+      titleEl.style.cssText = 'color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; font-weight: 700 !important; text-shadow: 0 2px 4px rgba(0,0,0,0.9) !important;';
+    }
+    if (contentEl) {
+      contentEl.innerHTML = this.sanitizer.sanitizeHtml(options.step.content);
+      contentEl.style.cssText = 'color: #f1f5f9 !important; -webkit-text-fill-color: #f1f5f9 !important; font-size: 14px !important; line-height: 1.65 !important;';
+    }
     if (footerEl) {
       footerEl.innerHTML = '';
       this.renderButtons(footerEl, options);
@@ -797,8 +816,8 @@ export class TooltipRenderer implements ITooltipRenderer {
     const body = document.createElement('div');
     body.className = 'kenzo-tooltip__body';
     body.innerHTML = `
-      <h3 class="kenzo-tooltip__title" id="kenzo-tooltip-title">${this.sanitizer.escapeText(options.step.title)}</h3>
-      <div class="kenzo-tooltip__content">${this.sanitizer.sanitizeHtml(options.step.content)}</div>
+      <h3 class="kenzo-tooltip__title" id="kenzo-tooltip-title" style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; font-weight: 700 !important; text-shadow: 0 2px 4px rgba(0,0,0,0.9) !important;">${this.sanitizer.escapeText(options.step.title)}</h3>
+      <div class="kenzo-tooltip__content" style="color: #f1f5f9 !important; -webkit-text-fill-color: #f1f5f9 !important; font-size: 14px !important; line-height: 1.65 !important;">${this.sanitizer.sanitizeHtml(options.step.content)}</div>
     `;
 
     // ── Progress bar
