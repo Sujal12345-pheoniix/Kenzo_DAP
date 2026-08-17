@@ -20,7 +20,6 @@ export class PopupManager {
   private shadowRoot: ShadowRoot | null = null;
   private exitIntentListener: ((e: MouseEvent) => void) | null = null;
   private idleTimer: ReturnType<typeof setTimeout> | null = null;
-  private activeReopenButtons: Map<string, HTMLElement> = new Map();
   private activeOverlay: HTMLElement | null = null;
 
   constructor() {
@@ -118,53 +117,6 @@ export class PopupManager {
         color: #ffffff;
       }
 
-      /* Top-middle reopen trigger button */
-      .kenzo-popup-reopen-btn {
-        position: fixed;
-        top: 18px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95));
-        border: 1px solid rgba(99, 102, 241, 0.4);
-        border-radius: 20px;
-        padding: 6px 16px;
-        color: #e2e8f0;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        font-size: 12px;
-        font-weight: 700;
-        cursor: pointer;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), 0 0 12px rgba(99, 102, 241, 0.25);
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        z-index: 2147483400;
-        backdrop-filter: blur(12px);
-        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-        animation: kenzo-reopen-fade 0.3s ease-out;
-      }
-      .kenzo-popup-reopen-btn:hover {
-        transform: translateX(-50%) translateY(-1px) scale(1.04);
-        border-color: rgba(129, 140, 248, 0.7);
-        color: #ffffff;
-        box-shadow: 0 6px 24px rgba(99, 102, 241, 0.4);
-      }
-      .kenzo-popup-reopen-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: #38bdf8;
-        box-shadow: 0 0 8px #38bdf8;
-        animation: kenzo-dot-pulse 1.8s infinite;
-      }
-
-      @keyframes kenzo-reopen-fade {
-        from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
-        to { opacity: 1; transform: translateX(-50%) translateY(0); }
-      }
-      @keyframes kenzo-dot-pulse {
-        0%, 100% { opacity: 1; transform: scale(1); }
-        50% { opacity: 0.5; transform: scale(1.3); }
-      }
       @keyframes kenzo-popup-backdrop-fade {
         from { opacity: 0; }
         to { opacity: 1; }
@@ -178,40 +130,53 @@ export class PopupManager {
     document.body.appendChild(this.shadowHost);
   }
 
+  /**
+   * Evaluates reload counter logic:
+   * 1. Appears once while entering the website (visit count = 0 -> 1).
+   * 2. If page reloaded more than 2 times (visit count >= 3), popup appears again and cycles.
+   * 3. No disturbing top-middle floating buttons.
+   */
   showPopup(popup: PopupItem, onPrimary?: () => void, onDismiss?: () => void, forceOpen = false): boolean {
     if (typeof document === 'undefined' || !this.shadowRoot) return false;
 
-    const storageKey = `kenzo_popup_dismissed_${popup.id}`;
-    const alreadyDismissed = !forceOpen && typeof localStorage !== 'undefined' && localStorage.getItem(storageKey) === 'true';
+    const storageKey = `kenzo_popup_visits_${popup.id}`;
+    let count = 0;
+    if (typeof localStorage !== 'undefined') {
+      count = parseInt(localStorage.getItem(storageKey) || '0', 10);
+    }
 
-    if (alreadyDismissed) {
-      // If already dismissed, don't show the intrusive full-screen modal automatically.
-      // Instead, show the top-middle reopen button so the user can easily re-access it!
-      this.renderReopenButton(popup, onPrimary, onDismiss);
-      return false;
+    if (!forceOpen) {
+      if (count === 0) {
+        // First time entering website: show popup and record visit count = 1
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem(storageKey, '1');
+        }
+        this.renderModalOverlay(popup, onPrimary, onDismiss);
+        return true;
+      } else if (count === 1) {
+        // First reload: skip popup, increment count to 2
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem(storageKey, '2');
+        }
+        return false;
+      } else if (count === 2) {
+        // Second reload: skip popup, increment count to 3
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem(storageKey, '3');
+        }
+        return false;
+      } else {
+        // Reloaded more than 2 times: show popup and reset count back to 1
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem(storageKey, '1');
+        }
+        this.renderModalOverlay(popup, onPrimary, onDismiss);
+        return true;
+      }
     }
 
     this.renderModalOverlay(popup, onPrimary, onDismiss);
     return true;
-  }
-
-  private renderReopenButton(popup: PopupItem, onPrimary?: () => void, onDismiss?: () => void): void {
-    if (!this.shadowRoot) return;
-    if (this.activeReopenButtons.has(popup.id)) return;
-
-    const reopenBtn = document.createElement('button');
-    reopenBtn.className = 'kenzo-popup-reopen-btn';
-    reopenBtn.innerHTML = `
-      <span class="kenzo-popup-reopen-dot"></span>
-      <span>📢 ${popup.title || 'Announcement'}</span>
-    `;
-
-    reopenBtn.addEventListener('click', () => {
-      this.renderModalOverlay(popup, onPrimary, onDismiss);
-    });
-
-    this.shadowRoot.appendChild(reopenBtn);
-    this.activeReopenButtons.set(popup.id, reopenBtn);
   }
 
   private renderModalOverlay(popup: PopupItem, onPrimary?: () => void, onDismiss?: () => void): void {
@@ -237,14 +202,6 @@ export class PopupManager {
     const close = () => {
       overlay.remove();
       this.activeOverlay = null;
-
-      // Mark as dismissed in localStorage
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem(`kenzo_popup_dismissed_${popup.id}`, 'true');
-      }
-
-      // Render top-middle reopen button so user can re-open at will
-      this.renderReopenButton(popup, onPrimary, onDismiss);
     };
 
     const primaryBtn = overlay.querySelector('.kenzo-popup-btn-primary');
@@ -292,7 +249,5 @@ export class PopupManager {
   clear(): void {
     this.activeOverlay?.remove();
     this.activeOverlay = null;
-    this.activeReopenButtons.forEach(btn => btn.remove());
-    this.activeReopenButtons.clear();
   }
 }
