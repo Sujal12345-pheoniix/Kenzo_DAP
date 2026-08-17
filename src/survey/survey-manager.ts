@@ -30,7 +30,7 @@ export class SurveyManager {
 
     this.shadowHost = document.createElement('div');
     this.shadowHost.id = 'kenzo-survey-root';
-    this.shadowHost.style.cssText = 'position: absolute; top: 0; left: 0; width: 0; height: 0; z-index: 2147483700;';
+    this.shadowHost.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2147483700; pointer-events: none;';
     this.shadowRoot = this.shadowHost.attachShadow({ mode: 'open' });
 
     const style = document.createElement('style');
@@ -39,6 +39,7 @@ export class SurveyManager {
         position: fixed;
         bottom: 24px;
         right: 24px;
+        pointer-events: auto;
         width: 360px;
         max-width: calc(100vw - 32px);
         background: #181825;

@@ -29,16 +29,17 @@ export class SelfHelpManager {
 
     this.shadowHost = document.createElement('div');
     this.shadowHost.id = 'kenzo-self-help-root';
-    this.shadowHost.style.cssText = 'position: absolute; top: 0; left: 0; width: 0; height: 0; z-index: 2147483400;';
+    this.shadowHost.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2147483400; pointer-events: none;';
     this.shadowRoot = this.shadowHost.attachShadow({ mode: 'open' });
 
     const style = document.createElement('style');
     style.textContent = `
       .self-help-fab {
         position: fixed;
-        top: 18px;
+        top: 16px;
         right: 24px;
         bottom: auto;
+        pointer-events: auto;
         background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%);
         color: #e2e8f0;
         border: 1px solid rgba(99, 102, 241, 0.4);

@@ -94,7 +94,7 @@ export class TaskListWidget {
 
     this.shadowHost = document.createElement('div');
     this.shadowHost.id = 'kenzo-task-list-root';
-    this.shadowHost.style.cssText = 'position: absolute; top: 0; left: 0; width: 0; height: 0; z-index: 2147483600;';
+    this.shadowHost.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2147483600; pointer-events: none;';
     this.shadowRoot = this.shadowHost.attachShadow({ mode: 'open' });
 
     const position = this.config?.position || 'bottom-left';
@@ -107,6 +107,7 @@ export class TaskListWidget {
         position: fixed;
         bottom: 24px;
         ${isRight ? 'right: 24px;' : 'left: 24px;'}
+        pointer-events: auto;
         width: 56px;
         height: 56px;
         border-radius: 50%;

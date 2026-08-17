@@ -269,7 +269,8 @@ export class LifecycleManager implements ILifecycleManager {
         }
       }
 
-      // 4. Popups (match urlRules against current route)
+      // 4. Popups & Walkthrough Sequence (Step 1 -> Step 2)
+      let popupOverlayShown = false;
       if (fullData.popups && fullData.popups.length > 0) {
         for (const pop of fullData.popups) {
           if (pop.status !== 'published' && pop.status !== 'active') continue;
@@ -279,22 +280,38 @@ export class LifecycleManager implements ILifecycleManager {
               id: pop.id,
               title: pop.title || pop.name,
               body: pop.content || '',
-              primaryButtonLabel: (pop.buttons && pop.buttons[0]?.text) || 'Got it',
+              primaryButtonLabel: (pop.buttons && pop.buttons[0]?.text) || 'Explore',
+              secondaryButtonLabel: 'Dismiss',
               triggerType: pop.triggerEvent || 'page_load',
-              idleDelayMs: (pop.triggerDelay || 2) * 1000,
+              idleDelayMs: (pop.triggerDelay || 1) * 1000,
             };
+
+            const onPopupClose = () => {
+              // Sequence Step 2: Trigger Guided Walkthrough upon Popup completion
+              void this.triggerMatchingFlow(false);
+            };
+
             if (item.triggerType === 'page_load') {
-              setTimeout(() => this.popupManager.showPopup(item), item.idleDelayMs || 1000);
+              popupOverlayShown = this.popupManager.showPopup(item, onPopupClose, onPopupClose);
             } else if (item.triggerType === 'exit_intent') {
-              this.popupManager.setupExitIntent(() => this.popupManager.showPopup(item));
+              this.popupManager.setupExitIntent(() => this.popupManager.showPopup(item, onPopupClose, onPopupClose));
             } else if (item.triggerType === 'idle') {
-              this.popupManager.setupIdleTrigger(item.idleDelayMs || 4000, () => this.popupManager.showPopup(item));
+              this.popupManager.setupIdleTrigger(item.idleDelayMs || 4000, () => this.popupManager.showPopup(item, onPopupClose, onPopupClose));
+            }
+
+            if (popupOverlayShown) {
+              break; // Show one modal popup at a time
             }
           }
         }
       }
 
-      // 5. Self-Help Articles
+      // If no popup was shown (or was already dismissed), immediately run Step 2 (Walkthrough)
+      if (!popupOverlayShown) {
+        void this.triggerMatchingFlow(false);
+      }
+
+      // 5. Self-Help Articles (Step 4: Top-Right Glassmorphic Drawer)
       if (fullData.selfHelpArticles && fullData.selfHelpArticles.length > 0) {
         const articles = fullData.selfHelpArticles.map((a: any) => ({
           id: a.id,
@@ -306,7 +323,7 @@ export class LifecycleManager implements ILifecycleManager {
         this.selfHelpManager.setArticles(articles);
       }
 
-      // 6. Task Lists (match urlRules against current route)
+      // 6. Task Lists (Step 6: Bottom-Left Checklist)
       if (fullData.taskLists && fullData.taskLists.length > 0) {
         for (const tl of fullData.taskLists) {
           if (tl.status !== 'published' && tl.status !== 'active') continue;
@@ -329,24 +346,34 @@ export class LifecycleManager implements ILifecycleManager {
         }
       }
 
-      // 7. Surveys (match urlRules against current route)
+      // 7. Surveys (Step 7: 7-Day Frequency Rule)
       if (fullData.surveys && fullData.surveys.length > 0) {
-        for (const survey of fullData.surveys) {
-          if (survey.status !== 'published' && survey.status !== 'active') continue;
-          const matches = !survey.urlRules || survey.urlRules.length === 0 || this.conditionEvaluator.evaluateUrlRules(survey.urlRules);
-          if (matches && survey.questions && survey.questions.length > 0) {
-            setTimeout(() => {
-              this.surveyManager.triggerSurvey({
-                id: survey.id,
-                title: survey.title || survey.name,
-                questions: survey.questions.map((q: any) => ({
-                  id: q.id || String(q.order),
-                  type: q.questionType === 'rating' ? 'nps' : (q.questionType || 'text'),
-                  question: q.questionText || q.question,
-                  options: q.options || []
-                }))
-              });
-            }, (survey.triggerDelay || 5) * 1000);
+        const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+        const lastSurveyTimestamp = typeof localStorage !== 'undefined' ? localStorage.getItem('kenzo_survey_last_prompted') : null;
+        const canTriggerSurvey = !lastSurveyTimestamp || (Date.now() - parseInt(lastSurveyTimestamp, 10)) >= SEVEN_DAYS_MS;
+
+        if (canTriggerSurvey) {
+          for (const survey of fullData.surveys) {
+            if (survey.status !== 'published' && survey.status !== 'active') continue;
+            const matches = !survey.urlRules || survey.urlRules.length === 0 || this.conditionEvaluator.evaluateUrlRules(survey.urlRules);
+            if (matches && survey.questions && survey.questions.length > 0) {
+              setTimeout(() => {
+                this.surveyManager.triggerSurvey({
+                  id: survey.id,
+                  title: survey.title || survey.name,
+                  questions: survey.questions.map((q: any) => ({
+                    id: q.id || String(q.order),
+                    type: q.questionType === 'rating' ? 'nps' : (q.questionType || 'text'),
+                    question: q.questionText || q.question,
+                    options: q.options || []
+                  }))
+                });
+                if (typeof localStorage !== 'undefined') {
+                  localStorage.setItem('kenzo_survey_last_prompted', Date.now().toString());
+                }
+              }, (survey.triggerDelay || 8) * 1000);
+              break;
+            }
           }
         }
       }

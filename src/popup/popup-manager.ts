@@ -33,7 +33,7 @@ export class PopupManager {
 
     this.shadowHost = document.createElement('div');
     this.shadowHost.id = 'kenzo-popup-root';
-    this.shadowHost.style.cssText = 'position: absolute; top: 0; left: 0; width: 0; height: 0; z-index: 2147483500;';
+    this.shadowHost.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2147483500; pointer-events: none;';
     this.shadowRoot = this.shadowHost.attachShadow({ mode: 'open' });
 
     const style = document.createElement('style');
@@ -178,8 +178,8 @@ export class PopupManager {
     document.body.appendChild(this.shadowHost);
   }
 
-  showPopup(popup: PopupItem, onPrimary?: () => void, onDismiss?: () => void, forceOpen = false): void {
-    if (typeof document === 'undefined' || !this.shadowRoot) return;
+  showPopup(popup: PopupItem, onPrimary?: () => void, onDismiss?: () => void, forceOpen = false): boolean {
+    if (typeof document === 'undefined' || !this.shadowRoot) return false;
 
     const storageKey = `kenzo_popup_dismissed_${popup.id}`;
     const alreadyDismissed = !forceOpen && typeof localStorage !== 'undefined' && localStorage.getItem(storageKey) === 'true';
@@ -188,10 +188,11 @@ export class PopupManager {
       // If already dismissed, don't show the intrusive full-screen modal automatically.
       // Instead, show the top-middle reopen button so the user can easily re-access it!
       this.renderReopenButton(popup, onPrimary, onDismiss);
-      return;
+      return false;
     }
 
     this.renderModalOverlay(popup, onPrimary, onDismiss);
+    return true;
   }
 
   private renderReopenButton(popup: PopupItem, onPrimary?: () => void, onDismiss?: () => void): void {
