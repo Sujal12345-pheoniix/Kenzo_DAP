@@ -21,6 +21,9 @@ import type { KenzoInitOptions, SdkState } from '@/types';
 import { PopupManager } from '@/popup/popup-manager';
 import { SmartTipManager } from '@/smart-tip/smart-tip-manager';
 import { BeaconManager } from '@/beacon/beacon-manager';
+import { SelfHelpManager } from '@/self-help/self-help-manager';
+import { SurveyManager } from '@/survey/survey-manager';
+import { TaskListWidget } from '@/task-list/task-list-widget';
 
 export class LifecycleManager implements ILifecycleManager {
   private state: SdkState = 'uninitialized';
@@ -34,6 +37,9 @@ export class LifecycleManager implements ILifecycleManager {
   private popupManager: PopupManager;
   private smartTipManager: SmartTipManager;
   private beaconManager: BeaconManager;
+  private selfHelpManager: SelfHelpManager;
+  private surveyManager: SurveyManager;
+  private taskListWidget: TaskListWidget;
 
   constructor(
     private readonly config: IConfigService,
@@ -52,6 +58,31 @@ export class LifecycleManager implements ILifecycleManager {
     this.popupManager = new PopupManager();
     this.smartTipManager = new SmartTipManager();
     this.beaconManager = new BeaconManager();
+    this.selfHelpManager = new SelfHelpManager((flowId) => {
+      void this.flowLoader.loadById(flowId).then((flow) => {
+        if (flow) this.flowRunner.start(flow);
+      });
+    });
+    this.surveyManager = new SurveyManager((surveyId, answers) => {
+      const cfg = this.config.get();
+      void fetch(`${cfg.apiBaseUrl}/surveys/${surveyId}/respond`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': cfg.apiKey },
+        body: JSON.stringify({
+          session_id: 'session_' + Date.now(),
+          answers,
+          url: window.location.href,
+        })
+      }).catch(() => {});
+    });
+    this.taskListWidget = new TaskListWidget(
+      this.conditionEvaluator as any,
+      (flowId) => {
+        void this.flowLoader.loadById(flowId).then((flow) => {
+          if (flow) this.flowRunner.start(flow);
+        });
+      }
+    );
   }
 
   getState(): SdkState {
@@ -73,15 +104,14 @@ export class LifecycleManager implements ILifecycleManager {
     this.initOptions = options;
 
     try {
-      const config = this.config.init(options);
+      // 1. Initialize configuration with runtime options
+      this.config.init(options);
 
-      // CRITICAL FIX: Update ApiClient base URL to the real apiBaseUrl from options.
-      // The ApiClient singleton is created before config.init() runs, so it
-      // starts with a default URL. We must update it here before any API calls.
+      const config = this.config.get();
+
+      // Configure ApiClient with the resolved base URL.
       const apiBaseUrl = options.apiBaseUrl || `${window.location.origin}/api/v1`;
       this.apiClient.setBaseUrl(apiBaseUrl);
-      // Also set the raw API key so it goes as x-api-key fallback header on every request.
-      // This allows the server to authenticate even when the JWT exchange hasn't completed.
       this.apiClient.setApiKey(config.apiKey);
       this.logger.debug('[Kenzo] ApiClient base URL configured', { apiBaseUrl });
       if (config.debug) {
@@ -97,64 +127,8 @@ export class LifecycleManager implements ILifecycleManager {
         const flows = (fullData?.flows || []).filter((f: any) => f.status === 'published');
         this.logger.info(`Loaded ${flows.length} published experience(s)`);
 
-        // Render Popups
-        if (fullData?.popups && fullData.popups.length > 0) {
-          for (const pop of fullData.popups) {
-            if (pop.status === 'published' || pop.status === 'active') {
-              const item = {
-                id: pop.id,
-                title: pop.title || pop.name,
-                body: pop.content || '',
-                primaryButtonLabel: 'Got it',
-                triggerType: pop.triggerEvent || 'page_load',
-                idleDelayMs: (pop.triggerDelay || 2) * 1000,
-              };
-              if (item.triggerType === 'page_load') {
-                setTimeout(() => this.popupManager.showPopup(item), item.idleDelayMs || 1000);
-              } else if (item.triggerType === 'exit_intent') {
-                this.popupManager.setupExitIntent(() => this.popupManager.showPopup(item));
-              } else if (item.triggerType === 'idle') {
-                this.popupManager.setupIdleTrigger(item.idleDelayMs || 4000, () => this.popupManager.showPopup(item));
-              }
-            }
-          }
-        }
-
-        // Render Smart Tips
-        if (fullData?.smartTips && fullData.smartTips.length > 0) {
-          for (const tip of fullData.smartTips) {
-            if (tip.selector) {
-              const sel = typeof tip.selector === 'string' ? { css: tip.selector } : tip.selector;
-              this.smartTipManager.registerTip({
-                id: tip.id,
-                selector: sel,
-                title: tip.name,
-                content: tip.content || '',
-                type: 'info'
-              });
-            }
-          }
-        }
-
-        // Render Beacons
-        if (fullData?.beacons && fullData.beacons.length > 0) {
-          for (const beacon of fullData.beacons) {
-            if (beacon.selector) {
-              const sel = typeof beacon.selector === 'string' ? { css: beacon.selector } : beacon.selector;
-              this.beaconManager.renderBeacon({
-                id: beacon.id,
-                selector: sel,
-                title: beacon.label || beacon.name,
-                flowId: beacon.flowId
-              }, (b) => {
-                if (b.flowId) {
-                  const targetFlow = flows.find((f: any) => f.id === b.flowId);
-                  if (targetFlow) this.flowRunner.start(targetFlow);
-                }
-              });
-            }
-          }
-        }
+        // Synchronize remote guidance suite for the current page route
+        await this.syncRemoteExperiencesForCurrentRoute(fullData);
       } catch (authErr) {
         this.logger.warn('Remote experience sync warning:', { error: String(authErr) });
       }
@@ -182,7 +156,7 @@ export class LifecycleManager implements ILifecycleManager {
       void this.triggerMatchingFlow();
       void this.performPageScan();
 
-      // Listen for navigation changes — auto-trigger the best page-specific flow
+      // Listen for navigation changes — auto-trigger the best page-specific flow & sync guidance
       this.navigationUnsubscribe = this.navigationWatcher.onNavigate((url) => {
         void this.performPageScan();
         // Reset path tracking so the new page always gets its walkthrough
@@ -195,10 +169,10 @@ export class LifecycleManager implements ILifecycleManager {
         this.flowLoader.invalidate();
         // Debounce: wait 700ms for Next.js page DOM to settle before triggering
         if (this.autoTriggerTimer) clearTimeout(this.autoTriggerTimer);
-        this.autoTriggerTimer = setTimeout(() => {
+        this.autoTriggerTimer = setTimeout(async () => {
           this.autoTriggerTimer = null;
-          // Trigger auto-flow on initial page load (use cached flows if available)
-        void this.triggerMatchingFlow(false);
+          await this.syncRemoteExperiencesForCurrentRoute();
+          void this.triggerMatchingFlow(false);
         }, 700);
         void url; // consumed by watcher
       });
@@ -237,6 +211,144 @@ export class LifecycleManager implements ILifecycleManager {
 
     if (options) {
       await this.initialize(options);
+    }
+  }
+
+  /**
+   * Dynamically evaluates all loaded guidance suite experiences (Smart Tips, Beacons,
+   * Popups, Self Help, Surveys, Task Lists) against the current page route.
+   */
+  private async syncRemoteExperiencesForCurrentRoute(cachedData?: any): Promise<void> {
+    try {
+      const fullData = cachedData || await (this.flowLoader as any).loadFullExperiences();
+      if (!fullData) return;
+
+      // 1. Clear previous page's smart tips and beacons
+      this.smartTipManager.clear();
+      this.beaconManager.clear();
+
+      // 2. Smart Tips (match urlRules against current route)
+      if (fullData.smartTips && fullData.smartTips.length > 0) {
+        for (const tip of fullData.smartTips) {
+          if (tip.status !== 'published' && tip.status !== 'active') continue;
+          const matches = !tip.urlRules || tip.urlRules.length === 0 || this.conditionEvaluator.evaluateUrlRules(tip.urlRules);
+          if (matches && tip.selector) {
+            const sel = typeof tip.selector === 'string' ? { css: tip.selector } : (tip.selector.value ? { css: tip.selector.value } : tip.selector);
+            this.smartTipManager.registerTip({
+              id: tip.id,
+              selector: sel,
+              title: tip.name,
+              content: tip.content || '',
+              type: 'info'
+            });
+          }
+        }
+      }
+
+      // 3. Beacons (match urlRules against current route)
+      if (fullData.beacons && fullData.beacons.length > 0) {
+        for (const beacon of fullData.beacons) {
+          if (beacon.status !== 'published' && beacon.status !== 'active') continue;
+          const matches = !beacon.urlRules || beacon.urlRules.length === 0 || this.conditionEvaluator.evaluateUrlRules(beacon.urlRules);
+          if (matches && beacon.selector) {
+            const sel = typeof beacon.selector === 'string' ? { css: beacon.selector } : (beacon.selector.value ? { css: beacon.selector.value } : beacon.selector);
+            this.beaconManager.renderBeacon({
+              id: beacon.id,
+              selector: sel,
+              title: beacon.label || beacon.name,
+              flowId: beacon.linkedFlowId || beacon.flowId
+            }, (b) => {
+              if (b.flowId) {
+                const targetFlow = (fullData.flows || []).find((f: any) => f.id === b.flowId);
+                if (targetFlow) this.flowRunner.start(targetFlow);
+              }
+            });
+          }
+        }
+      }
+
+      // 4. Popups (match urlRules against current route)
+      if (fullData.popups && fullData.popups.length > 0) {
+        for (const pop of fullData.popups) {
+          if (pop.status !== 'published' && pop.status !== 'active') continue;
+          const matches = !pop.urlRules || pop.urlRules.length === 0 || this.conditionEvaluator.evaluateUrlRules(pop.urlRules);
+          if (matches) {
+            const item = {
+              id: pop.id,
+              title: pop.title || pop.name,
+              body: pop.content || '',
+              primaryButtonLabel: (pop.buttons && pop.buttons[0]?.text) || 'Got it',
+              triggerType: pop.triggerEvent || 'page_load',
+              idleDelayMs: (pop.triggerDelay || 2) * 1000,
+            };
+            if (item.triggerType === 'page_load') {
+              setTimeout(() => this.popupManager.showPopup(item), item.idleDelayMs || 1000);
+            } else if (item.triggerType === 'exit_intent') {
+              this.popupManager.setupExitIntent(() => this.popupManager.showPopup(item));
+            } else if (item.triggerType === 'idle') {
+              this.popupManager.setupIdleTrigger(item.idleDelayMs || 4000, () => this.popupManager.showPopup(item));
+            }
+          }
+        }
+      }
+
+      // 5. Self-Help Articles
+      if (fullData.selfHelpArticles && fullData.selfHelpArticles.length > 0) {
+        const articles = fullData.selfHelpArticles.map((a: any) => ({
+          id: a.id,
+          title: a.title,
+          summary: a.content || '',
+          category: a.category || 'General',
+          flowId: a.linkedFlowId,
+        }));
+        this.selfHelpManager.setArticles(articles);
+      }
+
+      // 6. Task Lists (match urlRules against current route)
+      if (fullData.taskLists && fullData.taskLists.length > 0) {
+        for (const tl of fullData.taskLists) {
+          if (tl.status !== 'published' && tl.status !== 'active') continue;
+          const matches = !tl.urlRules || tl.urlRules.length === 0 || this.conditionEvaluator.evaluateUrlRules(tl.urlRules);
+          if (matches && tl.items && tl.items.length > 0) {
+            this.taskListWidget.init({
+              title: tl.title || tl.name,
+              tasks: tl.items.map((it: any) => ({
+                id: it.id,
+                title: it.title,
+                description: it.description || '',
+                flowId: it.linkedFlowId,
+                targetUrl: it.urlPattern,
+                completed: false,
+              }))
+            });
+            break;
+          }
+        }
+      }
+
+      // 7. Surveys (match urlRules against current route)
+      if (fullData.surveys && fullData.surveys.length > 0) {
+        for (const survey of fullData.surveys) {
+          if (survey.status !== 'published' && survey.status !== 'active') continue;
+          const matches = !survey.urlRules || survey.urlRules.length === 0 || this.conditionEvaluator.evaluateUrlRules(survey.urlRules);
+          if (matches && survey.questions && survey.questions.length > 0) {
+            setTimeout(() => {
+              this.surveyManager.triggerSurvey({
+                id: survey.id,
+                title: survey.title || survey.name,
+                questions: survey.questions.map((q: any) => ({
+                  id: q.id || String(q.order),
+                  type: q.questionType === 'rating' ? 'nps' : (q.questionType || 'text'),
+                  question: q.questionText || q.question,
+                  options: q.options || []
+                }))
+              });
+            }, (survey.triggerDelay || 5) * 1000);
+          }
+        }
+      }
+    } catch (err) {
+      this.logger.warn('Error syncing remote guidance experiences:', { error: String(err) });
     }
   }
 

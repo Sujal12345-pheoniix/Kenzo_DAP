@@ -613,12 +613,184 @@ export async function bootstrapDb(): Promise<void> {
         AND (url_rules IS NULL OR url_rules = '[]'::jsonb OR url_rules = '[{"type":"contains","pattern":"/"}]'::jsonb);
     `);
 
-    console.log('[Database] Phase 2 complete — 22 tables bootstrapped with indexes and seed data.');
+    // ── Seed Guidance Suite for Kenzo-erp ────────────────────────────────────
+    await seedGuidanceSuiteForERP(client, erpProjectId);
+
+    // ── Seed Guidance Suite for TruthBomb ────────────────────────────────────
+    await seedGuidanceSuiteForTruthBomb(client, tbProjectId);
+
+    console.log('[Database] Phase 2 complete — 22 tables bootstrapped with indexes, seed flows, and guidance suite.');
 
   } catch (err) {
     console.error('[Database] Error bootstrapping database:', err);
     throw err;
   } finally {
     client.release();
+  }
+}
+
+async function seedGuidanceSuiteForERP(client: any, projectId: string) {
+  // 1. Smart Tips
+  const tipCount = await client.query('SELECT COUNT(*) FROM smart_tips WHERE project_id = $1', [projectId]);
+  if (parseInt(tipCount.rows[0].count) === 0) {
+    const tips = [
+      { name: 'Dashboard KPI Overview', content: 'Real-time sync of system performance, active users, and company metrics.', position: 'bottom', selector: { type: 'css', value: '.grid, table, .stats-grid, body' }, trigger: 'hover', urlRules: [{ type: 'contains', pattern: '/dashboard' }] },
+      { name: 'Quick Deal Pipeline Action', content: 'Click here to rapidly register and qualify new sales deals into your CRM pipeline.', position: 'right', selector: { type: 'css', value: 'button, .btn-primary, body' }, trigger: 'hover', urlRules: [{ type: 'contains', pattern: '/dashboard/crm' }] },
+      { name: 'Attendance & Leave Verification', content: 'Review and approve pending employee leave requests and timesheets in one click.', position: 'top', selector: { type: 'css', value: 'button, table, body' }, trigger: 'hover', urlRules: [{ type: 'contains', pattern: '/dashboard/hrms' }] },
+      { name: 'Sprint Task Prioritization', content: 'Filter deliverables by sprint milestone, engineer assignee, or completion status.', position: 'left', selector: { type: 'css', value: '.grid, table, button, body' }, trigger: 'hover', urlRules: [{ type: 'contains', pattern: '/dashboard/projects' }] },
+      { name: 'Export Financial Ledger', content: 'Export comprehensive monthly revenue reports, balance sheets, and audit logs.', position: 'bottom', selector: { type: 'css', value: 'button, .grid, body' }, trigger: 'hover', urlRules: [{ type: 'contains', pattern: '/dashboard/finance' }] },
+    ];
+    for (const t of tips) {
+      await client.query(`
+        INSERT INTO smart_tips (project_id, name, content, selector, position, trigger_event, url_rules, status)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, 'published')
+      `, [projectId, t.name, t.content, JSON.stringify(t.selector), t.position, t.trigger, JSON.stringify(t.urlRules)]);
+    }
+  }
+
+  // 2. Beacons
+  const beaconCount = await client.query('SELECT COUNT(*) FROM beacons WHERE project_id = $1', [projectId]);
+  if (parseInt(beaconCount.rows[0].count) === 0) {
+    const beacons = [
+      { name: 'Add Deal Hotspot', label: 'Register Lead', description: 'Pulsing hotspot guiding sales reps to create deals.', color: '#3b82f6', selector: { type: 'css', value: 'button, .btn-primary, body' }, urlRules: [{ type: 'contains', pattern: '/dashboard/crm' }] },
+      { name: 'New Task Deliverable', label: 'Create Task', description: 'Quick hotspot for engineers to assign deliverables.', color: '#10b981', selector: { type: 'css', value: 'button, body' }, urlRules: [{ type: 'contains', pattern: '/dashboard/projects' }] },
+      { name: 'Leave Approval Hotspot', label: 'Approvals', description: 'Hotspot for managers to review pending requests.', color: '#8b5cf6', selector: { type: 'css', value: 'button, table, body' }, urlRules: [{ type: 'contains', pattern: '/dashboard/hrms' }] },
+    ];
+    for (const b of beacons) {
+      await client.query(`
+        INSERT INTO beacons (project_id, name, label, description, selector, color, size, pulse_animation, on_click_action, url_rules, status)
+        VALUES ($1, $2, $3, $4, $5, $6, 'medium', true, 'show_tooltip', $7, 'published')
+      `, [projectId, b.name, b.label, b.description, JSON.stringify(b.selector), b.color, JSON.stringify(b.urlRules)]);
+    }
+  }
+
+  // 3. Popups
+  const popupCount = await client.query('SELECT COUNT(*) FROM popups WHERE project_id = $1', [projectId]);
+  if (parseInt(popupCount.rows[0].count) === 0) {
+    await client.query(`
+      INSERT INTO popups (project_id, name, title, content, popup_type, position, theme, trigger_event, trigger_delay, show_close_button, buttons, url_rules, status)
+      VALUES ($1, 'Welcome to Kenzo OneERP', 'Welcome to Kenzo OneERP 👋',
+              'Your unified enterprise workspace for CRM, HRMS, Sprint Tasks, and Financial analytics. Launch interactive guides anytime via the Start Guide button.',
+              'modal', 'center', 'dark', 'page_load', 2, true,
+              $2, $3, 'published')
+    `, [
+      projectId,
+      JSON.stringify([{ text: 'Explore Workspace', action: 'close', style: 'primary' }]),
+      JSON.stringify([{ type: 'contains', pattern: '/dashboard' }])
+    ]);
+  }
+
+  // 4. Self Help Articles
+  const articleCount = await client.query('SELECT COUNT(*) FROM self_help_articles WHERE project_id = $1', [projectId]);
+  if (parseInt(articleCount.rows[0].count) === 0) {
+    const articles = [
+      { title: 'Navigating Kenzo OneERP Modules', category: 'Getting Started', tags: ['navigation', 'overview', 'dashboard'], content: 'The navigation sidebar provides instant access to CRM, HRMS, Projects, and Financial analytics. Click the "Start Guide" widget at bottom-right anytime for guided interactive tours.' },
+      { title: 'Managing Client Deals in CRM', category: 'CRM & Sales', tags: ['crm', 'deals', 'leads'], content: 'Navigate to /dashboard/crm to view deals in kanban or table view. Click "+ Add Deal" to register client prospects and monitor conversion stages.' },
+      { title: 'Processing Employee Leave & Attendance', category: 'Human Resources', tags: ['hrms', 'attendance', 'payroll'], content: 'HR Managers can review attendance logs, approve leave requests, and verify payroll allocations directly in the HRMS view.' },
+      { title: 'Tracking Sprint Tasks & Priorities', category: 'Project Management', tags: ['projects', 'sprints', 'tasks'], content: 'Assign engineering deliverables, configure priority tags (Urgent, High, Normal), and track sprint milestone progress live.' },
+      { title: 'Exporting Financial Ledgers & Reports', category: 'Finance', tags: ['finance', 'billing', 'reports'], content: 'Accountants can view live revenue charts, expense distributions, and export monthly balance sheets in CSV or PDF format.' },
+    ];
+    for (const a of articles) {
+      await client.query(`
+        INSERT INTO self_help_articles (project_id, title, content, category, tags, status)
+        VALUES ($1, $2, $3, $4, $5, 'published')
+      `, [projectId, a.title, a.content, a.category, JSON.stringify(a.tags)]);
+    }
+  }
+
+  // 5. Task Lists
+  const taskListCount = await client.query('SELECT COUNT(*) FROM task_lists WHERE project_id = $1', [projectId]);
+  if (parseInt(taskListCount.rows[0].count) === 0) {
+    const tl = await client.query(`
+      INSERT INTO task_lists (project_id, name, title, description, theme, url_rules, status)
+      VALUES ($1, 'Getting Started with OneERP', 'OneERP Onboarding Checklist (4 Steps)', 'Complete these core steps to master OneERP tools.', 'dark', $2, 'published')
+      RETURNING id
+    `, [projectId, JSON.stringify([{ type: 'contains', pattern: '/dashboard' }])]);
+    const listId = tl.rows[0].id;
+    const items = [
+      { title: 'Explore Executive Dashboard Overview', description: 'Review system KPI summary and active modules.', url: '/dashboard' },
+      { title: 'Inspect CRM Sales Pipeline', description: 'View client deals and qualified lead conversions.', url: '/dashboard/crm' },
+      { title: 'Review HRMS Attendance Logs', description: 'Check employee directories and pending leave approvals.', url: '/dashboard/hrms' },
+      { title: 'Track Engineering Sprint Boards', description: 'View active task assignments and project deadlines.', url: '/dashboard/projects' },
+    ];
+    for (let i = 0; i < items.length; i++) {
+      await client.query(`
+        INSERT INTO task_list_items (task_list_id, order_index, title, description, url_pattern, is_required)
+        VALUES ($1, $2, $3, $4, $5, false)
+      `, [listId, i, items[i].title, items[i].description, items[i].url]);
+    }
+  }
+
+  // 6. Surveys
+  const surveyCount = await client.query('SELECT COUNT(*) FROM surveys WHERE project_id = $1', [projectId]);
+  if (parseInt(surveyCount.rows[0].count) === 0) {
+    const s = await client.query(`
+      INSERT INTO surveys (project_id, name, title, description, survey_type, trigger_event, trigger_delay, url_rules, status)
+      VALUES ($1, 'OneERP Usability Survey', 'How is your OneERP experience today?', 'Help us improve your workflow with quick feedback.', 'nps', 'page_load', 6, $2, 'published')
+      RETURNING id
+    `, [projectId, JSON.stringify([{ type: 'contains', pattern: '/dashboard' }])]);
+    const surveyId = s.rows[0].id;
+    await client.query(`
+      INSERT INTO survey_questions (survey_id, order_index, question_type, question_text, is_required)
+      VALUES ($1, 0, 'rating', 'How easy is it to manage your daily workflows in OneERP? (1-5)', true),
+             ($1, 1, 'text', 'What additional features would improve your productivity?', false)
+    `, [surveyId]);
+  }
+}
+
+async function seedGuidanceSuiteForTruthBomb(client: any, projectId: string) {
+  // 1. Smart Tips
+  const tipCount = await client.query('SELECT COUNT(*) FROM smart_tips WHERE project_id = $1', [projectId]);
+  if (parseInt(tipCount.rows[0].count) === 0) {
+    await client.query(`
+      INSERT INTO smart_tips (project_id, name, content, selector, position, trigger_event, url_rules, status)
+      VALUES ($1, 'AI Fact Verification Engine', 'Instant multi-source verification with credibility score analysis.', $2, 'bottom', 'hover', $3, 'published'),
+             ($1, 'GEO Intelligence Scanner', 'Cross-reference geo-tagged claims with global historical datasets.', $4, 'top', 'hover', $5, 'published')
+    `, [
+      projectId,
+      JSON.stringify({ type: 'css', value: 'input, textarea, button, body' }),
+      JSON.stringify([{ type: 'contains', pattern: '/' }]),
+      JSON.stringify({ type: 'css', value: 'button, .grid, body' }),
+      JSON.stringify([{ type: 'contains', pattern: '/' }])
+    ]);
+  }
+
+  // 2. Beacons
+  const beaconCount = await client.query('SELECT COUNT(*) FROM beacons WHERE project_id = $1', [projectId]);
+  if (parseInt(beaconCount.rows[0].count) === 0) {
+    await client.query(`
+      INSERT INTO beacons (project_id, name, label, description, selector, color, size, pulse_animation, on_click_action, url_rules, status)
+      VALUES ($1, 'Verify Claim Hotspot', 'Verify Claim', 'Click to initiate AI fact verification on current statement.', $2, '#38bdf8', 'medium', true, 'show_tooltip', $3, 'published')
+    `, [
+      projectId,
+      JSON.stringify({ type: 'css', value: 'button, input, body' }),
+      JSON.stringify([{ type: 'contains', pattern: '/' }])
+    ]);
+  }
+
+  // 3. Popups
+  const popupCount = await client.query('SELECT COUNT(*) FROM popups WHERE project_id = $1', [projectId]);
+  if (parseInt(popupCount.rows[0].count) === 0) {
+    await client.query(`
+      INSERT INTO popups (project_id, name, title, content, popup_type, position, theme, trigger_event, trigger_delay, show_close_button, buttons, url_rules, status)
+      VALUES ($1, 'Welcome to TruthBomb', 'TruthBomb AI Intelligence 🔍',
+              'Verify claims, detect disinformation, and inspect geo-spatial intelligence signals in real time.',
+              'modal', 'center', 'dark', 'page_load', 2, true,
+              $2, $3, 'published')
+    `, [
+      projectId,
+      JSON.stringify([{ text: 'Start Analyzing', action: 'close', style: 'primary' }]),
+      JSON.stringify([{ type: 'contains', pattern: '/' }])
+    ]);
+  }
+
+  // 4. Self Help Articles
+  const articleCount = await client.query('SELECT COUNT(*) FROM self_help_articles WHERE project_id = $1', [projectId]);
+  if (parseInt(articleCount.rows[0].count) === 0) {
+    await client.query(`
+      INSERT INTO self_help_articles (project_id, title, content, category, tags, status)
+      VALUES ($1, 'How to Verify Statements with TruthBomb', 'Enter any public claim or news URL into the analyzer to inspect multi-source corroboration.', 'Fact-Checking', '["verification", "claims"]', 'published'),
+             ($1, 'Understanding Truth Scores & GEO Signals', 'Truth scores range from 0 to 100 based on source authority, consensus, and chronological integrity.', 'AI Engine', '["scores", "signals"]', 'published')
+    `, [projectId]);
   }
 }

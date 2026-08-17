@@ -16,6 +16,7 @@ interface Popup {
   trigger_delay: number;
   theme: 'light' | 'dark';
   show_close_button: boolean;
+  url_rules?: Array<{ type: string; pattern: string }>;
   status?: 'draft' | 'published';
   createdAt?: string;
 }
@@ -31,18 +32,29 @@ const POPUP_TYPES = ['modal', 'banner', 'tooltip'] as const;
 const POSITIONS = ['center', 'top', 'bottom-right'] as const;
 const TRIGGER_EVENTS = ['page_load', 'exit_intent', 'click'] as const;
 
+const COMMON_ROUTES = [
+  { label: 'All Pages (*)', pattern: '*' },
+  { label: 'Dashboard Overview (/dashboard)', pattern: '/dashboard' },
+  { label: 'CRM & Pipeline (/dashboard/crm)', pattern: '/dashboard/crm' },
+  { label: 'HRMS & Employees (/dashboard/hrms)', pattern: '/dashboard/hrms' },
+  { label: 'Projects & Tasks (/dashboard/projects)', pattern: '/dashboard/projects' },
+  { label: 'Finance & Ledger (/dashboard/finance)', pattern: '/dashboard/finance' },
+];
+
 const emptyForm = (): Partial<Popup> => ({
   name: '', title: '', content: '',
   popup_type: 'modal', position: 'center',
-  trigger_event: 'page_load', trigger_delay: 0,
-  theme: 'dark', show_close_button: true, status: 'draft',
+  trigger_event: 'page_load', trigger_delay: 2,
+  theme: 'dark', show_close_button: true, status: 'published',
+  url_rules: [{ type: 'contains', pattern: '/dashboard' }],
 });
 
 function StatusBadge({ status }: { status?: string }) {
   const cfg = {
     published: { dot: 'bg-emerald-400', text: 'text-emerald-400', label: 'Published' },
     draft: { dot: 'bg-yellow-400', text: 'text-yellow-400', label: 'Draft' },
-  }[status ?? 'draft'] ?? { dot: 'bg-zinc-500', text: 'text-zinc-400', label: status };
+    archived: { dot: 'bg-zinc-500', text: 'text-zinc-400', label: 'Archived' },
+  }[status ?? 'published'] ?? { dot: 'bg-zinc-500', text: 'text-zinc-400', label: status };
   return (
     <span className="inline-flex items-center gap-1.5">
       <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
@@ -66,6 +78,8 @@ export default function PopupsView({ projectId, headers }: GuidanceModuleProps) 
   const [panelOpen, setPanelOpen] = useState(false);
   const [editing, setEditing] = useState<Popup | null>(null);
   const [form, setForm] = useState<Partial<Popup>>(emptyForm());
+  const [selectedRouteFilter, setSelectedRouteFilter] = useState<string>('all');
+  const [targetRoutePattern, setTargetRoutePattern] = useState<string>('/dashboard');
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Popup | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -94,8 +108,19 @@ export default function PopupsView({ projectId, headers }: GuidanceModuleProps) 
 
   useEffect(() => { fetchPopups(); }, [fetchPopups]);
 
-  const openCreate = () => { setEditing(null); setForm(emptyForm()); setPanelOpen(true); };
-  const openEdit = (p: Popup) => { setEditing(p); setForm({ ...p }); setPanelOpen(true); };
+  const openCreate = () => {
+    setEditing(null);
+    setForm(emptyForm());
+    setTargetRoutePattern('/dashboard');
+    setPanelOpen(true);
+  };
+  const openEdit = (p: Popup) => {
+    setEditing(p);
+    setForm({ ...p });
+    const pat = p.url_rules && p.url_rules[0]?.pattern ? p.url_rules[0].pattern : '/dashboard';
+    setTargetRoutePattern(pat);
+    setPanelOpen(true);
+  };
   const closePanel = () => { setPanelOpen(false); setEditing(null); setForm(emptyForm()); };
 
   const handleSave = async () => {
@@ -104,13 +129,18 @@ export default function PopupsView({ projectId, headers }: GuidanceModuleProps) 
     }
     setSaving(true);
     try {
+      const payload = {
+        ...form,
+        url_rules: [{ type: 'contains', pattern: targetRoutePattern || '*' }],
+        status: form.status || 'published',
+      };
       const method = editing ? 'PUT' : 'POST';
       const url = editing ? `/api/v1/admin/popups/${editing.id}` : '/api/v1/admin/popups';
-      const res = await fetch(url, { method, headers: authHeaders(), body: JSON.stringify(form) });
+      const res = await fetch(url, { method, headers: authHeaders(), body: JSON.stringify(payload) });
       if (!res.ok) throw new Error();
       const saved = await res.json();
       if (editing) { setPopups(prev => prev.map(p => p.id === saved.id ? saved : p)); addToast('success', 'Popup updated'); }
-      else { setPopups(prev => [saved, ...prev]); addToast('success', 'Popup created'); }
+      else { setPopups(prev => [saved, ...prev]); addToast('success', 'Popup created & published'); }
       closePanel();
     } catch { addToast('error', 'Failed to save popup'); }
     finally { setSaving(false); }
@@ -134,6 +164,12 @@ export default function PopupsView({ projectId, headers }: GuidanceModuleProps) 
     tooltip: 'text-sky-400 bg-sky-500/10 border-sky-500/30',
   };
 
+  const filteredPopups = popups.filter(p => {
+    if (selectedRouteFilter === 'all') return true;
+    const pat = p.url_rules && p.url_rules[0]?.pattern ? p.url_rules[0].pattern : '';
+    return pat.includes(selectedRouteFilter) || pat === '*' || pat === '/';
+  });
+
   return (
     <div className="relative">
       <div className="flex items-center justify-between mb-6">
@@ -142,13 +178,35 @@ export default function PopupsView({ projectId, headers }: GuidanceModuleProps) 
             <Layers size={18} className="text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-slate-900">Popups</h2>
-            <p className="text-xs text-zinc-500">Modals, banners and tooltip overlays</p>
+            <h2 className="text-lg font-bold text-slate-900">Pop-ups & Modals</h2>
+            <p className="text-xs text-zinc-500">Announcement modals, slide-overs & notifications by route</p>
           </div>
         </div>
         <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-sm font-semibold rounded-xl transition-all">
           <Plus size={16} /> New Popup
         </button>
+      </div>
+
+      {/* Route Filter Bar */}
+      <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-2">
+        <span className="text-xs font-semibold text-zinc-400 mr-1 flex items-center gap-1">
+          Route:
+        </span>
+        {[
+          { id: 'all', label: 'All Routes' },
+          { id: '/dashboard', label: 'Overview (/dashboard)' },
+          { id: 'crm', label: 'CRM (/crm)' },
+          { id: 'hrms', label: 'HRMS (/hrms)' },
+          { id: 'projects', label: 'Projects (/projects)' },
+        ].map(r => (
+          <button
+            key={r.id}
+            onClick={() => setSelectedRouteFilter(r.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${selectedRouteFilter === r.id ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20' : 'bg-[#181b2e] border border-[#2a2f4c] text-zinc-400 hover:text-white'}`}
+          >
+            {r.label}
+          </button>
+        ))}
       </div>
 
       {/* Cards Grid */}
@@ -166,69 +224,77 @@ export default function PopupsView({ projectId, headers }: GuidanceModuleProps) 
             </div>
           ))}
         </div>
-      ) : popups.length === 0 ? (
+      ) : filteredPopups.length === 0 ? (
         <div className="bg-[#11131f] border border-[#1e2238] rounded-2xl p-20 text-center">
           <Layers size={48} className="text-zinc-700 mx-auto mb-4" />
-          <p className="text-zinc-500 font-medium mb-4">No popups configured</p>
+          <p className="text-zinc-500 font-medium mb-4">No popups configured for this route</p>
           <button onClick={openCreate} className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition-all">
             Create your first popup
           </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {popups.map(popup => (
-            <motion.div
-              key={popup.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-[#11131f] border border-[#1e2238] rounded-2xl p-5 group hover:border-[#2a2f4c] transition-all"
-            >
-              {/* Card Header */}
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex-1 min-w-0 mr-2">
-                  <h3 className="font-semibold text-white text-sm truncate">{popup.name}</h3>
-                  <p className="text-xs text-zinc-500 mt-0.5 truncate">{popup.title}</p>
-                </div>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={() => openEdit(popup)} className="p-1.5 rounded-lg hover:bg-indigo-500/20 text-zinc-400 hover:text-indigo-400 transition-colors">
-                    <Edit size={13} />
-                  </button>
-                  <button onClick={() => setDeleteTarget(popup)} className="p-1.5 rounded-lg hover:bg-red-500/20 text-zinc-400 hover:text-red-400 transition-colors">
-                    <Trash2 size={13} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Content Preview */}
-              {popup.content && (
-                <p className="text-xs text-zinc-500 line-clamp-2 mb-4 leading-relaxed">{popup.content}</p>
-              )}
-
-              {/* Preview Box */}
-              <div className={`rounded-xl border p-3 mb-4 ${popup.theme === 'dark' ? 'bg-[#0d0f17] border-[#2a2f4c]' : 'bg-zinc-100 border-zinc-300'}`}>
-                <div className="flex items-center gap-2">
-                  <div className={`text-xs px-2 py-0.5 rounded-full border flex items-center gap-1.5 ${typeColors[popup.popup_type] ?? 'text-zinc-400 bg-zinc-800 border-zinc-700'}`}>
-                    <TypeIcon type={popup.popup_type} />
-                    <span className="capitalize">{popup.popup_type}</span>
+          {filteredPopups.map(popup => {
+            const routePat = popup.url_rules && popup.url_rules[0]?.pattern ? popup.url_rules[0].pattern : '*';
+            return (
+              <motion.div
+                key={popup.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-[#11131f] border border-[#1e2238] rounded-2xl p-5 group hover:border-[#2a2f4c] transition-all"
+              >
+                {/* Card Header */}
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1 min-w-0 mr-2">
+                    <h3 className="font-semibold text-white text-sm truncate">{popup.name}</h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs text-zinc-400 truncate">{popup.title}</span>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-indigo-950/60 border border-indigo-500/30 text-[10px] font-mono text-indigo-300">
+                        {routePat}
+                      </span>
+                    </div>
                   </div>
-                  <span className={`text-xs ${popup.theme === 'dark' ? 'text-zinc-500' : 'text-zinc-500'}`}>{popup.position}</span>
+                  <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => openEdit(popup)} className="p-1.5 rounded-lg hover:bg-indigo-500/20 text-zinc-400 hover:text-indigo-400 transition-colors">
+                      <Edit size={13} />
+                    </button>
+                    <button onClick={() => setDeleteTarget(popup)} className="p-1.5 rounded-lg hover:bg-red-500/20 text-zinc-400 hover:text-red-400 transition-colors">
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
                 </div>
-              </div>
 
-              {/* Meta */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="flex items-center gap-1 text-xs text-zinc-600">
-                    <Clock size={11} />
-                    {popup.trigger_delay}s delay
-                  </span>
-                  <span className="text-zinc-700">·</span>
-                  <span className="text-xs text-zinc-600 capitalize">{popup.trigger_event.replace('_', ' ')}</span>
+                {/* Content Preview */}
+                {popup.content && (
+                  <p className="text-xs text-zinc-400 line-clamp-2 mb-4 leading-relaxed">{popup.content}</p>
+                )}
+
+                {/* Preview Box */}
+                <div className={`rounded-xl border p-3 mb-4 ${popup.theme === 'dark' ? 'bg-[#0d0f17] border-[#2a2f4c]' : 'bg-zinc-100 border-zinc-300'}`}>
+                  <div className="flex items-center gap-2">
+                    <div className={`text-xs px-2 py-0.5 rounded-full border flex items-center gap-1.5 ${typeColors[popup.popup_type] ?? 'text-zinc-400 bg-zinc-800 border-zinc-700'}`}>
+                      <TypeIcon type={popup.popup_type} />
+                      <span className="capitalize">{popup.popup_type}</span>
+                    </div>
+                    <span className={`text-xs ${popup.theme === 'dark' ? 'text-zinc-400' : 'text-zinc-500'}`}>{popup.position}</span>
+                  </div>
                 </div>
-                <StatusBadge status={popup.status} />
-              </div>
-            </motion.div>
-          ))}
+
+                {/* Meta */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="flex items-center gap-1 text-xs text-zinc-400">
+                      <Clock size={11} />
+                      {popup.trigger_delay}s delay
+                    </span>
+                    <span className="text-zinc-600">·</span>
+                    <span className="text-xs text-zinc-400 capitalize">{popup.trigger_event.replace('_', ' ')}</span>
+                  </div>
+                  <StatusBadge status={popup.status} />
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
       )}
 
@@ -255,6 +321,34 @@ export default function PopupsView({ projectId, headers }: GuidanceModuleProps) 
                 <div>
                   <label className="block text-xs font-semibold text-zinc-400 mb-1.5">Popup Name <span className="text-red-400">*</span></label>
                   <input type="text" value={form.name ?? ''} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Welcome Modal" className="w-full bg-[#181b2e] border border-[#2a2f4c] rounded-xl px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none focus:border-indigo-500 transition-colors" />
+                </div>
+
+                {/* Target Route / Page URL */}
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-400 mb-1.5">Target Route / Page URL <span className="text-red-400">*</span></label>
+                  <div className="space-y-2">
+                    <select
+                      value={COMMON_ROUTES.some(r => r.pattern === targetRoutePattern) ? targetRoutePattern : 'custom'}
+                      onChange={e => {
+                        if (e.target.value !== 'custom') {
+                          setTargetRoutePattern(e.target.value);
+                        }
+                      }}
+                      className="w-full bg-[#181b2e] border border-[#2a2f4c] rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-indigo-500 transition-colors"
+                    >
+                      {COMMON_ROUTES.map(r => (
+                        <option key={r.pattern} value={r.pattern}>{r.label}</option>
+                      ))}
+                      <option value="custom">Custom URL Pattern...</option>
+                    </select>
+                    <input
+                      type="text"
+                      value={targetRoutePattern}
+                      onChange={e => setTargetRoutePattern(e.target.value)}
+                      placeholder="e.g. /dashboard or /dashboard/crm"
+                      className="w-full bg-[#181b2e] border border-[#2a2f4c] rounded-xl px-3 py-2 text-xs font-mono text-indigo-300 placeholder-zinc-600 outline-none focus:border-indigo-500"
+                    />
+                  </div>
                 </div>
 
                 {/* Title */}

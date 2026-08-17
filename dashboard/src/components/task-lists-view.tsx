@@ -18,6 +18,8 @@ interface TaskList {
   name: string;
   title: string;
   items: TaskItem[];
+  url_rules?: Array<{ type: string; pattern: string }>;
+  status?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -29,8 +31,23 @@ interface GuidanceModuleProps {
 
 interface Toast { id: string; type: 'success' | 'error'; message: string; }
 
+const COMMON_ROUTES = [
+  { label: 'All Pages (*)', pattern: '*' },
+  { label: 'Dashboard Overview (/dashboard)', pattern: '/dashboard' },
+  { label: 'CRM & Pipeline (/dashboard/crm)', pattern: '/dashboard/crm' },
+  { label: 'HRMS & Employees (/dashboard/hrms)', pattern: '/dashboard/hrms' },
+  { label: 'Projects & Tasks (/dashboard/projects)', pattern: '/dashboard/projects' },
+  { label: 'Finance & Ledger (/dashboard/finance)', pattern: '/dashboard/finance' },
+];
+
 const emptyItem = (): TaskItem => ({ title: '', description: '', completion_trigger: '' });
-const emptyForm = (): Partial<TaskList> => ({ name: '', title: '', items: [emptyItem()] });
+const emptyForm = (): Partial<TaskList> => ({
+  name: '',
+  title: '',
+  items: [emptyItem()],
+  url_rules: [{ type: 'contains', pattern: '/dashboard' }],
+  status: 'published',
+});
 
 function CompletionBar({ total, label }: { total: number; label: string }) {
   return (
@@ -52,6 +69,7 @@ export default function TaskListsView({ projectId, headers }: GuidanceModuleProp
   const [panelOpen, setPanelOpen] = useState(false);
   const [editing, setEditing] = useState<TaskList | null>(null);
   const [form, setForm] = useState<Partial<TaskList>>(emptyForm());
+  const [targetRoutePattern, setTargetRoutePattern] = useState<string>('/dashboard');
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<TaskList | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -81,8 +99,19 @@ export default function TaskListsView({ projectId, headers }: GuidanceModuleProp
 
   useEffect(() => { fetchLists(); }, [fetchLists]);
 
-  const openCreate = () => { setEditing(null); setForm(emptyForm()); setPanelOpen(true); };
-  const openEdit = (l: TaskList) => { setEditing(l); setForm({ ...l, items: l.items ? [...l.items] : [emptyItem()] }); setPanelOpen(true); };
+  const openCreate = () => {
+    setEditing(null);
+    setForm(emptyForm());
+    setTargetRoutePattern('/dashboard');
+    setPanelOpen(true);
+  };
+  const openEdit = (l: TaskList) => {
+    setEditing(l);
+    setForm({ ...l, items: l.items ? [...l.items] : [emptyItem()] });
+    const pat = l.url_rules && l.url_rules[0]?.pattern ? l.url_rules[0].pattern : '/dashboard';
+    setTargetRoutePattern(pat);
+    setPanelOpen(true);
+  };
   const closePanel = () => { setPanelOpen(false); setEditing(null); setForm(emptyForm()); };
 
   const addItem = () => setForm(f => ({ ...f, items: [...(f.items ?? []), emptyItem()] }));
@@ -113,13 +142,18 @@ export default function TaskListsView({ projectId, headers }: GuidanceModuleProp
     }
     setSaving(true);
     try {
+      const payload = {
+        ...form,
+        url_rules: [{ type: 'contains', pattern: targetRoutePattern || '*' }],
+        status: form.status || 'published',
+      };
       const method = editing ? 'PUT' : 'POST';
       const url = editing ? `/api/v1/admin/task-lists/${editing.id}` : '/api/v1/admin/task-lists';
-      const res = await fetch(url, { method, headers: authHeaders(), body: JSON.stringify(form) });
+      const res = await fetch(url, { method, headers: authHeaders(), body: JSON.stringify(payload) });
       if (!res.ok) throw new Error();
       const saved = await res.json();
       if (editing) { setLists(prev => prev.map(l => l.id === saved.id ? saved : l)); addToast('success', 'Task list updated'); }
-      else { setLists(prev => [saved, ...prev]); addToast('success', 'Task list created'); }
+      else { setLists(prev => [saved, ...prev]); addToast('success', 'Task list created & published'); }
       closePanel();
     } catch { addToast('error', 'Failed to save task list'); }
     finally { setSaving(false); }
@@ -256,6 +290,35 @@ export default function TaskListsView({ projectId, headers }: GuidanceModuleProp
                   <label className="block text-xs font-semibold text-zinc-400 mb-1.5">Internal Name <span className="text-red-400">*</span></label>
                   <input type="text" value={form.name ?? ''} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. new-user-onboarding" className="w-full bg-[#181b2e] border border-[#2a2f4c] rounded-xl px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none focus:border-indigo-500 transition-colors" />
                 </div>
+
+                {/* Target Route / Page URL */}
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-400 mb-1.5">Target Route / Page URL <span className="text-red-400">*</span></label>
+                  <div className="space-y-2">
+                    <select
+                      value={COMMON_ROUTES.some(r => r.pattern === targetRoutePattern) ? targetRoutePattern : 'custom'}
+                      onChange={e => {
+                        if (e.target.value !== 'custom') {
+                          setTargetRoutePattern(e.target.value);
+                        }
+                      }}
+                      className="w-full bg-[#181b2e] border border-[#2a2f4c] rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-indigo-500 transition-colors"
+                    >
+                      {COMMON_ROUTES.map(r => (
+                        <option key={r.pattern} value={r.pattern}>{r.label}</option>
+                      ))}
+                      <option value="custom">Custom URL Pattern...</option>
+                    </select>
+                    <input
+                      type="text"
+                      value={targetRoutePattern}
+                      onChange={e => setTargetRoutePattern(e.target.value)}
+                      placeholder="e.g. /dashboard or /dashboard/projects"
+                      className="w-full bg-[#181b2e] border border-[#2a2f4c] rounded-xl px-3 py-2 text-xs font-mono text-indigo-300 placeholder-zinc-600 outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-xs font-semibold text-zinc-400 mb-1.5">Display Title <span className="text-red-400">*</span></label>
                   <input type="text" value={form.title ?? ''} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Get Started with Kenzo" className="w-full bg-[#181b2e] border border-[#2a2f4c] rounded-xl px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none focus:border-indigo-500 transition-colors" />

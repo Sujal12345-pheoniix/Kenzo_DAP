@@ -11,6 +11,9 @@ interface SmartTip {
   content: string;
   position: 'top' | 'bottom' | 'left' | 'right';
   trigger: 'hover' | 'click';
+  trigger_event?: string;
+  selector?: { type?: string; value?: string } | string;
+  url_rules?: Array<{ type: string; pattern: string }>;
   status: 'draft' | 'published';
   createdAt?: string;
   updatedAt?: string;
@@ -30,12 +33,24 @@ interface Toast {
 const POSITIONS = ['top', 'bottom', 'left', 'right'] as const;
 const TRIGGERS = ['hover', 'click'] as const;
 
+const COMMON_ROUTES = [
+  { label: 'All Pages (*)', pattern: '*' },
+  { label: 'Dashboard Overview (/dashboard)', pattern: '/dashboard' },
+  { label: 'CRM & Pipeline (/dashboard/crm)', pattern: '/dashboard/crm' },
+  { label: 'HRMS & Employees (/dashboard/hrms)', pattern: '/dashboard/hrms' },
+  { label: 'Projects & Tasks (/dashboard/projects)', pattern: '/dashboard/projects' },
+  { label: 'Finance & Ledger (/dashboard/finance)', pattern: '/dashboard/finance' },
+  { label: 'Employee Security (/dashboard/employees)', pattern: '/dashboard/employees' },
+];
+
 const emptyForm = (): Partial<SmartTip> => ({
   name: '',
   content: '',
   position: 'top',
   trigger: 'hover',
-  status: 'draft',
+  status: 'published',
+  selector: { type: 'css', value: 'button, .grid, table, body' },
+  url_rules: [{ type: 'contains', pattern: '/dashboard' }],
 });
 
 function StatusBadge({ status }: { status: string }) {
@@ -55,7 +70,7 @@ function StatusBadge({ status }: { status: string }) {
 function SkeletonRow() {
   return (
     <tr className="border-b border-[#1e2238]">
-      {[...Array(6)].map((_, i) => (
+      {[...Array(7)].map((_, i) => (
         <td key={i} className="px-4 py-3">
           <div className="h-4 bg-[#1e2238] rounded animate-pulse" style={{ width: `${60 + i * 10}%` }} />
         </td>
@@ -70,6 +85,9 @@ export default function SmartTipsView({ projectId, headers }: GuidanceModuleProp
   const [panelOpen, setPanelOpen] = useState(false);
   const [editing, setEditing] = useState<SmartTip | null>(null);
   const [form, setForm] = useState<Partial<SmartTip>>(emptyForm());
+  const [selectedRouteFilter, setSelectedRouteFilter] = useState<string>('all');
+  const [targetRoutePattern, setTargetRoutePattern] = useState<string>('/dashboard');
+  const [targetCssSelector, setTargetCssSelector] = useState<string>('button, .grid, table, body');
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<SmartTip | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -106,12 +124,18 @@ export default function SmartTipsView({ projectId, headers }: GuidanceModuleProp
   const openCreate = () => {
     setEditing(null);
     setForm(emptyForm());
+    setTargetRoutePattern('/dashboard');
+    setTargetCssSelector('button, .grid, table, body');
     setPanelOpen(true);
   };
 
   const openEdit = (tip: SmartTip) => {
     setEditing(tip);
     setForm({ ...tip });
+    const pat = tip.url_rules && tip.url_rules[0]?.pattern ? tip.url_rules[0].pattern : '/dashboard';
+    setTargetRoutePattern(pat);
+    const sel = typeof tip.selector === 'string' ? tip.selector : (tip.selector?.value || 'button, .grid, table, body');
+    setTargetCssSelector(sel);
     setPanelOpen(true);
   };
 
@@ -128,11 +152,18 @@ export default function SmartTipsView({ projectId, headers }: GuidanceModuleProp
     }
     setSaving(true);
     try {
+      const payload = {
+        ...form,
+        trigger_event: form.trigger || 'hover',
+        url_rules: [{ type: 'contains', pattern: targetRoutePattern || '*' }],
+        selector: { type: 'css', value: targetCssSelector || 'body' },
+        status: form.status || 'published',
+      };
       const method = editing ? 'PUT' : 'POST';
       const url = editing
         ? `/api/v1/admin/smart-tips/${editing.id}`
         : '/api/v1/admin/smart-tips';
-      const res = await fetch(url, { method, headers: authHeaders(), body: JSON.stringify(form) });
+      const res = await fetch(url, { method, headers: authHeaders(), body: JSON.stringify(payload) });
       if (!res.ok) throw new Error();
       const saved = await res.json();
       if (editing) {
@@ -140,7 +171,7 @@ export default function SmartTipsView({ projectId, headers }: GuidanceModuleProp
         addToast('success', 'Smart tip updated');
       } else {
         setTips(prev => [saved, ...prev]);
-        addToast('success', 'Smart tip created');
+        addToast('success', 'Smart tip created & published');
       }
       closePanel();
     } catch {
@@ -168,6 +199,12 @@ export default function SmartTipsView({ projectId, headers }: GuidanceModuleProp
     }
   };
 
+  const filteredTips = tips.filter(tip => {
+    if (selectedRouteFilter === 'all') return true;
+    const pat = tip.url_rules && tip.url_rules[0]?.pattern ? tip.url_rules[0].pattern : '';
+    return pat.includes(selectedRouteFilter) || pat === '*' || pat === '/';
+  });
+
   return (
     <div className="relative min-h-screen">
       {/* Header */}
@@ -178,7 +215,7 @@ export default function SmartTipsView({ projectId, headers }: GuidanceModuleProp
           </div>
           <div>
             <h2 className="text-lg font-bold text-slate-900">Smart Tips</h2>
-            <p className="text-xs text-zinc-500">Contextual tooltips and inline guidance</p>
+            <p className="text-xs text-zinc-500">Contextual tooltips, inline guidance & field validations by route</p>
           </div>
         </div>
         <button
@@ -189,61 +226,91 @@ export default function SmartTipsView({ projectId, headers }: GuidanceModuleProp
         </button>
       </div>
 
+      {/* Route Filter Bar */}
+      <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-2">
+        <span className="text-xs font-semibold text-zinc-400 mr-1 flex items-center gap-1">
+          Route:
+        </span>
+        {[
+          { id: 'all', label: 'All Routes' },
+          { id: '/dashboard', label: 'Overview (/dashboard)' },
+          { id: 'crm', label: 'CRM (/crm)' },
+          { id: 'hrms', label: 'HRMS (/hrms)' },
+          { id: 'projects', label: 'Projects (/projects)' },
+          { id: 'finance', label: 'Finance (/finance)' },
+        ].map(r => (
+          <button
+            key={r.id}
+            onClick={() => setSelectedRouteFilter(r.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${selectedRouteFilter === r.id ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20' : 'bg-[#181b2e] border border-[#2a2f4c] text-zinc-400 hover:text-white'}`}
+          >
+            {r.label}
+          </button>
+        ))}
+      </div>
+
       {/* Table */}
-      <div className="bg-[#11131f] border border-[#1e2238] rounded-2xl overflow-hidden">
+      <div className="bg-[#11131f] border border-[#1e2238] rounded-2xl overflow-hidden shadow-xl">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-[#1e2238]">
-              {['Name', 'Content Preview', 'Position', 'Trigger', 'Status', 'Actions'].map(h => (
-                <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider">{h}</th>
+              {['Name', 'Target Route', 'Target Element', 'Content Preview', 'Position', 'Status', 'Actions'].map(h => (
+                <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-zinc-400 uppercase tracking-wider">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {loading ? (
               [...Array(4)].map((_, i) => <SkeletonRow key={i} />)
-            ) : tips.length === 0 ? (
+            ) : filteredTips.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-20 text-center">
+                <td colSpan={7} className="px-4 py-20 text-center">
                   <div className="flex flex-col items-center gap-3">
                     <Lightbulb size={40} className="text-zinc-700" />
-                    <p className="text-zinc-500 font-medium">No smart tips yet</p>
+                    <p className="text-zinc-400 font-medium">No smart tips found for this route</p>
                     <button onClick={openCreate} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl transition-all">
-                      Create your first tip
+                      Create a tip for this route
                     </button>
                   </div>
                 </td>
               </tr>
             ) : (
-              tips.map(tip => (
-                <tr key={tip.id} className="border-b border-[#1e2238] hover:bg-[#181b2e] transition-colors">
-                  <td className="px-4 py-3 font-medium text-white">{tip.name}</td>
-                  <td className="px-4 py-3 text-zinc-400 max-w-xs">
-                    <span className="line-clamp-1">{tip.content}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#181b2e] border border-[#2a2f4c] text-xs text-zinc-300 capitalize">
-                      {tip.position}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#181b2e] border border-[#2a2f4c] text-xs text-zinc-300 capitalize">
-                      {tip.trigger}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3"><StatusBadge status={tip.status} /></td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => openEdit(tip)} className="p-1.5 rounded-lg hover:bg-indigo-500/20 text-zinc-400 hover:text-indigo-400 transition-colors">
-                        <Edit size={14} />
-                      </button>
-                      <button onClick={() => setDeleteTarget(tip)} className="p-1.5 rounded-lg hover:bg-red-500/20 text-zinc-400 hover:text-red-400 transition-colors">
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
+              filteredTips.map(tip => {
+                const routePat = tip.url_rules && tip.url_rules[0]?.pattern ? tip.url_rules[0].pattern : '*';
+                const selVal = typeof tip.selector === 'string' ? tip.selector : (tip.selector?.value || 'body');
+                return (
+                  <tr key={tip.id} className="border-b border-[#1e2238] hover:bg-[#181b2e] transition-colors">
+                    <td className="px-4 py-3 font-semibold text-white">{tip.name}</td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-indigo-950/60 border border-indigo-500/30 text-xs font-mono text-indigo-300">
+                        {routePat}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-xs font-mono text-zinc-400 max-w-[140px] truncate" title={selVal}>
+                      {selVal}
+                    </td>
+                    <td className="px-4 py-3 text-zinc-400 max-w-xs">
+                      <span className="line-clamp-1">{tip.content}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#181b2e] border border-[#2a2f4c] text-xs text-zinc-300 capitalize">
+                        {tip.position}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3"><StatusBadge status={tip.status} /></td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => openEdit(tip)} className="p-1.5 rounded-lg hover:bg-indigo-500/20 text-zinc-400 hover:text-indigo-400 transition-colors" title="Edit Tip">
+                          <Edit size={14} />
+                        </button>
+                        <button onClick={() => setDeleteTarget(tip)} className="p-1.5 rounded-lg hover:bg-red-500/20 text-zinc-400 hover:text-red-400 transition-colors" title="Delete Tip">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
@@ -285,13 +352,65 @@ export default function SmartTipsView({ projectId, headers }: GuidanceModuleProp
                   />
                 </div>
 
+                {/* Target Route / Page URL */}
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-400 mb-1.5">Target Route / Page URL <span className="text-red-400">*</span></label>
+                  <div className="space-y-2">
+                    <select
+                      value={COMMON_ROUTES.some(r => r.pattern === targetRoutePattern) ? targetRoutePattern : 'custom'}
+                      onChange={e => {
+                        if (e.target.value !== 'custom') {
+                          setTargetRoutePattern(e.target.value);
+                        }
+                      }}
+                      className="w-full bg-[#181b2e] border border-[#2a2f4c] rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-indigo-500 transition-colors"
+                    >
+                      {COMMON_ROUTES.map(r => (
+                        <option key={r.pattern} value={r.pattern}>{r.label}</option>
+                      ))}
+                      <option value="custom">Custom URL Pattern...</option>
+                    </select>
+                    <input
+                      type="text"
+                      value={targetRoutePattern}
+                      onChange={e => setTargetRoutePattern(e.target.value)}
+                      placeholder="e.g. /dashboard/crm or /settings"
+                      className="w-full bg-[#181b2e] border border-[#2a2f4c] rounded-xl px-3 py-2 text-xs font-mono text-indigo-300 placeholder-zinc-600 outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Target Element Selector */}
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-400 mb-1.5">Target Element CSS Selector</label>
+                  <input
+                    type="text"
+                    value={targetCssSelector}
+                    onChange={e => setTargetCssSelector(e.target.value)}
+                    placeholder="e.g. button.btn-primary, #add-deal, .grid"
+                    className="w-full bg-[#181b2e] border border-[#2a2f4c] rounded-xl px-3 py-2.5 text-xs font-mono text-zinc-200 placeholder-zinc-600 outline-none focus:border-indigo-500 transition-colors"
+                  />
+                  <div className="flex flex-wrap gap-1.5 mt-1.5">
+                    {['button', '.btn-primary', 'table', '.grid', 'body'].map(quickSel => (
+                      <button
+                        key={quickSel}
+                        type="button"
+                        onClick={() => setTargetCssSelector(quickSel)}
+                        className="px-2 py-0.5 rounded bg-[#181b2e] border border-[#2a2f4c] text-[10px] font-mono text-zinc-400 hover:text-indigo-300 hover:border-indigo-500"
+                      >
+                        {quickSel}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-xs font-semibold text-zinc-400 mb-1.5">Content <span className="text-red-400">*</span></label>
                   <textarea
                     value={form.content ?? ''}
                     onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
                     placeholder="Enter the tip message..."
-                    rows={5}
+                    rows={4}
                     className="w-full bg-[#181b2e] border border-[#2a2f4c] rounded-xl px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none focus:border-indigo-500 transition-colors resize-none"
                   />
                 </div>

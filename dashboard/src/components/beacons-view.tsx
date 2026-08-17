@@ -14,6 +14,9 @@ interface Beacon {
   size: 'small' | 'medium' | 'large';
   pulse_animation: boolean;
   on_click_action: 'show_tooltip' | 'open_flow' | 'external_link';
+  selector?: { type?: string; value?: string } | string;
+  url_rules?: Array<{ type: string; pattern: string }>;
+  status?: string;
   createdAt?: string;
 }
 
@@ -28,12 +31,24 @@ const SIZES = ['small', 'medium', 'large'] as const;
 const CLICK_ACTIONS = ['show_tooltip', 'open_flow', 'external_link'] as const;
 const PRESET_COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#ef4444', '#06b6d4'];
 
+const COMMON_ROUTES = [
+  { label: 'All Pages (*)', pattern: '*' },
+  { label: 'Dashboard Overview (/dashboard)', pattern: '/dashboard' },
+  { label: 'CRM & Pipeline (/dashboard/crm)', pattern: '/dashboard/crm' },
+  { label: 'HRMS & Employees (/dashboard/hrms)', pattern: '/dashboard/hrms' },
+  { label: 'Projects & Tasks (/dashboard/projects)', pattern: '/dashboard/projects' },
+  { label: 'Finance & Ledger (/dashboard/finance)', pattern: '/dashboard/finance' },
+];
+
 const sizeMap = { small: 'w-3 h-3', medium: 'w-4 h-4', large: 'w-5 h-5' };
 
 const emptyForm = (): Partial<Beacon> => ({
   name: '', label: '', description: '',
-  color: '#6366f1', size: 'medium',
+  color: '#3b82f6', size: 'medium',
   pulse_animation: true, on_click_action: 'show_tooltip',
+  selector: { type: 'css', value: 'button, .btn-primary, body' },
+  url_rules: [{ type: 'contains', pattern: '/dashboard/crm' }],
+  status: 'published',
 });
 
 function PulsingDot({ color, size, pulse }: { color: string; size: string; pulse: boolean }) {
@@ -59,6 +74,9 @@ export default function BeaconsView({ projectId, headers }: GuidanceModuleProps)
   const [panelOpen, setPanelOpen] = useState(false);
   const [editing, setEditing] = useState<Beacon | null>(null);
   const [form, setForm] = useState<Partial<Beacon>>(emptyForm());
+  const [selectedRouteFilter, setSelectedRouteFilter] = useState<string>('all');
+  const [targetRoutePattern, setTargetRoutePattern] = useState<string>('/dashboard/crm');
+  const [targetCssSelector, setTargetCssSelector] = useState<string>('button, .btn-primary, body');
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Beacon | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -87,8 +105,22 @@ export default function BeaconsView({ projectId, headers }: GuidanceModuleProps)
 
   useEffect(() => { fetchBeacons(); }, [fetchBeacons]);
 
-  const openCreate = () => { setEditing(null); setForm(emptyForm()); setPanelOpen(true); };
-  const openEdit = (b: Beacon) => { setEditing(b); setForm({ ...b }); setPanelOpen(true); };
+  const openCreate = () => {
+    setEditing(null);
+    setForm(emptyForm());
+    setTargetRoutePattern('/dashboard/crm');
+    setTargetCssSelector('button, .btn-primary, body');
+    setPanelOpen(true);
+  };
+  const openEdit = (b: Beacon) => {
+    setEditing(b);
+    setForm({ ...b });
+    const pat = b.url_rules && b.url_rules[0]?.pattern ? b.url_rules[0].pattern : '/dashboard/crm';
+    setTargetRoutePattern(pat);
+    const sel = typeof b.selector === 'string' ? b.selector : (b.selector?.value || 'button, body');
+    setTargetCssSelector(sel);
+    setPanelOpen(true);
+  };
   const closePanel = () => { setPanelOpen(false); setEditing(null); setForm(emptyForm()); };
 
   const handleSave = async () => {
@@ -97,13 +129,19 @@ export default function BeaconsView({ projectId, headers }: GuidanceModuleProps)
     }
     setSaving(true);
     try {
+      const payload = {
+        ...form,
+        url_rules: [{ type: 'contains', pattern: targetRoutePattern || '*' }],
+        selector: { type: 'css', value: targetCssSelector || 'body' },
+        status: form.status || 'published',
+      };
       const method = editing ? 'PUT' : 'POST';
       const url = editing ? `/api/v1/admin/beacons/${editing.id}` : '/api/v1/admin/beacons';
-      const res = await fetch(url, { method, headers: authHeaders(), body: JSON.stringify(form) });
+      const res = await fetch(url, { method, headers: authHeaders(), body: JSON.stringify(payload) });
       if (!res.ok) throw new Error();
       const saved = await res.json();
       if (editing) { setBeacons(prev => prev.map(b => b.id === saved.id ? saved : b)); addToast('success', 'Beacon updated'); }
-      else { setBeacons(prev => [saved, ...prev]); addToast('success', 'Beacon created'); }
+      else { setBeacons(prev => [saved, ...prev]); addToast('success', 'Beacon created & published'); }
       closePanel();
     } catch { addToast('error', 'Failed to save beacon'); }
     finally { setSaving(false); }
@@ -121,6 +159,12 @@ export default function BeaconsView({ projectId, headers }: GuidanceModuleProps)
     finally { setDeleting(false); }
   };
 
+  const filteredBeacons = beacons.filter(b => {
+    if (selectedRouteFilter === 'all') return true;
+    const pat = b.url_rules && b.url_rules[0]?.pattern ? b.url_rules[0].pattern : '';
+    return pat.includes(selectedRouteFilter) || pat === '*' || pat === '/';
+  });
+
   return (
     <div className="relative">
       {/* Header */}
@@ -131,7 +175,7 @@ export default function BeaconsView({ projectId, headers }: GuidanceModuleProps)
           </div>
           <div>
             <h2 className="text-lg font-bold text-slate-900">Beacons</h2>
-            <p className="text-xs text-zinc-500">Color-coded pulsing attention markers</p>
+            <p className="text-xs text-zinc-500">Pulsing hotspot markers anchored to page elements by route</p>
           </div>
         </div>
         <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-sm font-semibold rounded-xl transition-all">
@@ -139,8 +183,30 @@ export default function BeaconsView({ projectId, headers }: GuidanceModuleProps)
         </button>
       </div>
 
+      {/* Route Filter Bar */}
+      <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-2">
+        <span className="text-xs font-semibold text-zinc-400 mr-1 flex items-center gap-1">
+          Route:
+        </span>
+        {[
+          { id: 'all', label: 'All Routes' },
+          { id: 'crm', label: 'CRM (/crm)' },
+          { id: 'projects', label: 'Projects (/projects)' },
+          { id: 'hrms', label: 'HRMS (/hrms)' },
+          { id: 'finance', label: 'Finance (/finance)' },
+        ].map(r => (
+          <button
+            key={r.id}
+            onClick={() => setSelectedRouteFilter(r.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${selectedRouteFilter === r.id ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20' : 'bg-[#181b2e] border border-[#2a2f4c] text-zinc-400 hover:text-white'}`}
+          >
+            {r.label}
+          </button>
+        ))}
+      </div>
+
       {/* List */}
-      <div className="bg-[#11131f] border border-[#1e2238] rounded-2xl overflow-hidden">
+      <div className="bg-[#11131f] border border-[#1e2238] rounded-2xl overflow-hidden shadow-xl">
         {loading ? (
           <div className="p-4 space-y-3">
             {[...Array(5)].map((_, i) => (
@@ -153,61 +219,68 @@ export default function BeaconsView({ projectId, headers }: GuidanceModuleProps)
               </div>
             ))}
           </div>
-        ) : beacons.length === 0 ? (
+        ) : filteredBeacons.length === 0 ? (
           <div className="p-20 text-center">
             <Radio size={48} className="text-zinc-700 mx-auto mb-4" />
-            <p className="text-zinc-500 font-medium mb-4">No beacons configured</p>
+            <p className="text-zinc-400 font-medium mb-4">No beacons configured for this route</p>
             <button onClick={openCreate} className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition-all">
-              Create your first beacon
+              Create a beacon for this route
             </button>
           </div>
         ) : (
           <div className="divide-y divide-[#1e2238]">
-            {beacons.map(beacon => (
-              <motion.div
-                key={beacon.id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex items-center gap-4 px-5 py-4 hover:bg-[#181b2e] transition-colors group"
-              >
-                {/* Pulsing dot */}
-                <PulsingDot color={beacon.color} size={beacon.size} pulse={beacon.pulse_animation} />
+            {filteredBeacons.map(beacon => {
+              const routePat = beacon.url_rules && beacon.url_rules[0]?.pattern ? beacon.url_rules[0].pattern : '*';
+              const selVal = typeof beacon.selector === 'string' ? beacon.selector : (beacon.selector?.value || 'body');
+              return (
+                <motion.div
+                  key={beacon.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex items-center gap-4 px-5 py-4 hover:bg-[#181b2e] transition-colors group"
+                >
+                  {/* Pulsing dot */}
+                  <PulsingDot color={beacon.color} size={beacon.size} pulse={beacon.pulse_animation} />
 
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-white text-sm">{beacon.label}</span>
-                    <span className="text-xs text-zinc-600">·</span>
-                    <span className="text-xs text-zinc-500">{beacon.name}</span>
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-white text-sm">{beacon.label}</span>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-indigo-950/60 border border-indigo-500/30 text-[11px] font-mono text-indigo-300">
+                        {routePat}
+                      </span>
+                      <span className="text-[11px] font-mono text-zinc-400 truncate max-w-[150px]" title={selVal}>
+                        {selVal}
+                      </span>
+                    </div>
+                    {beacon.description && (
+                      <p className="text-xs text-zinc-400 truncate mt-0.5">{beacon.description}</p>
+                    )}
                   </div>
-                  {beacon.description && (
-                    <p className="text-xs text-zinc-500 mt-0.5 truncate">{beacon.description}</p>
-                  )}
-                </div>
 
-                {/* Meta chips */}
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[#0d0f17] border border-[#2a2f4c] text-xs text-zinc-400 capitalize">
-                    <ActionIcon action={beacon.on_click_action} />
-                    {beacon.on_click_action.replace(/_/g, ' ')}
-                  </span>
-                  <span className="inline-flex px-2 py-1 rounded-lg bg-[#0d0f17] border border-[#2a2f4c] text-xs text-zinc-400 capitalize">
-                    {beacon.size}
-                  </span>
-                  {beacon.pulse_animation && (
-                    <span className="inline-flex px-2 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-400">
-                      Pulsing
+                  {/* Badges */}
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#181b2e] border border-[#2a2f4c] text-xs text-zinc-300 capitalize">
+                      <ActionIcon action={beacon.on_click_action} />
+                      {beacon.on_click_action.replace('_', ' ')}
                     </span>
-                  )}
-                </div>
+                    <span className="text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-md">
+                      Published
+                    </span>
+                  </div>
 
-                {/* Actions */}
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={() => openEdit(beacon)} className="p-1.5 rounded-lg hover:bg-indigo-500/20 text-zinc-400 hover:text-indigo-400 transition-colors"><Edit size={14} /></button>
-                  <button onClick={() => setDeleteTarget(beacon)} className="p-1.5 rounded-lg hover:bg-red-500/20 text-zinc-400 hover:text-red-400 transition-colors"><Trash2 size={14} /></button>
-                </div>
-              </motion.div>
-            ))}
+                  {/* Actions */}
+                  <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => openEdit(beacon)} className="p-1.5 rounded-lg hover:bg-indigo-500/20 text-zinc-400 hover:text-indigo-400 transition-colors">
+                      <Edit size={14} />
+                    </button>
+                    <button onClick={() => setDeleteTarget(beacon)} className="p-1.5 rounded-lg hover:bg-red-500/20 text-zinc-400 hover:text-red-400 transition-colors">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -243,6 +316,58 @@ export default function BeaconsView({ projectId, headers }: GuidanceModuleProps)
                 <div>
                   <label className="block text-xs font-semibold text-zinc-400 mb-1.5">Internal Name <span className="text-red-400">*</span></label>
                   <input type="text" value={form.name ?? ''} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. feature-beacon-v1" className="w-full bg-[#181b2e] border border-[#2a2f4c] rounded-xl px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none focus:border-indigo-500 transition-colors" />
+                </div>
+
+                {/* Target Route / Page URL */}
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-400 mb-1.5">Target Route / Page URL <span className="text-red-400">*</span></label>
+                  <div className="space-y-2">
+                    <select
+                      value={COMMON_ROUTES.some(r => r.pattern === targetRoutePattern) ? targetRoutePattern : 'custom'}
+                      onChange={e => {
+                        if (e.target.value !== 'custom') {
+                          setTargetRoutePattern(e.target.value);
+                        }
+                      }}
+                      className="w-full bg-[#181b2e] border border-[#2a2f4c] rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-indigo-500 transition-colors"
+                    >
+                      {COMMON_ROUTES.map(r => (
+                        <option key={r.pattern} value={r.pattern}>{r.label}</option>
+                      ))}
+                      <option value="custom">Custom URL Pattern...</option>
+                    </select>
+                    <input
+                      type="text"
+                      value={targetRoutePattern}
+                      onChange={e => setTargetRoutePattern(e.target.value)}
+                      placeholder="e.g. /dashboard/crm or /projects"
+                      className="w-full bg-[#181b2e] border border-[#2a2f4c] rounded-xl px-3 py-2 text-xs font-mono text-indigo-300 placeholder-zinc-600 outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Target Element Selector */}
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-400 mb-1.5">Target Element CSS Selector</label>
+                  <input
+                    type="text"
+                    value={targetCssSelector}
+                    onChange={e => setTargetCssSelector(e.target.value)}
+                    placeholder="e.g. button.btn-primary, #add-deal, .grid"
+                    className="w-full bg-[#181b2e] border border-[#2a2f4c] rounded-xl px-3 py-2.5 text-xs font-mono text-zinc-200 placeholder-zinc-600 outline-none focus:border-indigo-500 transition-colors"
+                  />
+                  <div className="flex flex-wrap gap-1.5 mt-1.5">
+                    {['button', '.btn-primary', 'table', '.grid', 'body'].map(quickSel => (
+                      <button
+                        key={quickSel}
+                        type="button"
+                        onClick={() => setTargetCssSelector(quickSel)}
+                        className="px-2 py-0.5 rounded bg-[#181b2e] border border-[#2a2f4c] text-[10px] font-mono text-zinc-400 hover:text-indigo-300 hover:border-indigo-500"
+                      >
+                        {quickSel}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div>

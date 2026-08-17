@@ -16,6 +16,7 @@ interface Survey {
   question: string;
   survey_type: 'nps' | 'rating' | 'multiple_choice' | 'text';
   options?: SurveyOption[];
+  url_rules?: Array<{ type: string; pattern: string }>;
   status: 'draft' | 'published' | 'archived';
   response_count?: number;
   createdAt?: string;
@@ -30,8 +31,22 @@ interface Toast { id: string; type: 'success' | 'error'; message: string; }
 
 const SURVEY_TYPES = ['nps', 'rating', 'multiple_choice', 'text'] as const;
 
+const COMMON_ROUTES = [
+  { label: 'All Pages (*)', pattern: '*' },
+  { label: 'Dashboard Overview (/dashboard)', pattern: '/dashboard' },
+  { label: 'CRM & Pipeline (/dashboard/crm)', pattern: '/dashboard/crm' },
+  { label: 'HRMS & Employees (/dashboard/hrms)', pattern: '/dashboard/hrms' },
+  { label: 'Projects & Tasks (/dashboard/projects)', pattern: '/dashboard/projects' },
+  { label: 'Finance & Ledger (/dashboard/finance)', pattern: '/dashboard/finance' },
+];
+
 const emptyForm = (): Partial<Survey> => ({
-  name: '', question: '', survey_type: 'nps', options: [], status: 'draft',
+  name: '',
+  question: '',
+  survey_type: 'nps',
+  options: [],
+  url_rules: [{ type: 'contains', pattern: '/dashboard' }],
+  status: 'published',
 });
 
 function StatusBadge({ status }: { status: string }) {
@@ -79,6 +94,7 @@ export default function SurveysView({ projectId, headers }: GuidanceModuleProps)
   const [panelOpen, setPanelOpen] = useState(false);
   const [editing, setEditing] = useState<Survey | null>(null);
   const [form, setForm] = useState<Partial<Survey>>(emptyForm());
+  const [targetRoutePattern, setTargetRoutePattern] = useState<string>('/dashboard');
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Survey | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -109,8 +125,19 @@ export default function SurveysView({ projectId, headers }: GuidanceModuleProps)
 
   useEffect(() => { fetchSurveys(); }, [fetchSurveys]);
 
-  const openCreate = () => { setEditing(null); setForm(emptyForm()); setPanelOpen(true); };
-  const openEdit = (s: Survey) => { setEditing(s); setForm({ ...s, options: s.options ? [...s.options] : [] }); setPanelOpen(true); };
+  const openCreate = () => {
+    setEditing(null);
+    setForm(emptyForm());
+    setTargetRoutePattern('/dashboard');
+    setPanelOpen(true);
+  };
+  const openEdit = (s: Survey) => {
+    setEditing(s);
+    setForm({ ...s, options: s.options ? [...s.options] : [] });
+    const pat = s.url_rules && s.url_rules[0]?.pattern ? s.url_rules[0].pattern : '/dashboard';
+    setTargetRoutePattern(pat);
+    setPanelOpen(true);
+  };
   const closePanel = () => { setPanelOpen(false); setEditing(null); setForm(emptyForm()); setOptionInput(''); };
 
   const addOption = () => {
@@ -127,13 +154,18 @@ export default function SurveysView({ projectId, headers }: GuidanceModuleProps)
     }
     setSaving(true);
     try {
+      const payload = {
+        ...form,
+        url_rules: [{ type: 'contains', pattern: targetRoutePattern || '*' }],
+        status: form.status || 'published',
+      };
       const method = editing ? 'PUT' : 'POST';
       const url = editing ? `/api/v1/admin/surveys/${editing.id}` : '/api/v1/admin/surveys';
-      const res = await fetch(url, { method, headers: authHeaders(), body: JSON.stringify(form) });
+      const res = await fetch(url, { method, headers: authHeaders(), body: JSON.stringify(payload) });
       if (!res.ok) throw new Error();
       const saved = await res.json();
       if (editing) { setSurveys(prev => prev.map(s => s.id === saved.id ? saved : s)); addToast('success', 'Survey updated'); }
-      else { setSurveys(prev => [saved, ...prev]); addToast('success', 'Survey created'); }
+      else { setSurveys(prev => [saved, ...prev]); addToast('success', 'Survey created & published'); }
       closePanel();
     } catch { addToast('error', 'Failed to save survey'); }
     finally { setSaving(false); }
@@ -306,6 +338,34 @@ export default function SurveysView({ projectId, headers }: GuidanceModuleProps)
                 <div>
                   <label className="block text-xs font-semibold text-zinc-400 mb-1.5">Survey Name <span className="text-red-400">*</span></label>
                   <input type="text" value={form.name ?? ''} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Post-Onboarding NPS" className="w-full bg-[#181b2e] border border-[#2a2f4c] rounded-xl px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none focus:border-indigo-500 transition-colors" />
+                </div>
+
+                {/* Target Route / Page URL */}
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-400 mb-1.5">Target Route / Page URL <span className="text-red-400">*</span></label>
+                  <div className="space-y-2">
+                    <select
+                      value={COMMON_ROUTES.some(r => r.pattern === targetRoutePattern) ? targetRoutePattern : 'custom'}
+                      onChange={e => {
+                        if (e.target.value !== 'custom') {
+                          setTargetRoutePattern(e.target.value);
+                        }
+                      }}
+                      className="w-full bg-[#181b2e] border border-[#2a2f4c] rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-indigo-500 transition-colors"
+                    >
+                      {COMMON_ROUTES.map(r => (
+                        <option key={r.pattern} value={r.pattern}>{r.label}</option>
+                      ))}
+                      <option value="custom">Custom URL Pattern...</option>
+                    </select>
+                    <input
+                      type="text"
+                      value={targetRoutePattern}
+                      onChange={e => setTargetRoutePattern(e.target.value)}
+                      placeholder="e.g. /dashboard or /dashboard/crm"
+                      className="w-full bg-[#181b2e] border border-[#2a2f4c] rounded-xl px-3 py-2 text-xs font-mono text-indigo-300 placeholder-zinc-600 outline-none focus:border-indigo-500"
+                    />
+                  </div>
                 </div>
 
                 <div>
