@@ -223,9 +223,10 @@ export class LifecycleManager implements ILifecycleManager {
       const fullData = cachedData || await (this.flowLoader as any).loadFullExperiences();
       if (!fullData) return;
 
-      // 1. Clear previous page's smart tips and beacons
+      // 1. Clear previous page's smart tips, beacons, and popups
       this.smartTipManager.clear();
       this.beaconManager.clear();
+      this.popupManager.clear();
 
       // 2. Smart Tips (match urlRules against current route)
       if (fullData.smartTips && fullData.smartTips.length > 0) {
@@ -256,6 +257,7 @@ export class LifecycleManager implements ILifecycleManager {
               id: beacon.id,
               selector: sel,
               title: beacon.label || beacon.name,
+              description: beacon.description || '',
               flowId: beacon.linkedFlowId || beacon.flowId
             }, (b) => {
               if (b.flowId) {
@@ -312,6 +314,7 @@ export class LifecycleManager implements ILifecycleManager {
           if (matches && tl.items && tl.items.length > 0) {
             this.taskListWidget.init({
               title: tl.title || tl.name,
+              position: 'bottom-left',
               tasks: tl.items.map((it: any) => ({
                 id: it.id,
                 title: it.title,

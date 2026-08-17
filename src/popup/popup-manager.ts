@@ -1,6 +1,6 @@
 /**
  * Pop-up Manager — renders modal/banner dialogs triggered by page load, events, idle time, or exit intent.
- * Glassmorphic design with subtle glowing border and rich gradient action buttons.
+ * Features once-per-page auto-appearance rule with a sleek top-middle reopen trigger button.
  * @module popup/popup-manager
  */
 
@@ -20,6 +20,8 @@ export class PopupManager {
   private shadowRoot: ShadowRoot | null = null;
   private exitIntentListener: ((e: MouseEvent) => void) | null = null;
   private idleTimer: ReturnType<typeof setTimeout> | null = null;
+  private activeReopenButtons: Map<string, HTMLElement> = new Map();
+  private activeOverlay: HTMLElement | null = null;
 
   constructor() {
     this.initShadowDom();
@@ -39,8 +41,8 @@ export class PopupManager {
       .kenzo-popup-overlay {
         position: fixed;
         inset: 0;
-        background: rgba(10, 10, 18, 0.78);
-        backdrop-filter: blur(12px);
+        background: rgba(10, 10, 18, 0.82);
+        backdrop-filter: blur(14px);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -48,15 +50,15 @@ export class PopupManager {
         animation: kenzo-popup-backdrop-fade 0.25s ease-out;
       }
       .kenzo-popup-card {
-        background: rgba(24, 24, 37, 0.95);
-        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: linear-gradient(145deg, rgba(15, 23, 42, 0.98), rgba(24, 24, 37, 0.98));
+        border: 1px solid rgba(99, 102, 241, 0.35);
         border-radius: 20px;
         width: 90%;
-        max-width: 440px;
+        max-width: 460px;
         padding: 28px;
-        color: #f1f5f9;
+        color: #ffffff;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(99, 102, 241, 0.2);
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), 0 0 30px rgba(99, 102, 241, 0.25);
         animation: kenzo-popup-card-scale 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         overflow: hidden;
       }
@@ -71,14 +73,16 @@ export class PopupManager {
       .kenzo-popup-title {
         font-size: 20px;
         font-weight: 800;
-        color: #ffffff;
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
         letter-spacing: -0.02em;
         margin-bottom: 10px;
       }
       .kenzo-popup-body {
         font-size: 14px;
-        line-height: 1.5;
-        color: #cbd5e1;
+        line-height: 1.55;
+        color: #e2e8f0 !important;
+        -webkit-text-fill-color: #e2e8f0 !important;
         margin-bottom: 24px;
       }
       .kenzo-popup-actions {
@@ -87,7 +91,7 @@ export class PopupManager {
         gap: 12px;
       }
       .kenzo-popup-btn {
-        padding: 11px 22px;
+        padding: 10px 22px;
         border-radius: 12px;
         font-weight: 700;
         font-size: 13px;
@@ -96,21 +100,70 @@ export class PopupManager {
         transition: all 0.2s ease;
       }
       .kenzo-popup-btn-primary {
-        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
         color: #ffffff;
-        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
       }
       .kenzo-popup-btn-primary:hover {
         transform: translateY(-1px);
-        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
+        box-shadow: 0 6px 20px rgba(79, 70, 229, 0.6);
       }
       .kenzo-popup-btn-secondary {
         background: rgba(255, 255, 255, 0.08);
         color: #cbd5e1;
+        border: 1px solid rgba(255, 255, 255, 0.12);
       }
       .kenzo-popup-btn-secondary:hover {
         background: rgba(255, 255, 255, 0.15);
         color: #ffffff;
+      }
+
+      /* Top-middle reopen trigger button */
+      .kenzo-popup-reopen-btn {
+        position: fixed;
+        top: 18px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95));
+        border: 1px solid rgba(99, 102, 241, 0.4);
+        border-radius: 20px;
+        padding: 6px 16px;
+        color: #e2e8f0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), 0 0 12px rgba(99, 102, 241, 0.25);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        z-index: 2147483400;
+        backdrop-filter: blur(12px);
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        animation: kenzo-reopen-fade 0.3s ease-out;
+      }
+      .kenzo-popup-reopen-btn:hover {
+        transform: translateX(-50%) translateY(-1px) scale(1.04);
+        border-color: rgba(129, 140, 248, 0.7);
+        color: #ffffff;
+        box-shadow: 0 6px 24px rgba(99, 102, 241, 0.4);
+      }
+      .kenzo-popup-reopen-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #38bdf8;
+        box-shadow: 0 0 8px #38bdf8;
+        animation: kenzo-dot-pulse 1.8s infinite;
+      }
+
+      @keyframes kenzo-reopen-fade {
+        from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+        to { opacity: 1; transform: translateX(-50%) translateY(0); }
+      }
+      @keyframes kenzo-dot-pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(1.3); }
       }
       @keyframes kenzo-popup-backdrop-fade {
         from { opacity: 0; }
@@ -125,8 +178,46 @@ export class PopupManager {
     document.body.appendChild(this.shadowHost);
   }
 
-  showPopup(popup: PopupItem, onPrimary?: () => void, onDismiss?: () => void): void {
+  showPopup(popup: PopupItem, onPrimary?: () => void, onDismiss?: () => void, forceOpen = false): void {
     if (typeof document === 'undefined' || !this.shadowRoot) return;
+
+    const storageKey = `kenzo_popup_dismissed_${popup.id}`;
+    const alreadyDismissed = !forceOpen && typeof localStorage !== 'undefined' && localStorage.getItem(storageKey) === 'true';
+
+    if (alreadyDismissed) {
+      // If already dismissed, don't show the intrusive full-screen modal automatically.
+      // Instead, show the top-middle reopen button so the user can easily re-access it!
+      this.renderReopenButton(popup, onPrimary, onDismiss);
+      return;
+    }
+
+    this.renderModalOverlay(popup, onPrimary, onDismiss);
+  }
+
+  private renderReopenButton(popup: PopupItem, onPrimary?: () => void, onDismiss?: () => void): void {
+    if (!this.shadowRoot) return;
+    if (this.activeReopenButtons.has(popup.id)) return;
+
+    const reopenBtn = document.createElement('button');
+    reopenBtn.className = 'kenzo-popup-reopen-btn';
+    reopenBtn.innerHTML = `
+      <span class="kenzo-popup-reopen-dot"></span>
+      <span>📢 ${popup.title || 'Announcement'}</span>
+    `;
+
+    reopenBtn.addEventListener('click', () => {
+      this.renderModalOverlay(popup, onPrimary, onDismiss);
+    });
+
+    this.shadowRoot.appendChild(reopenBtn);
+    this.activeReopenButtons.set(popup.id, reopenBtn);
+  }
+
+  private renderModalOverlay(popup: PopupItem, onPrimary?: () => void, onDismiss?: () => void): void {
+    if (!this.shadowRoot) return;
+
+    // Remove existing overlay if any
+    this.activeOverlay?.remove();
 
     const overlay = document.createElement('div');
     overlay.className = 'kenzo-popup-overlay';
@@ -144,6 +235,15 @@ export class PopupManager {
 
     const close = () => {
       overlay.remove();
+      this.activeOverlay = null;
+
+      // Mark as dismissed in localStorage
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(`kenzo_popup_dismissed_${popup.id}`, 'true');
+      }
+
+      // Render top-middle reopen button so user can re-open at will
+      this.renderReopenButton(popup, onPrimary, onDismiss);
     };
 
     const primaryBtn = overlay.querySelector('.kenzo-popup-btn-primary');
@@ -160,6 +260,7 @@ export class PopupManager {
     });
 
     this.shadowRoot.appendChild(overlay);
+    this.activeOverlay = overlay;
   }
 
   setupExitIntent(onTrigger: () => void): void {
@@ -185,5 +286,12 @@ export class PopupManager {
     window.addEventListener('mousemove', resetTimer, { passive: true });
     window.addEventListener('keydown', resetTimer, { passive: true });
     resetTimer();
+  }
+
+  clear(): void {
+    this.activeOverlay?.remove();
+    this.activeOverlay = null;
+    this.activeReopenButtons.forEach(btn => btn.remove());
+    this.activeReopenButtons.clear();
   }
 }

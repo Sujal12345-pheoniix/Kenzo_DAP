@@ -36,28 +36,33 @@ export class SelfHelpManager {
     style.textContent = `
       .self-help-fab {
         position: fixed;
-        bottom: 24px;
-        right: 90px;
-        background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
-        color: #c7d2fe;
-        border: 1px solid rgba(199, 210, 254, 0.3);
-        border-radius: 24px;
-        padding: 10px 20px;
+        top: 18px;
+        right: 24px;
+        bottom: auto;
+        background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%);
+        color: #e2e8f0;
+        border: 1px solid rgba(99, 102, 241, 0.4);
+        border-radius: 20px;
+        padding: 7px 16px;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        font-size: 13px;
+        font-size: 12px;
         font-weight: 700;
+        letter-spacing: 0.01em;
         cursor: pointer;
-        box-shadow: 0 8px 25px rgba(49, 46, 129, 0.45);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), 0 0 12px rgba(99, 102, 241, 0.2);
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 7px;
         z-index: 2147483400;
-        transition: all 0.25s ease;
+        backdrop-filter: blur(12px);
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
       }
       .self-help-fab:hover {
-        transform: translateY(-2px) scale(1.04);
-        border-color: rgba(199, 210, 254, 0.6);
-        box-shadow: 0 12px 30px rgba(49, 46, 129, 0.6);
+        transform: translateY(-1px) scale(1.03);
+        border-color: rgba(129, 140, 248, 0.7);
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.98) 0%, rgba(49, 46, 129, 0.98) 100%);
+        box-shadow: 0 6px 24px rgba(99, 102, 241, 0.4);
+        color: #ffffff;
       }
       .self-help-panel {
         position: fixed;

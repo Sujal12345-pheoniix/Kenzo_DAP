@@ -97,7 +97,7 @@ export class TaskListWidget {
     this.shadowHost.style.cssText = 'position: absolute; top: 0; left: 0; width: 0; height: 0; z-index: 2147483600;';
     this.shadowRoot = this.shadowHost.attachShadow({ mode: 'open' });
 
-    const position = this.config?.position || 'bottom-right';
+    const position = this.config?.position || 'bottom-left';
     const brandColor = this.config?.brandColor || '#6366f1';
     const isRight = position === 'bottom-right';
 
