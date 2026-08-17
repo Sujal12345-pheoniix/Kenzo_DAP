@@ -40,6 +40,7 @@ export async function bootstrapDb(): Promise<void> {
       );
     `);
     await client.query(`ALTER TABLE projects ADD COLUMN IF NOT EXISTS client_email VARCHAR(255);`);
+    await client.query(`ALTER TABLE projects ADD COLUMN IF NOT EXISTS guidance_seeded BOOLEAN DEFAULT FALSE;`);
 
     // 2. Flows
     await client.query(`
@@ -630,6 +631,12 @@ export async function bootstrapDb(): Promise<void> {
 }
 
 async function seedGuidanceSuiteForERP(client: any, projectId: string) {
+  // Check if project has already been seeded. If so, respect all admin deletions permanently!
+  const proj = await client.query('SELECT guidance_seeded FROM projects WHERE id = $1', [projectId]);
+  if (proj.rows.length > 0 && proj.rows[0].guidance_seeded) {
+    return;
+  }
+
   // 1. Smart Tips
   const tipCount = await client.query('SELECT COUNT(*) FROM smart_tips WHERE project_id = $1', [projectId]);
   if (parseInt(tipCount.rows[0].count) === 0) {
@@ -736,9 +743,18 @@ async function seedGuidanceSuiteForERP(client: any, projectId: string) {
              ($1, 1, 'text', 'What additional features would improve your productivity?', false)
     `, [surveyId]);
   }
+
+  // Mark project as seeded so future admin deletions are 100% permanent
+  await client.query('UPDATE projects SET guidance_seeded = TRUE WHERE id = $1', [projectId]);
 }
 
 async function seedGuidanceSuiteForTruthBomb(client: any, projectId: string) {
+  // Check if project has already been seeded. If so, respect all admin deletions permanently!
+  const proj = await client.query('SELECT guidance_seeded FROM projects WHERE id = $1', [projectId]);
+  if (proj.rows.length > 0 && proj.rows[0].guidance_seeded) {
+    return;
+  }
+
   // 1. Smart Tips
   const tipCount = await client.query('SELECT COUNT(*) FROM smart_tips WHERE project_id = $1', [projectId]);
   if (parseInt(tipCount.rows[0].count) === 0) {
@@ -793,4 +809,7 @@ async function seedGuidanceSuiteForTruthBomb(client: any, projectId: string) {
              ($1, 'Understanding Truth Scores & GEO Signals', 'Truth scores range from 0 to 100 based on source authority, consensus, and chronological integrity.', 'AI Engine', '["scores", "signals"]', 'published')
     `, [projectId]);
   }
+
+  // Mark project as seeded so future admin deletions are 100% permanent
+  await client.query('UPDATE projects SET guidance_seeded = TRUE WHERE id = $1', [projectId]);
 }
