@@ -330,6 +330,7 @@ export class LifecycleManager implements ILifecycleManager {
           const matches = !tl.urlRules || tl.urlRules.length === 0 || this.conditionEvaluator.evaluateUrlRules(tl.urlRules);
           if (matches && tl.items && tl.items.length > 0) {
             this.taskListWidget.init({
+              id: tl.id,
               title: tl.title || tl.name,
               position: 'bottom-left',
               tasks: tl.items.map((it: any) => ({
@@ -339,7 +340,24 @@ export class LifecycleManager implements ILifecycleManager {
                 flowId: it.linkedFlowId,
                 targetUrl: it.urlPattern,
                 completed: false,
-              }))
+              })),
+              onCompleted: (cfg) => {
+                this.logger.info(`Checklist completed: ${cfg.title}`);
+                this.analytics.track({
+                  type: 'task_list_completed',
+                  flowId: cfg.id || 'checklist',
+                  sessionId: '',
+                  timestamp: new Date().toISOString(),
+                  url: typeof window !== 'undefined' ? window.location.href : '',
+                  userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+                  properties: {
+                    taskListId: cfg.id || '',
+                    title: cfg.title || '',
+                    completedTasks: cfg.tasks.length,
+                    totalTasks: cfg.tasks.length,
+                  }
+                });
+              }
             });
             break;
           }

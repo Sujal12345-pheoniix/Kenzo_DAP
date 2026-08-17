@@ -19,11 +19,13 @@ export interface TaskListItem {
 }
 
 export interface TaskListConfig {
+  id?: string;
   title?: string;
   position?: 'bottom-right' | 'bottom-left';
   brandColor?: string;
   tasks: TaskListItem[];
   rule?: SegmentationRule;
+  onCompleted?: (config: TaskListConfig) => void;
 }
 
 export class TaskListWidget {
@@ -32,6 +34,7 @@ export class TaskListWidget {
   private isOpen = false;
   private tasks: TaskListItem[] = [];
   private config: TaskListConfig | null = null;
+  private hasTrackedCompletion = false;
 
   constructor(
     private readonly conditionEvaluator: ConditionEvaluator,
@@ -55,16 +58,31 @@ export class TaskListWidget {
       return true;
     });
 
-    // Merge saved progress
-    if (savedProgress) {
-      this.tasks.forEach((t) => {
-        if (savedProgress[t.id] !== undefined) {
-          t.completed = savedProgress[t.id];
-        }
-      });
+    // Load persisted local progress
+    const listKey = `kenzo_checklist_${config.id || config.title || 'default'}`;
+    let locallyCompleted: string[] = [];
+    if (typeof localStorage !== 'undefined') {
+      try {
+        locallyCompleted = JSON.parse(localStorage.getItem(listKey) || '[]');
+      } catch (_) {}
     }
 
+    this.tasks.forEach((t) => {
+      if (savedProgress && savedProgress[t.id] !== undefined) {
+        t.completed = savedProgress[t.id];
+      } else if (locallyCompleted.includes(t.id)) {
+        t.completed = true;
+      }
+    });
+
     this.render();
+  }
+
+  private persistProgress(): void {
+    if (!this.config || typeof localStorage === 'undefined') return;
+    const listKey = `kenzo_checklist_${this.config.id || this.config.title || 'default'}`;
+    const completedIds = this.tasks.filter(t => t.completed).map(t => t.id);
+    localStorage.setItem(listKey, JSON.stringify(completedIds));
   }
 
   markTaskCompleted(flowIdOrTaskId: string): void {
@@ -79,10 +97,21 @@ export class TaskListWidget {
     });
 
     if (updated) {
+      this.persistProgress();
       this.updateBadgeAndProgress();
       if (this.onSyncStateToServer) {
         this.onSyncStateToServer(this.tasks);
       }
+      this.checkAllCompleted();
+    }
+  }
+
+  private checkAllCompleted(): void {
+    const completedCount = this.tasks.filter(t => t.completed).length;
+    const totalCount = this.tasks.length;
+    if (totalCount > 0 && completedCount === totalCount && !this.hasTrackedCompletion) {
+      this.hasTrackedCompletion = true;
+      this.config?.onCompleted?.(this.config);
     }
   }
 
@@ -113,7 +142,7 @@ export class TaskListWidget {
         border-radius: 50%;
         background: linear-gradient(135deg, ${brandColor}, #4f46e5);
         color: #ffffff;
-        border: none;
+        border: 2px solid rgba(255, 255, 255, 0.2);
         box-shadow: 0 6px 24px rgba(99, 102, 241, 0.45);
         cursor: pointer;
         display: flex;
@@ -141,8 +170,8 @@ export class TaskListWidget {
         align-items: center;
         justify-content: center;
         padding: 0 4px;
-        border: 2px solid #0f0f17;
-        box-sizing: border-box;
+        border: 2px solid #141421;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
       }
       .task-badge.hidden {
         display: none;
@@ -151,14 +180,15 @@ export class TaskListWidget {
         position: fixed;
         bottom: 92px;
         ${isRight ? 'right: 24px;' : 'left: 24px;'}
+        pointer-events: auto;
         width: 360px;
         max-width: calc(100vw - 32px);
         max-height: 520px;
-        background: #141421;
-        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: linear-gradient(145deg, rgba(15, 23, 42, 0.98), rgba(24, 24, 37, 0.98));
+        border: 1px solid rgba(99, 102, 241, 0.35);
         border-radius: 20px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-        color: #cdd6f4;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7), 0 0 25px rgba(99, 102, 241, 0.2);
+        color: #ffffff;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         display: flex;
         flex-direction: column;
@@ -167,7 +197,8 @@ export class TaskListWidget {
         transform: translateY(20px) scale(0.96);
         opacity: 0;
         visibility: hidden;
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        backdrop-filter: blur(16px);
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
       }
       .task-panel.open {
         transform: translateY(0) scale(1);
@@ -181,8 +212,9 @@ export class TaskListWidget {
       }
       .task-header-title {
         font-size: 17px;
-        font-weight: 700;
-        color: #f5e0dc;
+        font-weight: 800;
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
         margin-bottom: 8px;
         display: flex;
         align-items: center;
@@ -190,21 +222,40 @@ export class TaskListWidget {
       }
       .task-progress-label {
         font-size: 12px;
-        color: #a6adc8;
-        font-weight: 500;
+        color: #cbd5e1 !important;
+        -webkit-text-fill-color: #cbd5e1 !important;
+        font-weight: 600;
         margin-bottom: 8px;
       }
       .task-progress-bar-track {
         height: 6px;
-        background: rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.12);
         border-radius: 3px;
         overflow: hidden;
       }
       .task-progress-bar-fill {
         height: 100%;
-        background: linear-gradient(90deg, ${brandColor}, #10b981);
+        background: linear-gradient(90deg, #6366f1, #10b981);
         border-radius: 3px;
-        transition: width 0.3s ease;
+        transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .task-completion-banner {
+        margin-top: 10px;
+        padding: 8px 12px;
+        background: rgba(16, 185, 129, 0.15);
+        border: 1px solid rgba(16, 185, 129, 0.35);
+        border-radius: 10px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #34d399;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        animation: task-banner-pop 0.3s ease-out;
+      }
+      @keyframes task-banner-pop {
+        from { opacity: 0; transform: translateY(-4px); }
+        to { opacity: 1; transform: translateY(0); }
       }
       .task-list-body {
         padding: 12px;
@@ -218,26 +269,36 @@ export class TaskListWidget {
         padding: 12px 14px;
         border-radius: 12px;
         margin-bottom: 6px;
-        background: rgba(255, 255, 255, 0.02);
-        transition: background 0.2s ease;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        user-select: none;
       }
       .task-item:hover {
-        background: rgba(255, 255, 255, 0.06);
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(99, 102, 241, 0.3);
       }
       .task-checkbox {
-        width: 20px;
-        height: 20px;
+        width: 22px;
+        height: 22px;
         border-radius: 6px;
-        border: 2px solid rgba(255, 255, 255, 0.2);
+        border: 2px solid rgba(255, 255, 255, 0.3);
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-top: 2px;
+        margin-top: 1px;
         flex-shrink: 0;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .task-item:hover .task-checkbox {
+        border-color: #6366f1;
+        transform: scale(1.08);
       }
       .task-item.completed .task-checkbox {
         background: #10b981;
         border-color: #10b981;
+        box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
       }
       .task-item-content {
         flex: 1;
@@ -245,32 +306,37 @@ export class TaskListWidget {
       .task-item-title {
         font-size: 14px;
         font-weight: 600;
-        color: #e8e8f0;
-        margin-bottom: 2px;
+        color: #f1f5f9 !important;
+        -webkit-text-fill-color: #f1f5f9 !important;
+        margin-bottom: 3px;
+        transition: all 0.2s ease;
       }
       .task-item.completed .task-item-title {
         text-decoration: line-through;
-        color: #6c7086;
+        color: #94a3b8 !important;
+        -webkit-text-fill-color: #94a3b8 !important;
       }
       .task-item-desc {
         font-size: 12px;
-        color: #9399b2;
+        color: #94a3b8 !important;
+        -webkit-text-fill-color: #94a3b8 !important;
         line-height: 1.4;
       }
       .task-start-btn {
-        padding: 6px 12px;
-        border-radius: 6px;
-        background: rgba(99, 102, 241, 0.15);
-        color: #818cf8;
-        border: 1px solid rgba(99, 102, 241, 0.3);
+        padding: 5px 12px;
+        border-radius: 8px;
+        background: rgba(99, 102, 241, 0.2);
+        color: #a5b4fc;
+        border: 1px solid rgba(99, 102, 241, 0.4);
         font-size: 12px;
-        font-weight: 600;
+        font-weight: 700;
         cursor: pointer;
         transition: all 0.2s ease;
       }
       .task-start-btn:hover {
-        background: ${brandColor};
+        background: #4f46e5;
         color: #ffffff;
+        border-color: #6366f1;
       }
     `;
 
@@ -313,6 +379,7 @@ export class TaskListWidget {
     const completedCount = this.tasks.filter((t) => t.completed).length;
     const totalCount = this.tasks.length;
     const percent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+    const isAllComplete = totalCount > 0 && completedCount === totalCount;
 
     panel.innerHTML = `
       <div class="task-header">
@@ -323,13 +390,19 @@ export class TaskListWidget {
         <div class="task-progress-bar-track">
           <div class="task-progress-bar-fill" style="width: ${percent}%"></div>
         </div>
+        ${isAllComplete ? `
+          <div class="task-completion-banner">
+            <span>🎉</span>
+            <span>All tasks completed! Awesome job!</span>
+          </div>
+        ` : ''}
       </div>
       <div class="task-list-body">
         ${this.tasks
           .map(
             (task) => `
           <div class="task-item ${task.completed ? 'completed' : ''}" data-task-id="${task.id}">
-            <div class="task-checkbox">
+            <div class="task-checkbox" data-task-id="${task.id}">
               ${
                 task.completed
                   ? `<svg width="12" height="12" fill="none" stroke="#fff" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>`
@@ -352,8 +425,32 @@ export class TaskListWidget {
       </div>
     `;
 
+    // Click handler for task item & checkbox (Toggle state)
+    panel.querySelectorAll('.task-item').forEach((itemEl) => {
+      itemEl.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement;
+        // Don't toggle if user clicked the "Start" tour button
+        if (target.classList.contains('task-start-btn') || target.closest('.task-start-btn')) {
+          return;
+        }
+
+        const taskId = itemEl.getAttribute('data-task-id');
+        const task = this.tasks.find(t => t.id === taskId);
+        if (task) {
+          task.completed = !task.completed;
+          this.persistProgress();
+          this.updateBadgeAndProgress();
+          if (this.onSyncStateToServer) {
+            this.onSyncStateToServer(this.tasks);
+          }
+          this.checkAllCompleted();
+        }
+      });
+    });
+
     panel.querySelectorAll('.task-start-btn').forEach((startBtn) => {
       startBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
         const flowId = (e.currentTarget as HTMLElement).getAttribute('data-flow-id');
         if (flowId) {
           panel.classList.remove('open');

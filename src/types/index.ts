@@ -178,6 +178,10 @@ export type AnalyticsEventType =
   | 'button_clicked'
   | 'error'
   | 'sdk_initialized'
+  | 'task_list_completed'
+  | 'survey_submitted'
+  | 'popup_interacted'
+  | 'beacon_clicked'
   | 'custom';
 
 /** Analytics event payload. */

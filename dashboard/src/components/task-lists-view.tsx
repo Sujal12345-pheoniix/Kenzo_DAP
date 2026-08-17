@@ -18,6 +18,7 @@ interface TaskList {
   name: string;
   title: string;
   items: TaskItem[];
+  completed_count?: number;
   url_rules?: Array<{ type: string; pattern: string }>;
   status?: string;
   createdAt?: string;
@@ -218,10 +219,14 @@ export default function TaskListsView({ projectId, headers }: GuidanceModuleProp
                 onClick={() => setExpandedId(prev => prev === list.id ? null : list.id)}
               >
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-semibold text-white text-sm">{list.title}</h3>
-                    <span className="text-xs text-zinc-600 bg-[#0d0f17] border border-[#2a2f4c] px-2 py-0.5 rounded-full">
+                    <span className="text-xs text-zinc-400 bg-[#0d0f17] border border-[#2a2f4c] px-2 py-0.5 rounded-full font-medium">
                       {list.items?.length ?? 0} tasks
+                    </span>
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center gap-1">
+                      <CheckCircle size={11} />
+                      {list.completed_count ?? 0} users completed
                     </span>
                   </div>
                   <p className="text-xs text-zinc-500 mt-0.5">{list.name}</p>

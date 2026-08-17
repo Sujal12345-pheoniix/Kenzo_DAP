@@ -2374,7 +2374,11 @@ app.get('/api/v1/admin/task-lists', authenticateAdmin, async (req: Authenticated
     const lists = await pool.query('SELECT * FROM task_lists WHERE project_id=$1 ORDER BY created_at DESC', [req.projectId]);
     const listsWithItems = await Promise.all(lists.rows.map(async (list: any) => {
       const items = await pool.query('SELECT * FROM task_list_items WHERE task_list_id=$1 ORDER BY order_index ASC', [list.id]);
-      return { ...list, items: items.rows };
+      const comp = await pool.query(
+        "SELECT COUNT(*) FROM analytics_events WHERE project_id=$1 AND type='task_list_completed' AND (flow_id=$2 OR properties->>'taskListId'=$2)",
+        [req.projectId, list.id]
+      );
+      return { ...list, items: items.rows, completed_count: parseInt(comp.rows[0]?.count || '0', 10) };
     }));
     res.json(listsWithItems);
   } catch (err: any) {
