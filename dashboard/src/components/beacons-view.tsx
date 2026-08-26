@@ -51,12 +51,9 @@ const emptyForm = (): Partial<Beacon> => ({
   status: 'published',
 });
 
-function PulsingDot({ color, size, pulse }: { color: string; size: string; pulse: boolean }) {
+function PulsingDot({ color, size }: { color: string; size: string; pulse?: boolean }) {
   return (
     <div className="relative flex items-center justify-center" style={{ width: 24, height: 24 }}>
-      {pulse && (
-        <div className="absolute inset-0 rounded-full animate-ping opacity-30" style={{ backgroundColor: color }} />
-      )}
       <div className={`rounded-full ${sizeMap[size as keyof typeof sizeMap] ?? 'w-4 h-4'}`} style={{ backgroundColor: color }} />
     </div>
   );
@@ -168,27 +165,23 @@ export default function BeaconsView({ projectId, headers }: GuidanceModuleProps)
   return (
     <div className="relative">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
-        <div className="flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-2xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-center text-sky-400 shadow-lg shadow-sky-500/10">
-            <Radio size={20} className="text-sky-400" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-bold text-white tracking-tight">Beacons</h2>
+            <span className="text-xs bg-slate-800 text-slate-300 font-semibold px-2.5 py-0.5 rounded-md border border-slate-700">
+              {beacons.length} configured
+            </span>
           </div>
-          <div>
-            <h2 className="text-xl font-bold font-syne text-white tracking-tight">Interactive Hotspot Beacons</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Pulsing visual markers anchored to page elements by route</p>
-          </div>
+          <p className="text-xs text-slate-400 mt-1">Hotspot indicators and tooltips</p>
         </div>
         
-        <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#0b1324] border border-slate-800 text-xs text-slate-400 font-medium">
-            <span>Total Beacons:</span>
-            <span className="font-bold text-sky-400">{beacons.length}</span>
-          </div>
+        <div className="flex items-center gap-2.5">
           <button 
             onClick={openCreate} 
-            className="kenzo-glow-btn text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+            className="kenzo-btn-primary text-xs"
           >
-            <Plus size={15} />
+            <Plus size={14} />
             <span>New Beacon</span>
           </button>
         </div>
@@ -209,10 +202,10 @@ export default function BeaconsView({ projectId, headers }: GuidanceModuleProps)
           <button
             key={r.id}
             onClick={() => setSelectedRouteFilter(r.id)}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
               selectedRouteFilter === r.id 
-                ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40 shadow-sm' 
-                : 'bg-[#0b1324] border border-slate-800/80 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                ? 'bg-sky-600 text-white font-semibold' 
+                : 'bg-[#080e1a] border border-slate-800 text-slate-400 hover:text-slate-200'
             }`}
           >
             {r.label}
@@ -221,11 +214,11 @@ export default function BeaconsView({ projectId, headers }: GuidanceModuleProps)
       </div>
 
       {/* List */}
-      <div className="kenzo-glass-card rounded-2xl overflow-hidden shadow-2xl flex-1 flex flex-col">
+      <div className="bg-[#0c1322] border border-slate-800 rounded-xl overflow-hidden flex-1 flex flex-col">
         {loading ? (
           <div className="p-5 space-y-3">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="flex items-center gap-4 p-4 bg-[#070d18] rounded-xl animate-pulse">
+              <div key={i} className="flex items-center gap-4 p-4 bg-[#080e1a] rounded-xl animate-pulse">
                 <div className="w-8 h-8 rounded-full bg-slate-800" />
                 <div className="flex-1 space-y-2">
                   <div className="h-4 bg-slate-800 rounded w-1/3" />
@@ -236,19 +229,20 @@ export default function BeaconsView({ projectId, headers }: GuidanceModuleProps)
           </div>
         ) : filteredBeacons.length === 0 ? (
           <div className="p-16 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-center text-sky-400 mx-auto mb-4">
-              <Radio size={32} className="animate-pulse" />
+            <div className="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 mx-auto mb-3">
+              <Radio size={24} />
             </div>
-            <h3 className="text-base font-bold font-syne text-white">No Beacons Configured</h3>
-            <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1 mb-5">
+            <h3 className="text-sm font-semibold text-white">No Beacons Configured</h3>
+            <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1 mb-4">
               Add interactive pulsing beacon markers to highlight features on this route.
             </p>
-            <button onClick={openCreate} className="kenzo-glow-btn px-5 py-2.5 text-white text-xs font-bold rounded-xl transition-all cursor-pointer">
-              Create First Beacon
+            <button onClick={openCreate} className="kenzo-btn-primary text-xs mx-auto">
+              <Plus size={13} />
+              <span>Create First Beacon</span>
             </button>
           </div>
         ) : (
-          <div className="divide-y divide-slate-800/60">
+          <div className="divide-y divide-slate-800/80">
             {filteredBeacons.map(beacon => {
               const routePat = beacon.url_rules && beacon.url_rules[0]?.pattern ? beacon.url_rules[0].pattern : '*';
               const selVal = typeof beacon.selector === 'string' ? beacon.selector : (beacon.selector?.value || 'body');
@@ -257,7 +251,7 @@ export default function BeaconsView({ projectId, headers }: GuidanceModuleProps)
                   key={beacon.id}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="flex items-center gap-4 px-6 py-4 hover:bg-slate-800/30 transition-colors group"
+                  className="flex items-center gap-4 px-5 py-3.5 hover:bg-[#0f192c] transition-colors group"
                 >
                   {/* Pulsing dot */}
                   <PulsingDot color={beacon.color} size={beacon.size} pulse={beacon.pulse_animation} />
@@ -265,8 +259,8 @@ export default function BeaconsView({ projectId, headers }: GuidanceModuleProps)
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-bold text-white text-sm font-syne">{beacon.label}</span>
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-sky-500/10 border border-sky-500/20 text-[10px] font-mono text-sky-300">
+                      <span className="font-semibold text-white text-xs group-hover:text-sky-300 transition-colors">{beacon.label}</span>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded bg-[#080e1a] border border-slate-800 text-[10px] font-mono text-sky-300">
                         {routePat}
                       </span>
                       <span className="text-[11px] font-mono text-slate-400 truncate max-w-xs">
@@ -274,23 +268,23 @@ export default function BeaconsView({ projectId, headers }: GuidanceModuleProps)
                       </span>
                     </div>
                     {beacon.description && (
-                      <p className="text-xs text-slate-400 mt-1 line-clamp-1">{beacon.description}</p>
+                      <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{beacon.description}</p>
                     )}
                   </div>
 
                   {/* Action pill */}
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#070d18] border border-slate-800 text-[11px] text-slate-300 capitalize font-medium">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-[#080e1a] border border-slate-800 text-[11px] text-slate-300 capitalize">
                     <ActionIcon action={beacon.on_click_action} />
-                    {beacon.on_click_action.replace(/_/g, ' ')}
+                    <span>{beacon.on_click_action.replace(/_/g, ' ')}</span>
                   </span>
 
                   {/* Controls */}
                   <div className="flex items-center gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => openEdit(beacon)} className="p-2 rounded-xl hover:bg-sky-500/20 text-slate-400 hover:text-sky-300 transition-colors cursor-pointer">
-                      <Edit size={14} />
+                    <button onClick={() => openEdit(beacon)} className="p-1.5 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer" title="Edit Beacon">
+                      <Edit size={13} />
                     </button>
-                    <button onClick={() => setDeleteTarget(beacon)} className="p-2 rounded-xl hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors cursor-pointer">
-                      <Trash2 size={14} />
+                    <button onClick={() => setDeleteTarget(beacon)} className="p-1.5 rounded hover:bg-red-500/10 text-slate-400 hover:text-red-400 transition-colors cursor-pointer" title="Delete Beacon">
+                      <Trash2 size={13} />
                     </button>
                   </div>
                 </motion.div>
@@ -308,9 +302,9 @@ export default function BeaconsView({ projectId, headers }: GuidanceModuleProps)
             <motion.div
               initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 280 }}
-              className="fixed right-0 top-0 h-full w-full max-w-lg bg-[#070d18] border-l border-slate-800 z-50 flex flex-col shadow-2xl"
+              className="fixed right-0 top-0 h-full w-full max-w-lg bg-[#070d18] border-l border-slate-800 z-50 flex flex-col"
             >
-              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-[#0b1324]">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-[#0C1322]">
                 <div>
                   <h3 className="text-base font-bold font-syne text-white">{editing ? 'Edit Beacon' : 'New Hotspot Beacon'}</h3>
                   <p className="text-xs text-slate-400 mt-0.5">Configure beacon target element and pulsing style</p>
@@ -322,7 +316,7 @@ export default function BeaconsView({ projectId, headers }: GuidanceModuleProps)
                 {/* Name */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1.5">Internal Name <span className="text-sky-400">*</span></label>
-                  <input type="text" value={form.name ?? ''} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Dashboard Reports Beacon" className="w-full bg-[#0b1324] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors" />
+                  <input type="text" value={form.name ?? ''} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Dashboard Reports Beacon" className="w-full bg-[#0C1322] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors" />
                 </div>
 
                 {/* Target Route / Page URL */}
@@ -336,12 +330,12 @@ export default function BeaconsView({ projectId, headers }: GuidanceModuleProps)
                           setTargetRoutePattern(e.target.value);
                         }
                       }}
-                      className="w-full bg-[#0b1324] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none transition-colors"
+                      className="w-full bg-[#0C1322] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none transition-colors"
                     >
                       {COMMON_ROUTES.map(r => (
-                        <option key={r.pattern} value={r.pattern} className="bg-[#0b1324] text-white">{r.label}</option>
+                        <option key={r.pattern} value={r.pattern} className="bg-[#0C1322] text-white">{r.label}</option>
                       ))}
-                      <option value="custom" className="bg-[#0b1324] text-white">Custom URL Pattern...</option>
+                      <option value="custom" className="bg-[#0C1322] text-white">Custom URL Pattern...</option>
                     </select>
                     <input
                       type="text"
@@ -361,7 +355,7 @@ export default function BeaconsView({ projectId, headers }: GuidanceModuleProps)
                     value={targetCssSelector}
                     onChange={e => setTargetCssSelector(e.target.value)}
                     placeholder="e.g. button.btn-primary, #add-deal, .grid"
-                    className="w-full bg-[#0b1324] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-200 placeholder-slate-500 outline-none transition-colors"
+                    className="w-full bg-[#0C1322] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-200 placeholder-slate-500 outline-none transition-colors"
                   />
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     {['button', '.btn-primary', 'table', '.grid', 'body'].map(quickSel => (
@@ -369,7 +363,7 @@ export default function BeaconsView({ projectId, headers }: GuidanceModuleProps)
                         key={quickSel}
                         type="button"
                         onClick={() => setTargetCssSelector(quickSel)}
-                        className="px-2.5 py-1 rounded-lg bg-[#0b1324] border border-slate-700/60 text-[10px] font-mono text-slate-400 hover:text-sky-300 hover:border-sky-500/50 cursor-pointer transition-colors"
+                        className="px-2.5 py-1 rounded-lg bg-[#0C1322] border border-slate-700/60 text-[10px] font-mono text-slate-400 hover:text-sky-300 hover:border-sky-500/50 cursor-pointer transition-colors"
                       >
                         {quickSel}
                       </button>
@@ -379,12 +373,12 @@ export default function BeaconsView({ projectId, headers }: GuidanceModuleProps)
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1.5">Display Label <span className="text-sky-400">*</span></label>
-                  <input type="text" value={form.label ?? ''} onChange={e => setForm(f => ({ ...f, label: e.target.value }))} placeholder="e.g. New Feature" className="w-full bg-[#0b1324] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors" />
+                  <input type="text" value={form.label ?? ''} onChange={e => setForm(f => ({ ...f, label: e.target.value }))} placeholder="e.g. New Feature" className="w-full bg-[#0C1322] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors" />
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1.5">Description</label>
-                  <input type="text" value={form.description ?? ''} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Short description..." className="w-full bg-[#0b1324] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors" />
+                  <input type="text" value={form.description ?? ''} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Short description..." className="w-full bg-[#0C1322] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors" />
                 </div>
 
                 {/* Color Picker */}
@@ -405,7 +399,7 @@ export default function BeaconsView({ projectId, headers }: GuidanceModuleProps)
                   <label className="block text-xs font-semibold text-slate-300 mb-1.5">Size</label>
                   <div className="grid grid-cols-3 gap-2">
                     {SIZES.map(s => (
-                      <button key={s} onClick={() => setForm(f => ({ ...f, size: s }))} className={`py-2 rounded-xl border text-xs font-medium capitalize transition-all cursor-pointer ${form.size === s ? 'border-sky-400 bg-sky-500/15 text-sky-300 font-semibold' : 'border-slate-800 bg-[#0b1324] text-slate-400 hover:border-slate-700'}`}>{s}</button>
+                      <button key={s} onClick={() => setForm(f => ({ ...f, size: s }))} className={`py-2 rounded-xl border text-xs font-medium capitalize transition-all cursor-pointer ${form.size === s ? 'border-sky-400 bg-sky-500/15 text-sky-300 font-semibold' : 'border-slate-800 bg-[#0C1322] text-slate-400 hover:border-slate-700'}`}>{s}</button>
                     ))}
                   </div>
                 </div>
@@ -413,7 +407,7 @@ export default function BeaconsView({ projectId, headers }: GuidanceModuleProps)
                 {/* Pulse */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1.5">Pulse Animation</label>
-                  <button onClick={() => setForm(f => ({ ...f, pulse_animation: !f.pulse_animation }))} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-medium transition-all w-full cursor-pointer ${form.pulse_animation ? 'border-sky-400 bg-sky-500/15 text-sky-300 font-semibold' : 'border-slate-800 bg-[#0b1324] text-slate-400'}`}>
+                  <button onClick={() => setForm(f => ({ ...f, pulse_animation: !f.pulse_animation }))} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-medium transition-all w-full cursor-pointer ${form.pulse_animation ? 'border-sky-400 bg-sky-500/15 text-sky-300 font-semibold' : 'border-slate-800 bg-[#0C1322] text-slate-400'}`}>
                     {form.pulse_animation ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
                     {form.pulse_animation ? 'Pulse Enabled' : 'Pulse Disabled'}
                   </button>
@@ -424,7 +418,7 @@ export default function BeaconsView({ projectId, headers }: GuidanceModuleProps)
                   <label className="block text-xs font-semibold text-slate-300 mb-1.5">On Click Action</label>
                   <div className="space-y-2">
                     {CLICK_ACTIONS.map(a => (
-                      <button key={a} onClick={() => setForm(f => ({ ...f, on_click_action: a }))} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl border text-xs transition-all cursor-pointer ${form.on_click_action === a ? 'border-sky-400 bg-sky-500/15 text-sky-300 font-semibold' : 'border-slate-800 bg-[#0b1324] text-slate-400 hover:border-slate-700'}`}>
+                      <button key={a} onClick={() => setForm(f => ({ ...f, on_click_action: a }))} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl border text-xs transition-all cursor-pointer ${form.on_click_action === a ? 'border-sky-400 bg-sky-500/15 text-sky-300 font-semibold' : 'border-slate-800 bg-[#0C1322] text-slate-400 hover:border-slate-700'}`}>
                         <ActionIcon action={a} />
                         <span className="capitalize">{a.replace(/_/g, ' ')}</span>
                       </button>
@@ -433,7 +427,7 @@ export default function BeaconsView({ projectId, headers }: GuidanceModuleProps)
                 </div>
               </div>
 
-              <div className="px-6 py-4 border-t border-slate-800 bg-[#0b1324] flex gap-3">
+              <div className="px-6 py-4 border-t border-slate-800 bg-[#0C1322] flex gap-3">
                 <button onClick={closePanel} className="flex-1 py-2.5 rounded-xl border border-slate-700 text-xs font-semibold text-slate-300 hover:bg-slate-800 transition-colors cursor-pointer">Cancel</button>
                 <button onClick={handleSave} disabled={saving} className="flex-1 py-2.5 rounded-xl kenzo-glow-btn text-white text-xs font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer">
                   {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
@@ -449,9 +443,9 @@ export default function BeaconsView({ projectId, headers }: GuidanceModuleProps)
       <AnimatePresence>
         {deleteTarget && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-[#0b1324] border border-slate-800 rounded-3xl p-6 w-full max-w-sm shadow-2xl">
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-[#0C1322] border border-slate-800 rounded-lg p-6 w-full max-w-sm">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center"><AlertCircle size={20} className="text-red-400" /></div>
+                <div className="w-10 h-10 rounded-lg bg-red-500/10 border border-red-500/30 flex items-center justify-center"><AlertCircle size={20} className="text-red-400" /></div>
                 <div><h4 className="font-bold font-syne text-white">Delete Beacon</h4><p className="text-xs text-slate-400 mt-0.5">This action cannot be undone</p></div>
               </div>
               <p className="text-xs text-slate-300 mb-5 leading-relaxed">Are you sure you want to delete beacon <span className="font-semibold text-white">"{deleteTarget.label}"</span>?</p>
@@ -472,7 +466,7 @@ export default function BeaconsView({ projectId, headers }: GuidanceModuleProps)
         <AnimatePresence>
           {toasts.map(toast => (
             <motion.div key={toast.id} initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }}
-              className={`flex items-center gap-3 px-4 py-3 rounded-2xl border shadow-xl pointer-events-auto backdrop-blur-md ${toast.type === 'success' ? 'bg-[#0b1324]/95 border-emerald-500/40 text-emerald-300' : 'bg-[#0b1324]/95 border-red-500/40 text-red-300'}`}>
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg border pointer-events-auto backdrop-blur-md ${toast.type === 'success' ? 'bg-[#0C1322]/95 border-emerald-500/40 text-emerald-300' : 'bg-[#0C1322]/95 border-red-500/40 text-red-300'}`}>
               {toast.type === 'success' ? <CheckCircle size={16} className="text-emerald-400" /> : <AlertCircle size={16} className="text-red-400" />}
               <span className="text-xs font-medium">{toast.message}</span>
             </motion.div>

@@ -1,13 +1,10 @@
 import { useState, useEffect } from 'react';
 import { 
-  CheckCircle2, 
-  Layers, 
-  Activity, 
   ArrowUpRight, 
   ArrowDownRight, 
   Users,
-  BarChart3,
-  TrendingUp
+  TrendingUp,
+  Sparkles
 } from 'lucide-react';
 
 interface AnalyticsViewProps {
@@ -29,8 +26,9 @@ interface AnalyticsViewProps {
     }>;
   } | null;
   flowsCount: number;
-  activePublishedCount: number;
+  activePublishedCount?: number;
   getCompletionRate: () => string;
+  onLaunchStudio?: () => void;
 }
 
 const CHART_DATA = {
@@ -40,7 +38,7 @@ const CHART_DATA = {
   '30D': [780, 850, 810, 950, 1080, 1010, 1160, 1290, 1220, 1380, 1520, 1460]
 };
 
-export default function AnalyticsView({ analytics, flowsCount, activePublishedCount, getCompletionRate }: AnalyticsViewProps) {
+export default function AnalyticsView({ analytics, flowsCount, getCompletionRate, onLaunchStudio }: AnalyticsViewProps) {
   const [timeFilter, setTimeFilter] = useState<'12H' | '24H' | '7D' | '30D'>('7D');
   const [hoveredPoint, setHoveredPoint] = useState<{ val: number; idx: number } | null>(null);
 
@@ -95,29 +93,26 @@ export default function AnalyticsView({ analytics, flowsCount, activePublishedCo
   }, []);
 
   return (
-    <div className="space-y-8 select-none text-left w-full">
+    <div className="space-y-6 select-none text-left w-full">
       
       {/* Top Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
-        <div className="flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-2xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-center text-sky-400 shadow-lg shadow-sky-500/10">
-            <BarChart3 size={20} className="text-sky-400" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-bold text-white tracking-tight">Overview</h2>
           </div>
-          <div>
-            <h2 className="text-xl font-bold font-syne text-white tracking-tight">Executive Telemetry & Adoption Metrics</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Real-time user engagement, onboarding conversions & tour telemetry</p>
-          </div>
+          <p className="text-xs text-slate-400 mt-1">Engagement summary and tour performance</p>
         </div>
         
         {/* Time filters */}
-        <div className="flex items-center gap-1 bg-[#0b1324] border border-slate-800 p-1 rounded-xl shadow-inner">
+        <div className="flex items-center bg-[#080e1a] border border-slate-800 p-0.5 rounded-lg text-xs">
           {(['12H', '24H', '7D', '30D'] as const).map(filter => (
             <button
               key={filter}
               onClick={() => setTimeFilter(filter)}
-              className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+              className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
                 timeFilter === filter 
-                  ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40 shadow-sm' 
+                  ? 'bg-sky-600 text-white' 
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
@@ -127,80 +122,73 @@ export default function AnalyticsView({ analytics, flowsCount, activePublishedCo
         </div>
       </div>
 
-      {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {/* KPI 1: Engagement Events */}
-        <div className="kenzo-glass-card rounded-2xl p-6 relative overflow-hidden group">
-          <div className="flex items-start justify-between">
-            <div className="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
-              <Activity className="w-6 h-6" />
-            </div>
-            <div className="flex items-center gap-1 text-emerald-400 text-xs font-bold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
-              <ArrowUpRight size={13} />
-              <span>+14.2%</span>
-            </div>
+      {/* Interactive In-App Studio Banner */}
+      <div className="bg-[#0C1322] border border-slate-800 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 shrink-0">
+            <Sparkles size={18} />
           </div>
-          
-          <div className="mt-4">
-            <span className="text-[11px] font-bold text-slate-400 tracking-wider uppercase">Engagement Events</span>
-            <div className="text-3xl font-bold text-white mt-1 tracking-tight">
+          <div>
+            <h3 className="text-xs font-bold text-white">Live In-App Creator Studio & CRM Sandbox</h3>
+            <p className="text-[11px] text-slate-400 mt-0.5">Build walkthroughs, smart tips, popups, and hotspot beacons directly in context</p>
+          </div>
+        </div>
+        {onLaunchStudio && (
+          <button 
+            onClick={onLaunchStudio}
+            className="kenzo-btn-primary text-xs shrink-0 cursor-pointer"
+          >
+            <Sparkles size={12} />
+            <span>Open In-App Studio</span>
+          </button>
+        )}
+      </div>
+
+      {/* KPI Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* KPI 1: Engagement Events */}
+        <div className="bg-[#0C1322] border border-slate-800 rounded-lg p-5 relative overflow-hidden group shadow-sm">
+          <div>
+            <span className="text-[10px] font-semibold text-slate-400 tracking-wider uppercase">Engagement Events</span>
+            <div className="text-2xl font-bold text-white mt-1 tracking-tight">
               {analytics?.totalEvents?.toLocaleString() ?? '14,820'}
             </div>
-            <p className="text-[11px] text-slate-400 mt-1">Total user interactions captured</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">Total user interactions captured</p>
           </div>
         </div>
 
         {/* KPI 2: Completion Rate */}
-        <div className="kenzo-glass-card rounded-2xl p-6 relative overflow-hidden group">
-          <div className="flex items-start justify-between">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-              <CheckCircle2 className="w-6 h-6" />
-            </div>
-            <div className="flex items-center gap-1 text-emerald-400 text-xs font-bold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
-              <ArrowUpRight size={13} />
-              <span>+8.6%</span>
-            </div>
-          </div>
-          
-          <div className="mt-4">
-            <span className="text-[11px] font-bold text-slate-400 tracking-wider uppercase">Avg Completion Rate</span>
-            <div className="text-3xl font-bold text-white mt-1 tracking-tight">
+        <div className="bg-[#0C1322] border border-slate-800 rounded-lg p-5 relative overflow-hidden group shadow-sm">
+          <div>
+            <span className="text-[10px] font-semibold text-slate-400 tracking-wider uppercase">Avg Completion Rate</span>
+            <div className="text-2xl font-bold text-white mt-1 tracking-tight">
               {getCompletionRate() !== '0%' ? getCompletionRate() : '84%'}
             </div>
-            <p className="text-[11px] text-slate-400 mt-1">Successful walkthrough completions</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">Successful walkthrough completions</p>
           </div>
         </div>
 
         {/* KPI 3: Live Flows */}
-        <div className="kenzo-glass-card rounded-2xl p-6 relative overflow-hidden group">
-          <div className="flex items-start justify-between">
-            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-              <Layers className="w-6 h-6" />
-            </div>
-            <div className="flex items-center gap-1 text-sky-400 text-xs font-bold bg-sky-500/10 border border-sky-500/20 px-2 py-0.5 rounded-full">
-              <span>{activePublishedCount} Live</span>
-            </div>
-          </div>
-          
-          <div className="mt-4">
-            <span className="text-[11px] font-bold text-slate-400 tracking-wider uppercase">Configured Guidance Flows</span>
-            <div className="text-3xl font-bold text-white mt-1 tracking-tight">
+        <div className="bg-[#0C1322] border border-slate-800 rounded-lg p-5 relative overflow-hidden group shadow-sm">
+          <div>
+            <span className="text-[10px] font-semibold text-slate-400 tracking-wider uppercase">Configured Guidance Flows</span>
+            <div className="text-2xl font-bold text-white mt-1 tracking-tight">
               {flowsCount}
             </div>
-            <p className="text-[11px] text-slate-400 mt-1">Active tours, tips & modals</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">Active tours, tips & modals</p>
           </div>
         </div>
       </div>
 
       {/* Main Chart Card */}
-      <div className="kenzo-glass-card rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-6 mb-6">
+      <div className="bg-[#0c1322] border border-slate-800 rounded-lg p-5 sm:p-6 shadow-sm relative overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4 mb-5">
           <div>
-            <h3 className="text-base font-bold font-syne text-white flex items-center gap-2">
-              <TrendingUp size={18} className="text-sky-400" />
-              User Interaction Velocity & Volume
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <TrendingUp size={16} className="text-sky-400" />
+              Interactions
             </h3>
-            <p className="text-xs text-slate-400 mt-0.5">Continuous telemetry time series across all active client pages</p>
+            <p className="text-xs text-slate-400 mt-0.5">Events over time</p>
           </div>
           
           <div className="flex items-center gap-4 text-xs font-semibold">
@@ -284,25 +272,22 @@ export default function AnalyticsView({ analytics, flowsCount, activePublishedCo
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Onboarding Funnel */}
-        <div className="kenzo-glass-card rounded-2xl p-6 lg:col-span-2 space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
+        <div className="bg-[#0c1322] border border-slate-800 rounded-xl p-5 lg:col-span-2 space-y-4 shadow-sm">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
             <div>
-              <h3 className="text-sm font-bold font-syne text-white uppercase tracking-wider">Walkthrough Onboarding Funnel</h3>
-              <p className="text-xs text-slate-400">Step-by-step conversion and drop-off velocity</p>
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider">Tour Performance</h3>
+              <p className="text-xs text-slate-400 mt-0.5">Step-by-step conversion and drop-off velocity</p>
             </div>
-            <span className="text-xs text-sky-400 font-bold px-2.5 py-1 rounded-lg bg-sky-500/10 border border-sky-500/20">
-              Live Conversion
-            </span>
           </div>
 
-          <div className="space-y-4 pt-2">
+          <div className="space-y-4 pt-1">
             {(!analytics || !analytics.tourMetrics || analytics.tourMetrics.length === 0) ? (
               <div className="py-12 text-center text-xs text-slate-500 flex flex-col items-center gap-2">
                 <Users size={24} className="text-slate-600 animate-pulse" />
                 <span>No tour metrics logged. Run sandbox walkthroughs to feed database.</span>
               </div>
             ) : (
-              <div className="divide-y divide-slate-800/60">
+              <div className="divide-y divide-slate-800/80">
                 {analytics.tourMetrics.map(metric => {
                   const completionPct = metric.starts > 0 
                     ? ((metric.completions / metric.starts) * 100)
@@ -313,10 +298,10 @@ export default function AnalyticsView({ analytics, flowsCount, activePublishedCo
                     : 0;
 
                   return (
-                    <div key={metric.flowId} className="py-4 first:pt-0 last:pb-0 flex flex-col gap-2">
+                    <div key={metric.flowId} className="py-3.5 first:pt-0 last:pb-0 flex flex-col gap-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-200">{metric.name}</span>
-                        <div className="flex items-center gap-3 text-[11px] text-slate-400 font-medium">
+                        <span className="text-xs font-semibold text-slate-200">{metric.name}</span>
+                        <div className="flex items-center gap-3 text-[11px] text-slate-400">
                           <span>Starts: <strong className="text-white">{metric.starts}</strong></span>
                           <span>•</span>
                           <span>Completions: <strong className="text-emerald-400">{metric.completions}</strong></span>
@@ -324,21 +309,21 @@ export default function AnalyticsView({ analytics, flowsCount, activePublishedCo
                       </div>
 
                       {/* Progress Bar */}
-                      <div className="w-full bg-[#05090f] h-2.5 rounded-full overflow-hidden flex border border-slate-800">
+                      <div className="w-full bg-[#080e1a] h-2 rounded-full overflow-hidden flex border border-slate-800">
                         <div 
                           style={{ width: `${completionPct}%` }}
-                          className="bg-gradient-to-r from-sky-500 to-blue-600 h-full rounded-full transition-all duration-500" 
+                          className="bg-sky-500 h-full rounded-full transition-all duration-500" 
                         />
                         <div 
                           style={{ width: `${dropoffPct}%` }}
-                          className="bg-slate-800/80 h-full transition-all duration-500" 
+                          className="bg-slate-800 h-full transition-all duration-500" 
                         />
                       </div>
 
-                      <div className="flex items-center justify-between text-[10px] font-bold tracking-wider">
+                      <div className="flex items-center justify-between text-[11px] font-semibold">
                         <span className="text-sky-400">CONVERSION: {completionPct.toFixed(0)}%</span>
-                        <div className="flex items-center gap-0.5 text-rose-400">
-                          {dropoffPct > 50 ? <ArrowUpRight size={11} /> : <ArrowDownRight size={11} />}
+                        <div className="flex items-center gap-0.5 text-rose-400 text-xs">
+                          {dropoffPct > 50 ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
                           <span>DROPOFF: {dropoffPct.toFixed(0)}%</span>
                         </div>
                       </div>
@@ -351,29 +336,29 @@ export default function AnalyticsView({ analytics, flowsCount, activePublishedCo
         </div>
 
         {/* Live event stream */}
-        <div className="kenzo-glass-card rounded-2xl p-6 space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
-            <h3 className="text-sm font-bold font-syne text-white uppercase tracking-wider">Live Event Stream</h3>
-            <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+        <div className="bg-[#0c1322] border border-slate-800 rounded-xl p-5 space-y-4 shadow-sm">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h3 className="text-xs font-bold text-white uppercase tracking-wider">Live Event Stream</h3>
+            <div className="flex items-center gap-1.5 text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
               <span>Live</span>
             </div>
           </div>
 
-          <div className="relative border-l border-slate-800 ml-2 space-y-5 py-2">
+          <div className="relative border-l border-slate-800 ml-2 space-y-4 py-1">
             {activities.map((act) => {
               const getIconColor = () => {
-                if (act.type === 'complete') return 'bg-emerald-400 ring-emerald-500/30';
-                if (act.type === 'start') return 'bg-sky-400 ring-sky-500/30';
-                return 'bg-amber-400 ring-amber-500/30';
+                if (act.type === 'complete') return 'bg-emerald-400 ring-emerald-500/20';
+                if (act.type === 'start') return 'bg-sky-400 ring-sky-500/20';
+                return 'bg-amber-400 ring-amber-500/20';
               };
 
               return (
-                <div key={act.id} className="relative pl-5 text-xs text-left group">
-                  <span className={`absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full ring-4 ${getIconColor()} transition-transform duration-300 group-hover:scale-125`} />
+                <div key={act.id} className="relative pl-4 text-xs text-left group">
+                  <span className={`absolute -left-[5px] top-1.5 w-2 h-2 rounded-full ring-2 ${getIconColor()}`} />
                   
-                  <div className="flex items-center justify-between text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-0.5">
-                    <span>{act.time}</span>
+                  <div className="text-slate-500 text-[10px] font-medium mb-0.5">
+                    {act.time}
                   </div>
                   <p className="text-slate-200 leading-relaxed font-sans text-xs">
                     {act.msg}

@@ -6,11 +6,8 @@ import {
   Trash2,
   Eye,
   Sparkles,
-  Calendar,
   Compass,
-  ArrowRight,
   Globe,
-  Tag,
   AlertCircle,
   Plus,
   X,
@@ -199,16 +196,16 @@ function StepEditor({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-start justify-center p-4 pt-8">
+    <div className="fixed inset-0 bg-black/70 z-50 flex items-start justify-center p-4 pt-8">
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         transition={{ type: 'spring', damping: 25, stiffness: 150 }}
-        className="w-full max-w-2xl bg-zinc-900 border border-zinc-800/80 rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+        className="w-full max-w-2xl bg-[#0C1322] border border-[#1E293B] rounded-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
       >
         {/* Header */}
-        <div className="h-14 bg-gradient-to-r from-violet-600 to-indigo-600 flex items-center justify-between px-6 flex-shrink-0">
+        <div className="h-14 bg-[#080E1A] border-b border-[#1E293B] flex items-center justify-between px-6 flex-shrink-0">
           <div className="flex items-center gap-2">
             <Layers size={16} className="text-white" />
             <div>
@@ -600,18 +597,18 @@ function CreateTourModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4 cursor-default">
+    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 cursor-default">
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 15 }}
-        className="w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl relative max-h-[92vh] flex flex-col"
+        className="w-full max-w-2xl bg-[#0C1322] border border-[#1E293B] rounded-lg overflow-hidden shadow-2xl relative max-h-[92vh] flex flex-col"
       >
         {/* Modal Header */}
-        <div className="h-14 bg-gradient-to-r from-violet-600 to-indigo-600 flex items-center justify-between px-6 shadow-md shadow-indigo-600/25 ring-1 ring-white/10 flex-shrink-0">
+        <div className="h-14 bg-[#080E1A] border-b border-[#1E293B] flex items-center justify-between px-6 flex-shrink-0">
           <div className="flex items-center gap-2">
-            <Sparkles size={18} className="text-white animate-pulse" />
-            <h3 className="text-sm font-bold font-outfit text-white uppercase tracking-wider">Create & Publish Walkthrough Tour</h3>
+            <Sparkles size={18} className="text-sky-400" />
+            <h3 className="text-sm font-bold font-outfit text-white uppercase tracking-wider">Create Walkthrough</h3>
           </div>
           <button
             onClick={onClose}
@@ -630,7 +627,7 @@ function CreateTourModal({
           )}
 
           {/* Section 1: Tour Info */}
-          <div className="space-y-4 bg-zinc-950/60 p-4 border border-zinc-800/80 rounded-xl">
+          <div className="space-y-4 bg-[#080E1A] p-4 border border-[#1E293B] rounded-lg">
             <h4 className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
               <Compass size={12} /> 1. Tour Target & General Info
             </h4>
@@ -643,7 +640,7 @@ function CreateTourModal({
                   value={name}
                   onChange={e => setName(e.target.value)}
                   placeholder="e.g. CRM Sales Pipeline Tour"
-                  className="w-full bg-zinc-900 border border-zinc-800 focus:border-indigo-500 rounded-xl px-3 py-2 text-xs text-white outline-none"
+                  className="kenzo-input w-full"
                   required
                 />
               </div>
@@ -655,7 +652,7 @@ function CreateTourModal({
                   value={urlPattern}
                   onChange={e => setUrlPattern(e.target.value)}
                   placeholder="e.g. /dashboard/crm"
-                  className="w-full bg-zinc-900 border border-zinc-800 focus:border-indigo-500 rounded-xl px-3 py-2 text-xs text-indigo-300 font-mono outline-none"
+                  className="kenzo-input w-full font-mono text-sky-400"
                   required
                 />
               </div>
@@ -693,7 +690,7 @@ function CreateTourModal({
                 onChange={e => setDescription(e.target.value)}
                 rows={2}
                 placeholder="Summary of what users learn in this tour..."
-                className="w-full bg-zinc-900 border border-zinc-800 focus:border-indigo-500 rounded-xl px-3 py-2 text-xs text-white outline-none resize-none"
+                className="kenzo-input w-full resize-none"
               />
             </div>
 
@@ -703,7 +700,7 @@ function CreateTourModal({
                 <select
                   value={status}
                   onChange={e => setStatus(e.target.value as any)}
-                  className="w-full bg-zinc-900 border border-zinc-800 focus:border-indigo-500 rounded-xl px-3 py-2 text-xs text-white outline-none cursor-pointer"
+                  className="kenzo-input w-full cursor-pointer"
                 >
                   <option value="published">🚀 Published (LIVE on website)</option>
                   <option value="draft">📝 Draft (Internal only)</option>
@@ -716,14 +713,14 @@ function CreateTourModal({
                   type="number"
                   value={priority}
                   onChange={e => setPriority(parseInt(e.target.value) || 1)}
-                  className="w-full bg-zinc-900 border border-zinc-800 focus:border-indigo-500 rounded-xl px-3 py-2 text-xs text-white outline-none"
+                  className="kenzo-input w-full"
                 />
               </div>
             </div>
           </div>
 
           {/* Section 2: Initial Step Builder */}
-          <div className="space-y-4 bg-zinc-950/60 p-4 border border-zinc-800/80 rounded-xl">
+          <div className="space-y-4 bg-[#080E1A] p-4 border border-[#1E293B] rounded-lg">
             <h4 className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
               <Layers size={12} /> 2. Configure First Step / Tooltip
             </h4>
@@ -747,7 +744,7 @@ function CreateTourModal({
                 onChange={e => setStepContent(e.target.value)}
                 rows={2}
                 placeholder="Instructions displayed inside the popup/tooltip..."
-                className="w-full bg-zinc-900 border border-zinc-800 focus:border-indigo-500 rounded-xl px-3 py-2 text-xs text-white outline-none resize-none"
+                className="kenzo-input w-full resize-none"
                 required
               />
             </div>
@@ -760,7 +757,7 @@ function CreateTourModal({
                   value={stepSelector}
                   onChange={e => setStepSelector(e.target.value)}
                   placeholder="body, aside, table, #id"
-                  className="w-full bg-zinc-900 border border-zinc-800 focus:border-indigo-500 rounded-xl px-3 py-2 text-xs text-indigo-300 font-mono outline-none"
+                  className="kenzo-input w-full font-mono text-sky-400"
                   required
                 />
               </div>
@@ -770,7 +767,7 @@ function CreateTourModal({
                 <select
                   value={displayMode}
                   onChange={e => setDisplayMode(e.target.value)}
-                  className="w-full bg-zinc-900 border border-zinc-800 focus:border-indigo-500 rounded-xl px-3 py-2 text-xs text-white outline-none cursor-pointer"
+                  className="kenzo-input w-full cursor-pointer"
                 >
                   <option value="modal">🪟 Center Modal (Popup)</option>
                   <option value="spotlight">🔦 Spotlight Cutout</option>
@@ -784,7 +781,7 @@ function CreateTourModal({
                 <select
                   value={placement}
                   onChange={e => setPlacement(e.target.value)}
-                  className="w-full bg-zinc-900 border border-zinc-800 focus:border-indigo-500 rounded-xl px-3 py-2 text-xs text-white outline-none cursor-pointer"
+                  className="kenzo-input w-full cursor-pointer"
                 >
                   {PLACEMENTS.map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
@@ -796,10 +793,10 @@ function CreateTourModal({
           <button
             type="submit"
             disabled={submitting}
-            className="w-full bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-650 hover:from-violet-500 hover:to-indigo-550 text-white text-xs font-bold py-3.5 rounded-xl cursor-pointer transition-all shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full kenzo-btn-primary justify-center py-3.5 text-xs rounded-lg"
           >
             <Sparkles size={14} />
-            <span>{submitting ? 'Publishing Walkthrough Live...' : '🚀 Publish Walkthrough Live'}</span>
+            <span>{submitting ? 'Publishing...' : 'Publish Walkthrough'}</span>
           </button>
         </form>
       </motion.div>
@@ -819,6 +816,9 @@ export default function ToursView({
   const [stepEditorFlow, setStepEditorFlow] = useState<Flow | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft'>('all');
+  const [routeFilter, setRouteFilter] = useState<string>('all');
 
   const activeProjectId = typeof window !== 'undefined' ? localStorage.getItem('kenzo_active_project_id') || '' : '';
 
@@ -845,228 +845,247 @@ export default function ToursView({
     }
   };
 
-  const aiSuggestions = [
-    { title: "Standard User Onboarding Flow", steps: 4, desc: "Guide new signups through the main analytics layout." },
-    { title: "Snippet Installation Wizard", steps: 3, desc: "Step-by-step guidance for setting up the JS tracker snippet." },
-    { title: "CRM Workspace Walkthrough", steps: 5, desc: "Demonstrate pipeline management, leads, and dashboards." }
-  ];
+  // Unique routes for filter dropdown
+  const uniqueRoutes = Array.from(new Set(flows.map(f => f.urlRules?.[0]?.pattern || '/'))).filter(Boolean);
+
+  const filteredFlows = flows.filter(flow => {
+    const matchesSearch = flow.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          (flow.description && flow.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                          flow.id.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || flow.status === statusFilter;
+    const flowRoute = flow.urlRules?.[0]?.pattern || '/';
+    const matchesRoute = routeFilter === 'all' || flowRoute.includes(routeFilter);
+    return matchesSearch && matchesStatus && matchesRoute;
+  });
 
   return (
-    <div className="space-y-8 select-none relative text-left w-full">
-
+    <div className="space-y-6 select-none relative text-left w-full text-slate-100">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
-        <div className="flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-2xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-center text-sky-400 shadow-lg shadow-sky-500/10">
-            <Layers size={20} className="text-sky-400" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-bold text-white tracking-tight">Walkthroughs</h2>
+            <span className="text-xs bg-slate-800 text-slate-300 font-semibold px-2.5 py-0.5 rounded-lg border border-slate-700">
+              {flows.length} configured
+            </span>
           </div>
-          <div>
-            <h2 className="text-xl font-bold font-syne text-white tracking-tight">Enterprise Walkthrough Tours</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Deploy, monitor, and configure active multi-step user onboarding flows</p>
-          </div>
+          <p className="text-xs text-slate-400 mt-1">Manage product walkthroughs and onboarding flows.</p>
         </div>
 
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-2.5 flex-wrap">
           <button
             onClick={handleAutoGenerateAI}
             disabled={isGeneratingAI}
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl transition-all duration-200 shadow-md shadow-emerald-600/20 active:scale-95 cursor-pointer disabled:opacity-50"
+            className="kenzo-btn-secondary text-xs disabled:opacity-50"
           >
-            <Zap size={14} className={isGeneratingAI ? 'animate-spin' : ''} />
-            <span>{isGeneratingAI ? 'Generating 5 AI Tours...' : '⚡ Auto-Generate 5 AI Tours'}</span>
-          </button>
-
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="kenzo-glow-btn text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all duration-200 shadow-md flex items-center gap-2 active:scale-95 cursor-pointer"
-          >
-            <Plus size={14} />
-            <span>Create Walkthrough Tour</span>
+            <Zap size={13} className={isGeneratingAI ? 'animate-spin text-amber-400' : 'text-amber-400'} />
+            <span>{isGeneratingAI ? 'Generating...' : 'Auto-Generate Tours'}</span>
           </button>
 
           <a
             href={`/sandbox.html?kenzo_builder=true&api_key=${apiKey}`}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-2 bg-[#0b1324] border border-slate-700/80 hover:border-sky-500/50 hover:bg-slate-800 text-slate-300 hover:text-white text-xs font-bold px-3.5 py-2.5 rounded-xl transition-all active:scale-95 cursor-pointer shadow-inner"
+            className="kenzo-btn-secondary text-xs"
           >
             <Sparkles size={13} className="text-sky-400" />
-            <span>Open Visual Builder</span>
+            <span>Visual Builder</span>
           </a>
+
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="kenzo-btn-primary text-xs"
+          >
+            <Plus size={14} />
+            <span>Create Walkthrough</span>
+          </button>
         </div>
       </div>
 
-      {/* Empty State */}
-      {flows.length === 0 ? (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 kenzo-glass-card rounded-3xl p-8 sm:p-12 flex flex-col items-center justify-center text-center min-h-[360px] shadow-2xl">
-            <div className="w-16 h-16 rounded-2xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-center text-sky-400 mb-4 shadow-lg">
-              <Compass size={30} className="animate-pulse" />
-            </div>
-            <h3 className="text-lg font-bold font-syne text-white">No Walkthroughs Configured</h3>
-            <p className="text-slate-400 text-xs mt-2 max-w-md leading-relaxed">
-              Launch the Sandbox Builder to visually select HTML elements, capture click events, and create interactive guided tours in seconds.
-            </p>
-            <div className="mt-6 flex items-center gap-3">
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="kenzo-glow-btn text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow cursor-pointer"
-              >
-                Create First Tour
-              </button>
-              <a
-                href={`/sandbox.html?kenzo_builder=true&api_key=${apiKey}`}
-                target="_blank"
-                className="flex items-center gap-2 bg-[#0b1324] border border-slate-700 hover:border-sky-500/40 text-slate-300 hover:text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow"
-              >
-                <span>Launch Visual Sandbox</span>
-                <ArrowRight size={13} />
-              </a>
-            </div>
-          </div>
-
-          <div className="kenzo-glass-card rounded-3xl p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
-              <div className="flex items-center gap-2 text-sky-400 font-bold text-xs uppercase tracking-wider font-syne">
-                <Sparkles size={14} />
-                <span>AI Recommendations</span>
-              </div>
-              <span className="text-[10px] bg-sky-500/10 text-sky-300 px-2 py-0.5 rounded-full font-semibold">Ready</span>
-            </div>
-            <div className="space-y-3 pt-1">
-              {aiSuggestions.map((sug, idx) => (
-                <div key={idx} className="p-3.5 bg-[#070d18] border border-slate-800 hover:border-sky-500/40 rounded-2xl flex flex-col gap-1 transition-all cursor-pointer group">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-200 group-hover:text-sky-300 transition-colors">{sug.title}</span>
-                    <span className="text-[10px] bg-sky-500/10 text-sky-300 font-semibold px-2 py-0.5 rounded-full">{sug.steps} steps</span>
-                  </div>
-                  <p className="text-[11px] text-slate-400 leading-normal">{sug.desc}</p>
-                </div>
-              ))}
-            </div>
-            <div className="pt-2 text-[10px] text-slate-500 flex items-center gap-1.5 font-medium border-t border-slate-800/80">
-              <AlertCircle size={12} className="text-sky-400 shrink-0" />
-              <span>Select templates inside builder to generate immediately.</span>
-            </div>
+      {/* Filter & Search Bar */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-[#0C1322] border border-[#1E293B] p-3 rounded-lg">
+        <div className="flex items-center gap-2.5 w-full sm:w-auto flex-1 max-w-md">
+          <div className="relative w-full">
+            <input
+              type="text"
+              placeholder="Search walkthroughs by title, route, or ID..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="kenzo-input w-full pl-8 py-1.5 text-xs placeholder-slate-500"
+            />
+            <Compass size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
           </div>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {flows.map((flow) => {
-            const pattern = flow.urlRules?.[0]?.pattern || 'Any Route (/)';
-            const isPublished = flow.status === 'published';
 
-            return (
-              <motion.div
-                key={flow.id}
-                whileHover={{ y: -3 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                className="kenzo-glass-card rounded-3xl p-6 shadow-2xl flex flex-col justify-between group relative overflow-hidden"
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+          {/* Route Filter */}
+          <select
+            value={routeFilter}
+            onChange={e => setRouteFilter(e.target.value)}
+            className="kenzo-input py-1.5 text-xs cursor-pointer text-slate-300"
+          >
+            <option value="all">All Routes</option>
+            {uniqueRoutes.map(r => (
+              <option key={r} value={r}>{r}</option>
+            ))}
+          </select>
+
+          {/* Status Filter */}
+          <div className="flex items-center bg-[#080e1a] border border-slate-800 p-0.5 rounded-lg text-xs">
+            {(['all', 'published', 'draft'] as const).map(st => (
+              <button
+                key={st}
+                onClick={() => setStatusFilter(st)}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-medium capitalize transition-colors cursor-pointer ${
+                  statusFilter === st ? 'bg-sky-600 text-white font-semibold' : 'text-slate-400 hover:text-slate-200'
+                }`}
               >
-                {/* Header Gradient line */}
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-sky-400 via-blue-500 to-amber-400" />
+                {st}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
 
-                <div>
-                  {/* Card Header Info */}
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <span className="text-[11px] font-bold font-mono text-sky-400/90 bg-sky-500/10 px-2.5 py-0.5 rounded-lg border border-sky-500/20">
-                      ID: {flow.id.substring(0, 8)}
-                    </span>
-                    {isPublished ? (
-                      <span className="text-[10px] font-bold bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                        <span>Live</span>
-                      </span>
-                    ) : (
-                      <span className="text-[10px] font-bold bg-amber-500/10 border border-amber-500/30 text-amber-400 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                        Draft
-                      </span>
-                    )}
-                  </div>
+      {/* Main Operational Data Table */}
+      {filteredFlows.length === 0 ? (
+        <div className="bg-[#0C1322] border border-[#1E293B] rounded-lg p-12 text-center">
+          <div className="w-12 h-12 rounded-xl bg-slate-800/80 border border-slate-700 flex items-center justify-center text-slate-400 mx-auto mb-3">
+            <Layers size={24} />
+          </div>
+          <h3 className="text-sm font-semibold text-white">No Walkthrough Tours Found</h3>
+          <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1 mb-4">
+            {searchQuery || statusFilter !== 'all' || routeFilter !== 'all' 
+              ? 'No tours match your filter criteria. Try clearing search filters.'
+              : 'Create your first interactive step-by-step walkthrough to onboard users.'}
+          </p>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="kenzo-btn-primary text-xs mx-auto"
+          >
+            <Plus size={13} />
+            <span>Create New Tour</span>
+          </button>
+        </div>
+      ) : (
+        <div className="bg-[#0C1322] border border-[#1E293B] rounded-lg overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs text-left border-collapse min-w-[760px]">
+              <thead>
+                <tr className="border-b border-slate-800 bg-[#080e1a] text-slate-400 font-semibold text-[11px] uppercase tracking-wider">
+                  <th className="py-3 px-4 w-28">Status</th>
+                  <th className="py-3 px-4">Tour Name & Details</th>
+                  <th className="py-3 px-4 w-48">Target Route</th>
+                  <th className="py-3 px-4 w-28 text-center">Steps</th>
+                  <th className="py-3 px-4 w-24 text-center">Priority</th>
+                  <th className="py-3 px-4 w-36 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/80">
+                {filteredFlows.map(flow => {
+                  const pattern = flow.urlRules?.[0]?.pattern || '/';
+                  const isLive = flow.status === 'published';
 
-                  <h3 className="text-base font-bold text-white font-syne truncate group-hover:text-sky-300 transition-colors">{flow.name}</h3>
-                  <p className="text-xs text-slate-400 mt-1.5 leading-relaxed min-h-[36px] line-clamp-2">
-                    {flow.description || 'No description provided. Click edit to add details.'}
-                  </p>
-
-                  <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-slate-800/80 text-[11px]">
-                    <div className="flex items-center gap-1.5 text-slate-300 font-medium">
-                      <Globe size={13} className="text-sky-400" />
-                      <span className="truncate" title={pattern}>{pattern}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-slate-300 font-medium">
-                      <Layers size={13} className="text-sky-400" />
-                      <span>{flow.stepCount || 0} steps</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-slate-300 font-medium">
-                      <Tag size={13} className="text-sky-400" />
-                      <span>Priority: {flow.priority}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-slate-300 font-medium">
-                      <Calendar size={13} className="text-sky-400" />
-                      <span>Version: v{flow.version}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Action Footer */}
-                <div className="flex items-center justify-between mt-5 pt-3 border-t border-slate-800/80">
-                  <a
-                    href={`/sandbox.html?kenzo_flow=${flow.id}&api_key=${apiKey}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="py-1.5 px-3 bg-[#070d18] border border-slate-700/80 hover:border-sky-500/50 hover:text-white rounded-xl text-slate-300 flex items-center gap-1.5 text-xs transition-colors cursor-pointer font-bold"
-                  >
-                    <Eye size={13} className="text-sky-400" />
-                    <span>Preview</span>
-                  </a>
-
-                  <div className="flex items-center gap-2">
-                    {isPublished ? (
-                      <button
-                        onClick={() => handleUpdateFlowStatus(flow.id, 'draft')}
-                        className="text-xs bg-[#070d18] border border-slate-700 hover:border-slate-600 hover:text-white px-3 py-1.5 rounded-xl text-slate-400 transition-all cursor-pointer font-semibold"
-                      >
-                        Draft
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleUpdateFlowStatus(flow.id, 'published')}
-                        className="text-xs bg-sky-500/15 border border-sky-500/30 hover:bg-sky-500 hover:text-white px-3 py-1.5 rounded-xl text-sky-300 transition-all cursor-pointer font-bold"
-                      >
-                        Publish
-                      </button>
-                    )}
-
-                    {/* Edit Steps button */}
-                    <button
-                      onClick={() => setStepEditorFlow(flow)}
-                      className="p-2 bg-sky-500/10 border border-sky-500/20 hover:bg-sky-500 hover:border-sky-500 rounded-xl text-sky-400 hover:text-white transition-colors cursor-pointer"
-                      title="Edit Steps"
+                  return (
+                    <tr 
+                      key={flow.id} 
+                      className="hover:bg-[#0F192C] transition-colors group border-b border-slate-800/60 last:border-b-0"
                     >
-                      <GripVertical size={13} />
-                    </button>
+                      {/* Status Toggle Column */}
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <button
+                          onClick={() => handleUpdateFlowStatus(flow.id, isLive ? 'draft' : 'published')}
+                          className={`text-xs font-medium cursor-pointer hover:underline ${
+                            isLive ? 'text-emerald-400' : 'text-slate-400'
+                          }`}
+                          title={`Click to switch to ${isLive ? 'Draft' : 'Live'}`}
+                        >
+                          {isLive ? 'Published' : 'Draft'}
+                        </button>
+                      </td>
 
-                    <button
-                      onClick={() => setEditingFlow(flow)}
-                      className="p-2 bg-[#070d18] border border-slate-700 hover:border-slate-600 hover:text-white rounded-xl text-slate-400 transition-colors cursor-pointer"
-                      title="Edit Flow Settings"
-                    >
-                      <Edit size={13} />
-                    </button>
+                      {/* Name & Details Column */}
+                      <td className="py-3.5 px-4">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="font-semibold text-white text-xs group-hover:text-sky-300 transition-colors">
+                            {flow.name}
+                          </span>
+                          {flow.description && (
+                            <span className="text-[11px] text-slate-400 line-clamp-1 max-w-md">
+                              {flow.description}
+                            </span>
+                          )}
+                        </div>
+                      </td>
 
-                    <button
-                      onClick={() => handleDeleteFlow(flow.id)}
-                      className="p-2 bg-[#070d18] border border-slate-700 hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-400 rounded-xl text-slate-500 transition-colors cursor-pointer"
-                      title="Delete Flow"
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })}
+                      {/* Target Route Column */}
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1 bg-[#080e1a] border border-slate-800 text-slate-300 font-mono text-[11px] px-2 py-0.5 rounded">
+                          <Globe size={11} className="text-slate-500" />
+                          <span className="truncate max-w-[140px]" title={pattern}>{pattern}</span>
+                        </span>
+                      </td>
+
+                      {/* Steps Column */}
+                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                        <button
+                          onClick={() => setStepEditorFlow(flow)}
+                          className="inline-flex items-center gap-1 bg-[#080e1a] hover:bg-sky-500/15 border border-slate-800 hover:border-sky-500/40 text-slate-300 hover:text-sky-300 px-2 py-1 rounded text-[11px] font-semibold transition-colors cursor-pointer"
+                        >
+                          <Layers size={11} className="text-sky-400" />
+                          <span>{flow.stepCount || 0} steps</span>
+                        </button>
+                      </td>
+
+                      {/* Priority Column */}
+                      <td className="py-3.5 px-4 text-center whitespace-nowrap text-slate-400 font-mono text-[11px]">
+                        P{flow.priority || 1}
+                      </td>
+
+                      {/* Row Actions Column */}
+                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                        <div className="inline-flex items-center gap-1.5">
+                          <a
+                            href={`/sandbox.html?kenzo_flow=${flow.id}&api_key=${apiKey}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="p-1.5 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                            title="Preview in Sandbox"
+                          >
+                            <Eye size={13} />
+                          </a>
+
+                          <button
+                            onClick={() => setStepEditorFlow(flow)}
+                            className="p-1.5 rounded hover:bg-sky-500/10 text-slate-400 hover:text-sky-300 transition-colors cursor-pointer"
+                            title="Edit Steps"
+                          >
+                            <GripVertical size={13} />
+                          </button>
+
+                          <button
+                            onClick={() => setEditingFlow(flow)}
+                            className="p-1.5 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                            title="Edit Tour Settings"
+                          >
+                            <Edit size={13} />
+                          </button>
+
+                          <button
+                            onClick={() => handleDeleteFlow(flow.id)}
+                            className="p-1.5 rounded hover:bg-red-500/10 text-slate-400 hover:text-red-400 transition-colors cursor-pointer"
+                            title="Delete Tour"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -1100,80 +1119,76 @@ export default function ToursView({
       {/* Edit Flow Details Dialog */}
       <AnimatePresence>
         {editingFlow && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4 cursor-default">
+          <div className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 15 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 150 }}
-              className="w-full max-w-lg bg-zinc-900 border border-zinc-800/80 rounded-2xl overflow-hidden shadow-2xl relative mt-4 max-h-[90vh] flex flex-col"
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              className="w-full max-w-lg bg-[#0C1322] border border-[#1E293B] rounded-lg overflow-hidden shadow-2xl flex flex-col"
             >
-              <div className="h-14 bg-gradient-to-r from-violet-600 to-indigo-600 flex items-center justify-between px-6 shadow-md shadow-indigo-600/25 ring-1 ring-white/10">
+              <div className="h-12 border-b border-[#1E293B] flex items-center justify-between px-5 bg-[#080E1A]">
                 <div className="flex items-center gap-2">
-                  <Layers size={18} className="text-white" />
-                  <h3 className="text-sm font-bold font-outfit text-white uppercase tracking-wider">Edit Tour Configuration</h3>
+                  <Layers size={16} className="text-sky-400" />
+                  <h3 className="text-xs font-bold text-white uppercase tracking-wider">Tour Settings</h3>
                 </div>
                 <button
                   onClick={() => setEditingFlow(null)}
-                  className="text-xs bg-black/20 hover:bg-black/30 text-white px-3 py-1.5 rounded-lg transition-colors cursor-pointer font-bold"
+                  className="text-slate-400 hover:text-white p-1 cursor-pointer"
                 >
-                  Cancel
+                  <X size={15} />
                 </button>
               </div>
 
-              <form onSubmit={(e) => { e.preventDefault(); handleSaveFlowDetails(editingFlow.id, editingFlow); }} className="p-6 overflow-y-auto space-y-5">
-                <div className="space-y-1.5 text-left">
-                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Tour Name</label>
+              <form onSubmit={(e) => { e.preventDefault(); handleSaveFlowDetails(editingFlow.id, editingFlow); }} className="p-5 space-y-4">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-slate-300">Tour Name</label>
                   <input
                     type="text"
                     value={editingFlow.name}
                     onChange={(e) => setEditingFlow({ ...editingFlow, name: e.target.value })}
-                    className="w-full bg-zinc-950 border border-zinc-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-3 py-2.5 text-xs text-white outline-none transition-all"
+                    className="kenzo-input w-full"
                     required
                   />
                 </div>
 
-                <div className="space-y-1.5 text-left">
-                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Description</label>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-slate-300">Description</label>
                   <textarea
                     value={editingFlow.description}
                     onChange={(e) => setEditingFlow({ ...editingFlow, description: e.target.value })}
-                    rows={3}
-                    className="w-full bg-zinc-950 border border-zinc-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-3 py-2.5 text-xs text-white outline-none transition-all resize-none"
+                    rows={2}
+                    className="kenzo-input w-full resize-none"
                     placeholder="Describe what onboarding flow accomplishes..."
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 text-left">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Priority Weight</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-slate-300">Priority (Weight)</label>
                     <input
                       type="number"
                       value={editingFlow.priority}
-                      onChange={(e) => setEditingFlow({ ...editingFlow, priority: parseInt(e.target.value) || 0 })}
-                      className="w-full bg-zinc-950 border border-zinc-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-3 py-2.5 text-xs text-white outline-none transition-all"
-                      min={0}
+                      onChange={(e) => setEditingFlow({ ...editingFlow, priority: parseInt(e.target.value) || 1 })}
+                      className="kenzo-input w-full"
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Status</label>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-slate-300">Status</label>
                     <select
                       value={editingFlow.status}
                       onChange={(e) => setEditingFlow({ ...editingFlow, status: e.target.value as any })}
-                      className="w-full bg-zinc-950 border border-zinc-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-3 py-2.5 text-xs text-zinc-300 outline-none transition-all cursor-pointer font-semibold"
+                      className="kenzo-input w-full cursor-pointer"
                     >
-                      <option value="draft">Draft Mode</option>
-                      <option value="published">Published (LIVE)</option>
+                      <option value="published">Published (Live)</option>
+                      <option value="draft">Draft</option>
                       <option value="archived">Archived</option>
                     </select>
                   </div>
                 </div>
 
-                <div className="p-3 bg-zinc-950 border border-zinc-850 rounded-xl text-[10px] text-left space-y-2">
-                  <div className="flex items-center gap-1.5 text-zinc-400 font-semibold">
-                    <Compass size={11} className="text-indigo-400" />
-                    <span>Target ERP Route Pattern</span>
-                  </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-slate-300">Target ERP Route Pattern</label>
                   <input
                     type="text"
                     value={editingFlow.urlRules?.[0]?.pattern || '/'}
@@ -1181,20 +1196,27 @@ export default function ToursView({
                       ...editingFlow,
                       urlRules: [{ type: 'contains', pattern: e.target.value }]
                     })}
-                    className="w-full bg-zinc-900 border border-zinc-800 focus:border-indigo-500 rounded-lg px-3 py-2 text-xs text-indigo-300 font-mono outline-none"
+                    className="kenzo-input w-full font-mono text-sky-300"
                     placeholder="e.g. /dashboard/crm"
                   />
-                  <p className="text-[9px] text-zinc-500 leading-relaxed font-semibold">
-                    * Set route pattern to target specific ERP sub-paths (e.g. <code>/dashboard/crm</code>) or <code>/</code> for global.
-                  </p>
                 </div>
 
-                <button
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-violet-600 to-indigo-650 hover:from-violet-500 hover:to-indigo-550 text-white text-xs font-bold py-3 rounded-xl cursor-pointer transition-all shadow-md shadow-indigo-600/10 active:scale-[0.99] focus:outline-none"
-                >
-                  🚀 Save & Push Changes Live
-                </button>
+                <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setEditingFlow(null)}
+                    className="kenzo-btn-secondary text-xs"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="kenzo-btn-primary text-xs"
+                  >
+                    <Save size={13} />
+                    <span>Save Changes</span>
+                  </button>
+                </div>
               </form>
             </motion.div>
           </div>

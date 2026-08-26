@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   BookOpen, Plus, Edit, Trash2, X, Save, AlertCircle, CheckCircle,
-  Loader2, Search, Tag, Filter
+  Loader2, Search, Tag
 } from 'lucide-react';
 
 interface Article {
@@ -132,53 +132,48 @@ export default function SelfHelpView({ projectId, headers }: GuidanceModuleProps
   };
 
   return (
-    <div className="space-y-8 select-none relative text-left w-full">
+    <div className="space-y-6 select-none relative text-left w-full">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
-        <div className="flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-2xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-center text-sky-400 shadow-lg shadow-sky-500/10">
-            <BookOpen size={20} className="text-sky-400" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-bold text-white tracking-tight">Self Help</h2>
+            <span className="text-xs bg-slate-800 text-slate-300 font-semibold px-2.5 py-0.5 rounded-md border border-slate-800">
+              {articles.length} configured
+            </span>
           </div>
-          <div>
-            <h2 className="text-xl font-bold font-syne text-white tracking-tight">Self-Help & Knowledge Base</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Embeddable documentation, FAQs, and contextual troubleshooting guides</p>
-          </div>
+          <p className="text-xs text-slate-400 mt-1">Knowledge base and documentation</p>
         </div>
         
-        <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#0b1324] border border-slate-800 text-xs text-slate-400 font-medium">
-            <span>Total Articles:</span>
-            <span className="font-bold text-sky-400">{articles.length}</span>
-          </div>
+        <div className="flex items-center gap-2.5">
           <button 
             onClick={openCreate} 
-            className="kenzo-glow-btn text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+            className="kenzo-btn-primary text-xs"
           >
-            <Plus size={15} />
+            <Plus size={14} />
             <span>New Article</span>
           </button>
         </div>
       </div>
 
       {/* Search & Filter */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex flex-col sm:flex-row gap-2.5 bg-[#0c1322] border border-slate-800 p-3 rounded-xl">
         <div className="flex-1 relative">
-          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
           <input
             type="text" value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Search knowledge base articles..."
-            className="w-full bg-[#0b1324] border border-slate-700/80 focus:border-sky-400 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors"
+            className="kenzo-input w-full pl-8 py-1.5 text-xs placeholder-slate-500"
           />
         </div>
         {categories.length > 0 && (
           <div className="relative shrink-0">
-            <Filter size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <select
               value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
-              className="bg-[#0b1324] border border-slate-700/80 focus:border-sky-400 rounded-2xl pl-9 pr-8 py-2.5 text-xs text-slate-300 outline-none appearance-none cursor-pointer"
+              className="kenzo-input py-1.5 text-xs cursor-pointer text-slate-300"
             >
-              <option value="" className="bg-[#0b1324] text-white">All Categories</option>
-              {categories.map(c => <option key={c} value={c} className="bg-[#0b1324] text-white">{c}</option>)}
+              <option value="">All Categories</option>
+              {categories.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
         )}
@@ -187,39 +182,40 @@ export default function SelfHelpView({ projectId, headers }: GuidanceModuleProps
       {loading ? (
         <div className="space-y-3">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="kenzo-glass-card rounded-2xl p-5 animate-pulse space-y-2">
+            <div key={i} className="bg-[#0c1322] border border-slate-800 rounded-xl p-4 space-y-2">
               <div className="h-4 bg-slate-800 rounded w-1/2" />
               <div className="h-3 bg-slate-800 rounded w-full" />
             </div>
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="kenzo-glass-card rounded-3xl p-16 text-center shadow-2xl">
-          <div className="w-16 h-16 rounded-2xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-center text-sky-400 mx-auto mb-4">
-            <BookOpen size={32} className="animate-pulse" />
+        <div className="bg-[#0c1322] border border-slate-800 rounded-xl p-16 text-center">
+          <div className="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 mx-auto mb-3">
+            <BookOpen size={24} />
           </div>
-          <h3 className="text-base font-bold font-syne text-white">No Articles Found</h3>
-          <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1 mb-5">
+          <h3 className="text-sm font-semibold text-white">No Articles Found</h3>
+          <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1 mb-4">
             {search ? 'Try adjusting your search query' : 'Create helpful troubleshooting articles and product documentation.'}
           </p>
-          <button onClick={openCreate} className="kenzo-glow-btn px-5 py-2.5 text-white text-xs font-bold rounded-xl transition-all cursor-pointer">
-            Create First Article
+          <button onClick={openCreate} className="kenzo-btn-primary text-xs mx-auto">
+            <Plus size={13} />
+            <span>Create First Article</span>
           </button>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {filtered.map(article => (
             <motion.div
               key={article.id}
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
-              className="kenzo-glass-card rounded-2xl p-5 hover:border-sky-500/40 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 group"
+              className="bg-[#0c1322] border border-slate-800 rounded-xl p-4 hover:border-slate-700 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4 group"
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2.5 flex-wrap">
-                  <h3 className="font-bold text-white text-sm font-syne group-hover:text-sky-300 transition-colors truncate">{article.title}</h3>
+                  <h3 className="font-semibold text-white text-xs group-hover:text-sky-300 transition-colors truncate">{article.title}</h3>
                   {article.category && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-sky-500/10 border border-sky-500/20 text-[10px] font-medium text-sky-300">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded bg-[#080e1a] border border-slate-800 text-[10px] font-medium text-sky-300">
                       {article.category}
                     </span>
                   )}
@@ -227,10 +223,10 @@ export default function SelfHelpView({ projectId, headers }: GuidanceModuleProps
                 </div>
                 <p className="text-xs text-slate-400 mt-1 line-clamp-1">{article.content}</p>
                 {article.tags && article.tags.length > 0 && (
-                  <div className="flex items-center gap-1.5 mt-2.5 flex-wrap">
+                  <div className="flex items-center gap-1.5 mt-2 flex-wrap">
                     {article.tags.map(tag => (
-                      <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#070d18] border border-slate-800 text-[10px] text-slate-400">
-                        <Tag size={9} className="text-sky-400" />
+                      <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#080e1a] border border-slate-800 text-[10px] text-slate-400">
+                        <Tag size={9} className="text-slate-500" />
                         {tag}
                       </span>
                     ))}
@@ -259,9 +255,9 @@ export default function SelfHelpView({ projectId, headers }: GuidanceModuleProps
             <motion.div
               initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 280 }}
-              className="fixed right-0 top-0 h-full w-full max-w-lg bg-[#070d18] border-l border-slate-800 z-50 flex flex-col shadow-2xl"
+              className="fixed right-0 top-0 h-full w-full max-w-lg bg-[#070d18] border-l border-slate-800 z-50 flex flex-col"
             >
-              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-[#0b1324]">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-[#0C1322]">
                 <div>
                   <h3 className="text-base font-bold font-syne text-white">{editing ? 'Edit Article' : 'New Article'}</h3>
                   <p className="text-xs text-slate-400 mt-0.5">Write and configure your contextual help content</p>
@@ -272,12 +268,12 @@ export default function SelfHelpView({ projectId, headers }: GuidanceModuleProps
               <div className="flex-1 overflow-y-auto p-6 space-y-5">
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1.5">Article Title <span className="text-sky-400">*</span></label>
-                  <input type="text" value={form.title ?? ''} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. How to set up your project workspace" className="w-full bg-[#0b1324] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors" />
+                  <input type="text" value={form.title ?? ''} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. How to set up your project workspace" className="w-full bg-[#0C1322] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors" />
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1.5">Content <span className="text-sky-400">*</span></label>
-                  <textarea value={form.content ?? ''} onChange={e => setForm(f => ({ ...f, content: e.target.value }))} placeholder="Write step-by-step instructions or explanations..." rows={8} className="w-full bg-[#0b1324] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors resize-none leading-relaxed" />
+                  <textarea value={form.content ?? ''} onChange={e => setForm(f => ({ ...f, content: e.target.value }))} placeholder="Write step-by-step instructions or explanations..." rows={8} className="w-full bg-[#0C1322] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors resize-none leading-relaxed" />
                 </div>
 
                 <div>
@@ -287,7 +283,7 @@ export default function SelfHelpView({ projectId, headers }: GuidanceModuleProps
                     onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
                     list="categories-list"
                     placeholder="e.g. Getting Started"
-                    className="w-full bg-[#0b1324] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors"
+                    className="w-full bg-[#0C1322] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors"
                   />
                   <datalist id="categories-list">
                     {categories.map(c => <option key={c} value={c} />)}
@@ -305,7 +301,7 @@ export default function SelfHelpView({ projectId, headers }: GuidanceModuleProps
                     ))}
                   </div>
                   <div className="flex gap-2">
-                    <input type="text" value={tagInput} onChange={e => setTagInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && addTag()} placeholder="Add tag and press Enter..." className="flex-1 bg-[#0b1324] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 outline-none transition-colors" />
+                    <input type="text" value={tagInput} onChange={e => setTagInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && addTag()} placeholder="Add tag and press Enter..." className="flex-1 bg-[#0C1322] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 outline-none transition-colors" />
                     <button onClick={addTag} className="px-3.5 py-2 kenzo-glow-btn text-white rounded-xl text-xs font-semibold transition-colors cursor-pointer"><Plus size={14} /></button>
                   </div>
                 </div>
@@ -314,13 +310,13 @@ export default function SelfHelpView({ projectId, headers }: GuidanceModuleProps
                   <label className="block text-xs font-semibold text-slate-300 mb-1.5">Status</label>
                   <div className="grid grid-cols-3 gap-2">
                     {(['draft', 'published', 'archived'] as const).map(s => (
-                      <button key={s} onClick={() => setForm(f => ({ ...f, status: s }))} className={`py-2.5 rounded-xl border text-xs font-medium capitalize transition-all cursor-pointer ${form.status === s ? 'border-sky-400 bg-sky-500/15 text-sky-300 font-semibold' : 'border-slate-800 bg-[#0b1324] text-slate-400 hover:border-slate-700'}`}>{s}</button>
+                      <button key={s} onClick={() => setForm(f => ({ ...f, status: s }))} className={`py-2.5 rounded-xl border text-xs font-medium capitalize transition-all cursor-pointer ${form.status === s ? 'border-sky-400 bg-sky-500/15 text-sky-300 font-semibold' : 'border-slate-800 bg-[#0C1322] text-slate-400 hover:border-slate-700'}`}>{s}</button>
                     ))}
                   </div>
                 </div>
               </div>
 
-              <div className="px-6 py-4 border-t border-slate-800 bg-[#0b1324] flex gap-3">
+              <div className="px-6 py-4 border-t border-slate-800 bg-[#0C1322] flex gap-3">
                 <button onClick={closePanel} className="flex-1 py-2.5 rounded-xl border border-slate-700 text-xs font-semibold text-slate-300 hover:bg-slate-800 transition-colors cursor-pointer">Cancel</button>
                 <button onClick={handleSave} disabled={saving} className="flex-1 py-2.5 rounded-xl kenzo-glow-btn text-white text-xs font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer">
                   {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
@@ -336,9 +332,9 @@ export default function SelfHelpView({ projectId, headers }: GuidanceModuleProps
       <AnimatePresence>
         {deleteTarget && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-[#0b1324] border border-slate-800 rounded-3xl p-6 w-full max-w-sm shadow-2xl">
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-[#0C1322] border border-slate-800 rounded-lg p-6 w-full max-w-sm">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center"><AlertCircle size={20} className="text-red-400" /></div>
+                <div className="w-10 h-10 rounded-lg bg-red-500/10 border border-red-500/30 flex items-center justify-center"><AlertCircle size={20} className="text-red-400" /></div>
                 <div><h4 className="font-bold font-syne text-white">Delete Article</h4><p className="text-xs text-slate-400 mt-0.5">This action cannot be undone</p></div>
               </div>
               <p className="text-xs text-slate-300 mb-5 leading-relaxed">Are you sure you want to delete <span className="font-semibold text-white">"{deleteTarget.title}"</span>?</p>
@@ -359,7 +355,7 @@ export default function SelfHelpView({ projectId, headers }: GuidanceModuleProps
         <AnimatePresence>
           {toasts.map(toast => (
             <motion.div key={toast.id} initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }}
-              className={`flex items-center gap-3 px-4 py-3 rounded-2xl border shadow-xl pointer-events-auto backdrop-blur-md ${toast.type === 'success' ? 'bg-[#0b1324]/95 border-emerald-500/40 text-emerald-300' : 'bg-[#0b1324]/95 border-red-500/40 text-red-300'}`}>
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg border pointer-events-auto backdrop-blur-md ${toast.type === 'success' ? 'bg-[#0C1322]/95 border-emerald-500/40 text-emerald-300' : 'bg-[#0C1322]/95 border-red-500/40 text-red-300'}`}>
               {toast.type === 'success' ? <CheckCircle size={16} className="text-emerald-400" /> : <AlertCircle size={16} className="text-red-400" />}
               <span className="text-xs font-medium">{toast.message}</span>
             </motion.div>

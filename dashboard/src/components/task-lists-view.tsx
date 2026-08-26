@@ -173,29 +173,25 @@ export default function TaskListsView({ projectId, headers }: GuidanceModuleProp
   };
 
   return (
-    <div className="space-y-8 select-none relative text-left w-full">
+    <div className="space-y-6 select-none relative text-left w-full">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
-        <div className="flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-2xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-center text-sky-400 shadow-lg shadow-sky-500/10">
-            <CheckSquare size={20} className="text-sky-400" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-bold text-white tracking-tight">Task Lists</h2>
+            <span className="text-xs bg-slate-800 text-slate-300 font-semibold px-2.5 py-0.5 rounded-md border border-slate-800">
+              {lists.length} configured
+            </span>
           </div>
-          <div>
-            <h2 className="text-xl font-bold font-syne text-white tracking-tight">Onboarding Checklists & Task Lists</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Interactive guided progress checklists and feature adoption workflows</p>
-          </div>
+          <p className="text-xs text-slate-400 mt-1">Checklists and milestone workflows</p>
         </div>
         
-        <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#0b1324] border border-slate-800 text-xs text-slate-400 font-medium">
-            <span>Total Checklists:</span>
-            <span className="font-bold text-sky-400">{lists.length}</span>
-          </div>
+        <div className="flex items-center gap-2.5">
           <button 
             onClick={openCreate} 
-            className="kenzo-glow-btn text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+            className="kenzo-btn-primary text-xs"
           >
-            <Plus size={15} />
+            <Plus size={14} />
             <span>New Task List</span>
           </button>
         </div>
@@ -204,7 +200,7 @@ export default function TaskListsView({ projectId, headers }: GuidanceModuleProp
       {loading ? (
         <div className="space-y-4">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="kenzo-glass-card rounded-2xl p-6 animate-pulse space-y-3">
+            <div key={i} className="bg-[#0c1322] border border-slate-800 rounded-xl p-5 space-y-3">
               <div className="h-4 bg-slate-800 rounded w-1/3" />
               <div className="h-3 bg-slate-800 rounded w-1/2" />
               <div className="h-2 bg-slate-800 rounded-full w-full" />
@@ -212,52 +208,53 @@ export default function TaskListsView({ projectId, headers }: GuidanceModuleProp
           ))}
         </div>
       ) : lists.length === 0 ? (
-        <div className="kenzo-glass-card rounded-3xl p-16 text-center shadow-2xl">
-          <div className="w-16 h-16 rounded-2xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-center text-sky-400 mx-auto mb-4">
-            <CheckSquare size={32} className="animate-pulse" />
+        <div className="bg-[#0c1322] border border-slate-800 rounded-xl p-16 text-center">
+          <div className="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 mx-auto mb-3">
+            <CheckSquare size={24} />
           </div>
-          <h3 className="text-base font-bold font-syne text-white">No Task Lists Configured</h3>
-          <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1 mb-5">
+          <h3 className="text-sm font-semibold text-white">No Task Lists Configured</h3>
+          <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1 mb-4">
             Create an onboarding checklist to guide new users through critical milestones.
           </p>
-          <button onClick={openCreate} className="kenzo-glow-btn px-5 py-2.5 text-white text-xs font-bold rounded-xl transition-all cursor-pointer">
-            Create First Checklist
+          <button onClick={openCreate} className="kenzo-btn-primary text-xs mx-auto">
+            <Plus size={13} />
+            <span>Create First Checklist</span>
           </button>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {lists.map(list => (
             <motion.div
               key={list.id}
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              className="kenzo-glass-card rounded-3xl overflow-hidden hover:border-sky-500/40 transition-all shadow-xl"
+              className="bg-[#0c1322] border border-slate-800 rounded-xl overflow-hidden hover:border-slate-700 transition-colors"
             >
               <div
-                className="flex items-center justify-between px-6 py-5 cursor-pointer"
+                className="flex items-center justify-between px-5 py-4 cursor-pointer"
                 onClick={() => setExpandedId(prev => prev === list.id ? null : list.id)}
               >
-                <div className="flex items-center gap-4 flex-1 min-w-0">
-                  <div className="w-10 h-10 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 shrink-0">
-                    <Target size={18} />
+                <div className="flex items-center gap-3.5 flex-1 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 shrink-0">
+                    <Target size={16} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2.5 flex-wrap">
-                      <h3 className="font-bold text-white text-sm font-syne truncate">{list.title}</h3>
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-sky-500/10 border border-sky-500/20 text-[10px] font-mono text-sky-300">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-semibold text-white text-xs truncate">{list.title}</h3>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded bg-[#080e1a] border border-slate-800 text-[10px] font-mono text-sky-300">
                         {list.url_rules?.[0]?.pattern || '*'}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-400 mt-0.5">{list.name}</p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">{list.name}</p>
                     <CompletionBar total={list.items?.length ?? 0} label="Milestones" />
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 ml-4">
-                  <button onClick={e => { e.stopPropagation(); openEdit(list); }} className="p-2 rounded-xl hover:bg-sky-500/20 text-slate-400 hover:text-sky-300 transition-colors cursor-pointer">
-                    <Edit size={14} />
+                <div className="flex items-center gap-1.5 ml-4">
+                  <button onClick={e => { e.stopPropagation(); openEdit(list); }} className="p-1.5 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer">
+                    <Edit size={13} />
                   </button>
-                  <button onClick={e => { e.stopPropagation(); setDeleteTarget(list); }} className="p-2 rounded-xl hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors cursor-pointer">
+                  <button onClick={e => { e.stopPropagation(); setDeleteTarget(list); }} className="p-1.5 rounded hover:bg-red-500/10 text-slate-400 hover:text-red-400 transition-colors cursor-pointer">
                     <Trash2 size={14} />
                   </button>
                   <div className="p-2 text-slate-400">
@@ -269,7 +266,7 @@ export default function TaskListsView({ projectId, headers }: GuidanceModuleProp
               {expandedId === list.id && (
                 <div className="border-t border-slate-800/80 px-6 py-4 bg-[#070d18]/60 space-y-2.5">
                   {(list.items ?? []).map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-3 p-3 bg-[#0b1324] border border-slate-800 rounded-2xl">
+                    <div key={idx} className="flex items-center gap-3 p-3 bg-[#0C1322] border border-slate-800 rounded-lg">
                       <div className="w-5 h-5 rounded-full bg-sky-500/20 text-sky-400 flex items-center justify-center text-[10px] font-bold shrink-0">
                         {idx + 1}
                       </div>
@@ -299,9 +296,9 @@ export default function TaskListsView({ projectId, headers }: GuidanceModuleProp
             <motion.div
               initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 280 }}
-              className="fixed right-0 top-0 h-full w-full max-w-lg bg-[#070d18] border-l border-slate-800 z-50 flex flex-col shadow-2xl"
+              className="fixed right-0 top-0 h-full w-full max-w-lg bg-[#070d18] border-l border-slate-800 z-50 flex flex-col"
             >
-              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-[#0b1324]">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-[#0C1322]">
                 <div>
                   <h3 className="text-base font-bold font-syne text-white">{editing ? 'Edit Task List' : 'New Task List'}</h3>
                   <p className="text-xs text-slate-400 mt-0.5">Configure onboarding steps and completion triggers</p>
@@ -312,7 +309,7 @@ export default function TaskListsView({ projectId, headers }: GuidanceModuleProp
               <div className="flex-1 overflow-y-auto p-6 space-y-5">
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1.5">Internal Name <span className="text-sky-400">*</span></label>
-                  <input type="text" value={form.name ?? ''} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. core-onboarding-checklist" className="w-full bg-[#0b1324] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors" />
+                  <input type="text" value={form.name ?? ''} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. core-onboarding-checklist" className="w-full bg-[#0C1322] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors" />
                 </div>
 
                 <div>
@@ -325,12 +322,12 @@ export default function TaskListsView({ projectId, headers }: GuidanceModuleProp
                           setTargetRoutePattern(e.target.value);
                         }
                       }}
-                      className="w-full bg-[#0b1324] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none transition-colors"
+                      className="w-full bg-[#0C1322] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none transition-colors"
                     >
                       {COMMON_ROUTES.map(r => (
-                        <option key={r.pattern} value={r.pattern} className="bg-[#0b1324] text-white">{r.label}</option>
+                        <option key={r.pattern} value={r.pattern} className="bg-[#0C1322] text-white">{r.label}</option>
                       ))}
-                      <option value="custom" className="bg-[#0b1324] text-white">Custom URL Pattern...</option>
+                      <option value="custom" className="bg-[#0C1322] text-white">Custom URL Pattern...</option>
                     </select>
                     <input
                       type="text"
@@ -344,7 +341,7 @@ export default function TaskListsView({ projectId, headers }: GuidanceModuleProp
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1.5">Display Title <span className="text-sky-400">*</span></label>
-                  <input type="text" value={form.title ?? ''} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Get Started with Kenzo Platform" className="w-full bg-[#0b1324] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors" />
+                  <input type="text" value={form.title ?? ''} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Get Started with Kenzo Platform" className="w-full bg-[#0C1322] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors" />
                 </div>
 
                 {/* Tasks */}
@@ -358,7 +355,7 @@ export default function TaskListsView({ projectId, headers }: GuidanceModuleProp
 
                   <div className="space-y-3">
                     {(form.items ?? []).map((item, idx) => (
-                      <div key={idx} className="bg-[#0b1324] border border-slate-800 rounded-2xl p-4 space-y-2.5">
+                      <div key={idx} className="bg-[#0C1322] border border-slate-800 rounded-lg p-4 space-y-2.5">
                         <div className="flex items-center gap-2 mb-2">
                           <GripVertical size={14} className="text-slate-500" />
                           <span className="text-xs font-bold text-sky-400 font-syne">Milestone {idx + 1}</span>
@@ -377,7 +374,7 @@ export default function TaskListsView({ projectId, headers }: GuidanceModuleProp
                 </div>
               </div>
 
-              <div className="px-6 py-4 border-t border-slate-800 bg-[#0b1324] flex gap-3">
+              <div className="px-6 py-4 border-t border-slate-800 bg-[#0C1322] flex gap-3">
                 <button onClick={closePanel} className="flex-1 py-2.5 rounded-xl border border-slate-700 text-xs font-semibold text-slate-300 hover:bg-slate-800 transition-colors cursor-pointer">Cancel</button>
                 <button onClick={handleSave} disabled={saving} className="flex-1 py-2.5 rounded-xl kenzo-glow-btn text-white text-xs font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer">
                   {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
@@ -393,9 +390,9 @@ export default function TaskListsView({ projectId, headers }: GuidanceModuleProp
       <AnimatePresence>
         {deleteTarget && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-[#0b1324] border border-slate-800 rounded-3xl p-6 w-full max-w-sm shadow-2xl">
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-[#0C1322] border border-slate-800 rounded-lg p-6 w-full max-w-sm">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center"><AlertCircle size={20} className="text-red-400" /></div>
+                <div className="w-10 h-10 rounded-lg bg-red-500/10 border border-red-500/30 flex items-center justify-center"><AlertCircle size={20} className="text-red-400" /></div>
                 <div><h4 className="font-bold font-syne text-white">Delete Task List</h4><p className="text-xs text-slate-400 mt-0.5">This action cannot be undone</p></div>
               </div>
               <p className="text-xs text-slate-300 mb-5 leading-relaxed">Are you sure you want to delete <span className="font-semibold text-white">"{deleteTarget.title}"</span>?</p>
@@ -416,7 +413,7 @@ export default function TaskListsView({ projectId, headers }: GuidanceModuleProp
         <AnimatePresence>
           {toasts.map(toast => (
             <motion.div key={toast.id} initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }}
-              className={`flex items-center gap-3 px-4 py-3 rounded-2xl border shadow-xl pointer-events-auto backdrop-blur-md ${toast.type === 'success' ? 'bg-[#0b1324]/95 border-emerald-500/40 text-emerald-300' : 'bg-[#0b1324]/95 border-red-500/40 text-red-300'}`}>
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg border pointer-events-auto backdrop-blur-md ${toast.type === 'success' ? 'bg-[#0C1322]/95 border-emerald-500/40 text-emerald-300' : 'bg-[#0C1322]/95 border-red-500/40 text-red-300'}`}>
               {toast.type === 'success' ? <CheckCircle size={16} className="text-emerald-400" /> : <AlertCircle size={16} className="text-red-400" />}
               <span className="text-xs font-medium">{toast.message}</span>
             </motion.div>

@@ -7,8 +7,8 @@
   --color-kenzo-navy: #09101d;
   --color-kenzo-card: #0b1324;
   --color-kenzo-card2: #101c33;
-  --color-kenzo-border: rgba(148, 163, 184, 0.12);
-  --color-kenzo-border-hover: rgba(56, 189, 248, 0.35);
+  --color-kenzo-border: #1e293b;
+  --color-kenzo-border-hover: #38bdf8;
   --color-kenzo-blue: #0284c7;
   --color-kenzo-sky: #38bdf8;
   --color-kenzo-gold: #f59e0b;
@@ -20,26 +20,14 @@
   --font-syne: "Outfit", "Plus Jakarta Sans", sans-serif;
   --font-outfit: "Outfit", sans-serif;
   --font-mono: "JetBrains Mono", monospace;
-
-  --animate-pulse-subtle: pulseSubtle 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  --animate-shimmer: shimmer 2s infinite linear;
-}
-
-@keyframes pulseSubtle {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.7; transform: scale(1.02); }
-}
-
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
 }
 
 :root {
   --bg: #05090f;
   --sidebar-bg: #070d18;
-  --card-bg: rgba(11, 19, 36, 0.85);
-  --border: rgba(148, 163, 184, 0.12);
+  --card-bg: #0c1322;
+  --well-bg: #080e1a;
+  --border: #1e293b;
   --primary: #0284c7;
   --primary-sky: #38bdf8;
   --primary-hover: #0369a1;
@@ -49,74 +37,308 @@
   --success: #10b981;
 }
 
+html.light, .light {
+  --bg: #f8fafc;
+  --sidebar-bg: #ffffff;
+  --card-bg: #ffffff;
+  --well-bg: #f1f5f9;
+  --border: #e2e8f0;
+  --primary: #0284c7;
+  --primary-sky: #0284c7;
+  --primary-hover: #0369a1;
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --gold: #d97706;
+  --success: #059669;
+}
+
 body {
   margin: 0;
   padding: 0;
-  background-color: #05090f;
-  background-image: 
-    linear-gradient(rgba(148, 163, 184, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148, 163, 184, 0.035) 1px, transparent 1px),
-    radial-gradient(at 20% 0%, rgba(2, 132, 199, 0.12) 0px, transparent 50%),
-    radial-gradient(at 80% 100%, rgba(245, 158, 11, 0.05) 0px, transparent 45%);
-  background-size: 32px 32px, 32px 32px, 100% 100%, 100% 100%;
+  background-color: var(--bg);
   color: var(--text);
   font-family: 'Plus Jakarta Sans', sans-serif;
   height: 100vh;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* Glassmorphism Surface Helpers */
-.kenzo-glass {
-  background: rgba(11, 19, 36, 0.75);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(148, 163, 184, 0.12);
+/* Light Theme Global Adaptations */
+html.light body {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
 }
 
-.kenzo-glass-card {
-  background: linear-gradient(180deg, rgba(16, 28, 51, 0.85) 0%, rgba(9, 16, 29, 0.9) 100%);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(148, 163, 184, 0.12);
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+html.light header {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
 }
 
-.kenzo-glass-card:hover {
-  border-color: rgba(56, 189, 248, 0.3);
+html.light [class*="bg-[#070d18]"], 
+html.light [class*="bg-[#070D18]"] {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
 }
 
-.hero-gradient-text {
-  background: linear-gradient(135deg, #38bdf8 0%, #60a5fa 50%, #c084fc 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+html.light [class*="bg-[#05090f]"], 
+html.light [class*="bg-[#05090F]"] {
+  background-color: #f8fafc !important;
 }
 
-.kenzo-glow-btn {
-  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
-  box-shadow: 0 4px 18px rgba(2, 132, 199, 0.35);
+html.light [class*="bg-[#0c1322]"], 
+html.light [class*="bg-[#0C1322]"],
+html.light [class*="bg-[#0b1324]"],
+html.light [class*="bg-[#101c33]"] {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
 }
 
-.kenzo-glow-btn:hover {
-  background: linear-gradient(135deg, #0369a1 0%, #1d4ed8 100%);
-  box-shadow: 0 6px 24px rgba(2, 132, 199, 0.5);
+html.light [class*="bg-[#080e1a]"], 
+html.light [class*="bg-[#080E1A]"] {
+  background-color: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
 }
 
-/* Scrollbar styling */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+html.light [class*="border-slate-800"], 
+html.light [class*="border-[#1E293B]"], 
+html.light [class*="border-[#1e293b]"],
+html.light [class*="border-slate-700"] {
+  border-color: #e2e8f0 !important;
 }
 
-::-webkit-scrollbar-track {
-  background: rgba(5, 9, 15, 0.8);
+html.light .text-white, 
+html.light [class*="text-[#f8fafc]"] {
+  color: #0f172a !important;
 }
 
-::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.2);
-  border-radius: 9999px;
+html.light .text-slate-200, 
+html.light .text-slate-300 {
+  color: #1e293b !important;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(56, 189, 248, 0.4);
+html.light .text-slate-400 {
+  color: #64748b !important;
+}
+
+html.light .text-slate-500 {
+  color: #94a3b8 !important;
+}
+
+html.light .kenzo-input, 
+html.light .kenzo-select {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+html.light .kenzo-input:focus,
+html.light .kenzo-select:focus {
+  border-color: #0284c7 !important;
+  box-shadow: 0 0 0 1px #0284c7 !important;
+}
+
+html.light .kenzo-btn-secondary {
+  background-color: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  color: #1e293b !important;
+}
+
+html.light .kenzo-btn-secondary:hover {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+html.light .kenzo-btn-outline {
+  color: #334155 !important;
+  border-color: #cbd5e1 !important;
+}
+
+html.light .kenzo-btn-outline:hover {
+  border-color: #94a3b8 !important;
+  background-color: #f1f5f9 !important;
+}
+
+html.light .kenzo-table-row {
+  border-bottom-color: #e2e8f0 !important;
+}
+
+html.light .kenzo-table-row:hover {
+  background-color: #f8fafc !important;
+}
+
+html.light ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+html.light ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Enterprise Interactive Form Controls & Badges */
+.kenzo-input {
+  background-color: #080e1a;
+  border: 1px solid #1e293b;
+  color: #f1f5f9;
+  font-size: 0.8125rem;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.kenzo-input:focus {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 1px #0284c7;
+}
+
+.kenzo-select {
+  background-color: #080e1a;
+  border: 1px solid #1e293b;
+  color: #f1f5f9;
+  font-size: 0.8125rem;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  transition: all 0.15s ease;
+  outline: none;
+  appearance: none;
+}
+
+.kenzo-select:focus {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 1px #0284c7;
+}
+
+.kenzo-btn-primary {
+  background: #0284c7;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.8125rem;
+  padding: 0.45rem 0.875rem;
+  border-radius: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  border: 1px solid #0369a1;
+}
+
+.kenzo-btn-primary:hover {
+  background: #0369a1;
+}
+
+.kenzo-btn-primary:active {
+  transform: scale(0.98);
+}
+
+.kenzo-btn-secondary {
+  background: #0c1322;
+  color: #cbd5e1;
+  font-weight: 500;
+  font-size: 0.8125rem;
+  padding: 0.45rem 0.875rem;
+  border-radius: 0.5rem;
+  border: 1px solid #1e293b;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.kenzo-btn-secondary:hover {
+  background: #111927;
+  color: #ffffff;
+}
+
+.kenzo-btn-danger {
+  background: transparent;
+  color: #f87171;
+  font-weight: 600;
+  font-size: 0.8125rem;
+  padding: 0.45rem 0.875rem;
+  border-radius: 0.5rem;
+  border: 1px solid #f87171;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.kenzo-btn-danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.kenzo-btn-outline {
+  background: transparent;
+  color: #cbd5e1;
+  font-weight: 500;
+  font-size: 0.8125rem;
+  padding: 0.45rem 0.875rem;
+  border-radius: 0.5rem;
+  border: 1px solid #334155;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.kenzo-btn-outline:hover {
+  border-color: #64748b;
+}
+
+.kenzo-table-row {
+  background: transparent;
+  border-bottom: 1px solid rgba(30, 41, 59, 0.6);
+  transition: background-color 0.15s ease;
+}
+
+.kenzo-table-row:hover {
+  background-color: #0a1120;
+}
+
+.kenzo-badge {
+  display: inline-flex;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.375rem;
+}
+
+.kenzo-badge-blue {
+  background-color: rgba(14, 165, 233, 0.1);
+  color: #38bdf8;
+  border: 1px solid rgba(14, 165, 233, 0.2);
+}
+
+.kenzo-badge-green {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.kenzo-badge-amber {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.kenzo-badge-red {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.kenzo-badge-slate {
+  background-color: rgba(100, 116, 139, 0.1);
+  color: #94a3b8;
+  border: 1px solid rgba(100, 116, 139, 0.2);
 }

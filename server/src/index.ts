@@ -2761,6 +2761,7 @@ app.all('/api/*', (req: Request, res: Response) => {
 
 // Fallback to serving index.html for dashboard single page app routes
 app.get('*', (req: Request, res: Response) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.sendFile(path.join(__dirname, '../public/dashboard/index.html'));
 });
 

@@ -43,6 +43,7 @@ interface Project {
 export type TabType = 
   // Super Admin Tabs
   | 'overview'
+  | 'dap_studio'
   | 'organizations'
   | 'applications'
   | 'project_keys'
@@ -177,8 +178,9 @@ export default function Sidebar({
     {
       category: 'Intelligence & Studio',
       items: [
+        { id: 'dap_studio', label: 'In-App Studio Sandbox', icon: Sparkles },
         { id: 'content_library', label: 'Content Library', icon: FolderKanban },
-        { id: 'ai_studio', label: 'AI Studio', icon: Bot },
+        { id: 'ai_studio', label: 'AI Guidance Studio', icon: Bot },
       ]
     },
     {
@@ -211,6 +213,7 @@ export default function Sidebar({
       category: 'Company Portal',
       items: [
         { id: 'ceo_overview', label: 'Company Overview', icon: Home },
+        { id: 'dap_studio', label: 'In-App Studio Sandbox', icon: Sparkles },
         { id: 'ceo_orgs', label: 'Organization Sites', icon: Building },
         { id: 'ceo_apps', label: 'My Applications', icon: Boxes },
         { id: 'ceo_walkthroughs', label: 'My Walkthroughs', icon: Layers, badge: flowsCount > 0 ? flowsCount : undefined },
@@ -252,7 +255,7 @@ export default function Sidebar({
       {/* Collapse Trigger Button */}
       <button 
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute -right-3.5 top-6 bg-[#0b1324] border border-slate-700/80 text-slate-300 hover:text-sky-400 hover:border-sky-500/50 w-7 h-7 rounded-full flex items-center justify-center cursor-pointer transition-all z-50 shadow-lg"
+        className="absolute -right-3.5 top-6 bg-[#0b1324] border border-slate-700/80 text-slate-300 hover:text-sky-400 hover:border-sky-500/50 w-7 h-7 rounded flex items-center justify-center cursor-pointer transition-all z-50"
       >
         {isCollapsed ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
       </button>
@@ -265,7 +268,7 @@ export default function Sidebar({
           </div>
           {!isCollapsed && (
             <div className="flex flex-col">
-              <h1 className="font-bold text-base tracking-tight text-white leading-tight font-syne flex items-center gap-1">
+              <h1 className="font-bold text-base tracking-tight text-white leading-tight flex items-center gap-1">
                 Kenzo<span className="text-sky-400">_DAP</span>
               </h1>
               <span className="text-[9px] font-bold text-sky-400/90 tracking-wider uppercase">
@@ -280,7 +283,7 @@ export default function Sidebar({
           <div className="p-3 border-b border-slate-800/80 relative">
             <button
               onClick={() => setWorkspaceMenuOpen(!workspaceMenuOpen)}
-              className="w-full bg-[#0b1324] hover:bg-[#101c33] border border-slate-700/60 hover:border-sky-500/40 text-left px-3 py-2.5 rounded-xl flex items-center justify-between text-xs transition-all shadow-inner"
+              className="w-full bg-[#0b1324] hover:bg-[#101c33] border border-slate-700/60 hover:border-sky-500/40 text-left px-3 py-2.5 rounded-lg flex items-center justify-between text-xs transition-all shadow-inner"
             >
               <div className="flex items-center gap-2 truncate">
                 <Building size={14} className="text-sky-400 shrink-0" />
@@ -298,7 +301,7 @@ export default function Sidebar({
                   initial={{ opacity: 0, y: -6 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
-                  className="absolute left-3 right-3 top-14 bg-[#0b1324] border border-slate-700/80 rounded-2xl shadow-2xl z-50 py-1.5 overflow-hidden backdrop-blur-xl"
+                  className="absolute left-3 right-3 top-14 bg-[#0b1324] border border-slate-700/80 rounded-lg shadow-2xl z-50 py-1.5 overflow-hidden"
                 >
                   <div className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                     Workspaces ({projects.length})
@@ -355,7 +358,7 @@ export default function Sidebar({
           {currentNav.map((group, idx) => (
             <div key={idx} className="space-y-1">
               {!isCollapsed && (
-                <div className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest font-syne">
+                <div className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                   {group.category}
                 </div>
               )}
@@ -366,9 +369,9 @@ export default function Sidebar({
                   <button
                     key={item.id}
                     onClick={() => setActiveTab(item.id)}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                       isActive
-                        ? 'bg-gradient-to-r from-sky-500/20 via-blue-600/15 to-transparent text-white border-l-2 border-sky-400 font-semibold shadow-sm'
+                        ? 'bg-sky-500/10 text-white font-semibold'
                         : 'text-slate-400 hover:bg-[#0b1324]/70 hover:text-slate-200'
                     } ${isCollapsed ? 'justify-center px-0' : ''}`}
                     title={isCollapsed ? item.label : undefined}
@@ -376,7 +379,7 @@ export default function Sidebar({
                     <Icon size={16} className={isActive ? 'text-sky-400' : 'text-slate-400'} />
                     {!isCollapsed && <span className="truncate flex-1 text-left">{item.label}</span>}
                     {!isCollapsed && item.badge !== undefined && (
-                      <span className="bg-sky-500/20 text-sky-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-sky-500/30">
+                      <span className="bg-sky-500/20 text-sky-300 text-[10px] font-bold px-2 py-0.5 rounded-md">
                         {item.badge}
                       </span>
                     )}
@@ -392,7 +395,7 @@ export default function Sidebar({
           {!isCollapsed ? (
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5 truncate">
-                <div className="w-8 h-8 rounded-full bg-sky-500/20 border border-sky-500/40 flex items-center justify-center text-sky-300 font-bold text-xs shrink-0">
+                <div className="w-8 h-8 rounded-lg bg-sky-500/20 border border-sky-500/40 flex items-center justify-center text-sky-300 font-bold text-xs shrink-0">
                   {user?.name ? user.name[0].toUpperCase() : 'K'}
                 </div>
                 <div className="flex flex-col truncate">

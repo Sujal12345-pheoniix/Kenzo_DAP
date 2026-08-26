@@ -119,36 +119,32 @@ export default function ContentLibraryView({ projectId, headers }: GuidanceModul
   }, {} as Record<string, number>);
 
   return (
-    <div className="space-y-8 select-none relative text-left w-full">
+    <div className="space-y-6 select-none relative text-left w-full">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
-        <div className="flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-2xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-center text-sky-400 shadow-lg shadow-sky-500/10">
-            <Library size={20} className="text-sky-400" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-bold text-white tracking-tight">Content Library</h2>
+            <span className="text-xs bg-slate-800 text-slate-300 font-semibold px-2.5 py-0.5 rounded-md border border-slate-700">
+              {items.length} assets
+            </span>
           </div>
-          <div>
-            <h2 className="text-xl font-bold font-syne text-white tracking-tight">Content & Asset Library</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Reusable layout templates, media assets, scripts & shared widgets</p>
-          </div>
+          <p className="text-xs text-slate-400 mt-1">Templates, images, and reusable assets</p>
         </div>
         
-        <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#0b1324] border border-slate-800 text-xs text-slate-400 font-medium">
-            <span>Total Assets:</span>
-            <span className="font-bold text-sky-400">{items.length}</span>
-          </div>
+        <div className="flex items-center gap-2.5">
           <button 
             onClick={openCreate} 
-            className="kenzo-glow-btn text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+            className="kenzo-btn-primary text-xs"
           >
-            <Plus size={15} />
-            <span>Add Content</span>
+            <Plus size={14} />
+            <span>Add Asset</span>
           </button>
         </div>
       </div>
 
       {/* Type Stats Filter Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {CONTENT_TYPES.map(t => {
           const tc = typeConfig[t];
           const isSelected = typeFilter === t;
@@ -156,14 +152,14 @@ export default function ContentLibraryView({ projectId, headers }: GuidanceModul
             <button
               key={t}
               onClick={() => setTypeFilter(prev => prev === t ? '' : t)}
-              className={`p-4 rounded-2xl border transition-all text-left cursor-pointer ${
+              className={`p-3.5 rounded-xl border transition-all text-left cursor-pointer ${
                 isSelected 
-                  ? 'border-sky-500/60 bg-sky-500/15 shadow-lg shadow-sky-500/10' 
-                  : 'kenzo-glass-card hover:border-slate-700'
+                  ? 'border-sky-500/60 bg-sky-500/15' 
+                  : 'bg-[#0c1322] border-slate-800 hover:border-slate-700'
               }`}
             >
-              <div className={`w-8 h-8 rounded-xl border flex items-center justify-center mb-2.5 ${tc.bg} ${tc.color}`}>{tc.icon}</div>
-              <div className="text-xl font-bold text-white">{typeCounts[t]}</div>
+              <div className={`w-7 h-7 rounded-lg border flex items-center justify-center mb-2 ${tc.bg} ${tc.color}`}>{tc.icon}</div>
+              <div className="text-lg font-bold text-white">{typeCounts[t]}</div>
               <div className="text-xs text-slate-400 capitalize font-medium">{t}s</div>
             </button>
           );
@@ -179,7 +175,7 @@ export default function ContentLibraryView({ projectId, headers }: GuidanceModul
             value={search} 
             onChange={e => setSearch(e.target.value)} 
             placeholder="Search content library assets..." 
-            className="w-full bg-[#0b1324] border border-slate-700/80 focus:border-sky-400 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors" 
+            className="w-full bg-[#0C1322] border border-slate-700/80 focus:border-sky-400 rounded-lg pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors" 
           />
         </div>
         {categories.length > 0 && (
@@ -188,10 +184,10 @@ export default function ContentLibraryView({ projectId, headers }: GuidanceModul
             <select 
               value={categoryFilter} 
               onChange={e => setCategoryFilter(e.target.value)} 
-              className="bg-[#0b1324] border border-slate-700/80 focus:border-sky-400 rounded-2xl pl-9 pr-8 py-2.5 text-xs text-slate-300 outline-none appearance-none cursor-pointer"
+              className="bg-[#0C1322] border border-slate-700/80 focus:border-sky-400 rounded-lg pl-9 pr-8 py-2.5 text-xs text-slate-300 outline-none appearance-none cursor-pointer"
             >
-              <option value="" className="bg-[#0b1324] text-white">All Categories</option>
-              {categories.map(c => <option key={c} value={c} className="bg-[#0b1324] text-white">{c}</option>)}
+              <option value="" className="bg-[#0C1322] text-white">All Categories</option>
+              {categories.map(c => <option key={c} value={c} className="bg-[#0C1322] text-white">{c}</option>)}
             </select>
           </div>
         )}
@@ -200,7 +196,7 @@ export default function ContentLibraryView({ projectId, headers }: GuidanceModul
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="kenzo-glass-card rounded-3xl animate-pulse overflow-hidden">
+            <div key={i} className="bg-[#0C1322] border border-slate-800 rounded-lg animate-pulse overflow-hidden">
               <div className="h-32 bg-slate-800" />
               <div className="p-5 space-y-2">
                 <div className="h-4 bg-slate-700 rounded w-2/3" />
@@ -210,9 +206,9 @@ export default function ContentLibraryView({ projectId, headers }: GuidanceModul
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="kenzo-glass-card rounded-3xl p-16 text-center shadow-2xl">
-          <div className="w-16 h-16 rounded-2xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-center text-sky-400 mx-auto mb-4">
-            <Library size={32} className="animate-pulse" />
+        <div className="bg-[#0C1322] border border-slate-800 rounded-lg p-16 text-center">
+          <div className="w-16 h-16 rounded-lg bg-sky-500/10 border border-sky-500/25 flex items-center justify-center text-sky-400 mx-auto mb-4">
+            <Library size={32} />
           </div>
           <h3 className="text-base font-bold font-syne text-white">No Content Assets Found</h3>
           <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1 mb-5">
@@ -231,14 +227,14 @@ export default function ContentLibraryView({ projectId, headers }: GuidanceModul
                 key={item.id}
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="kenzo-glass-card rounded-3xl overflow-hidden hover:border-sky-500/40 transition-all flex flex-col justify-between group shadow-xl"
+                className="bg-[#0C1322] border border-slate-800 rounded-lg overflow-hidden hover:border-sky-500/40 transition-all flex flex-col justify-between group"
               >
                 <div className="h-28 bg-[#070d18] border-b border-slate-800/80 flex items-center justify-center relative">
-                  <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center ${tc.bg} ${tc.color}`}>
+                  <div className={`w-12 h-12 rounded-lg border flex items-center justify-center ${tc.bg} ${tc.color}`}>
                     {tc.icon}
                   </div>
                   <div className="absolute top-3 right-3 opacity-80 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => setDeleteTarget(item)} className="p-1.5 rounded-lg bg-[#0b1324] border border-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors cursor-pointer">
+                    <button onClick={() => setDeleteTarget(item)} className="p-1.5 rounded-lg bg-[#0C1322] border border-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors cursor-pointer">
                       <Trash2 size={13} />
                     </button>
                   </div>
@@ -279,9 +275,9 @@ export default function ContentLibraryView({ projectId, headers }: GuidanceModul
             <motion.div
               initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 280 }}
-              className="fixed right-0 top-0 h-full w-full max-w-lg bg-[#070d18] border-l border-slate-800 z-50 flex flex-col shadow-2xl"
+              className="fixed right-0 top-0 h-full w-full max-w-lg bg-[#070d18] border-l border-slate-800 z-50 flex flex-col"
             >
-              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-[#0b1324]">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-[#0C1322]">
                 <div>
                   <h3 className="text-base font-bold font-syne text-white">Add Content Item</h3>
                   <p className="text-xs text-slate-400 mt-0.5">Upload or register an asset in your library</p>
@@ -292,12 +288,12 @@ export default function ContentLibraryView({ projectId, headers }: GuidanceModul
               <div className="flex-1 overflow-y-auto p-6 space-y-5">
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1.5">Asset Name <span className="text-sky-400">*</span></label>
-                  <input type="text" value={form.name ?? ''} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Welcome Modal Graphic" className="w-full bg-[#0b1324] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors" />
+                  <input type="text" value={form.name ?? ''} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Welcome Modal Graphic" className="w-full bg-[#0C1322] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors" />
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1.5">Description</label>
-                  <textarea value={form.description ?? ''} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Brief summary of usage..." rows={3} className="w-full bg-[#0b1324] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors resize-none" />
+                  <textarea value={form.description ?? ''} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Brief summary of usage..." rows={3} className="w-full bg-[#0C1322] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors resize-none" />
                 </div>
 
                 <div>
@@ -306,7 +302,7 @@ export default function ContentLibraryView({ projectId, headers }: GuidanceModul
                     {CONTENT_TYPES.map(t => {
                       const tc = typeConfig[t];
                       return (
-                        <button key={t} onClick={() => setForm(f => ({ ...f, content_type: t }))} className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-xs transition-all cursor-pointer ${form.content_type === t ? 'border-sky-400 bg-sky-500/15 text-sky-300 font-semibold' : 'border-slate-800 bg-[#0b1324] text-slate-400 hover:border-slate-700'}`}>
+                        <button key={t} onClick={() => setForm(f => ({ ...f, content_type: t }))} className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-xs transition-all cursor-pointer ${form.content_type === t ? 'border-sky-400 bg-sky-500/15 text-sky-300 font-semibold' : 'border-slate-800 bg-[#0C1322] text-slate-400 hover:border-slate-700'}`}>
                           <span className={tc.color}>{tc.icon}</span>
                           <span className="capitalize font-medium">{t}</span>
                         </button>
@@ -320,13 +316,13 @@ export default function ContentLibraryView({ projectId, headers }: GuidanceModul
                   <input
                     type="text" value={form.category ?? ''} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
                     list="lib-categories" placeholder="e.g. Onboarding"
-                    className="w-full bg-[#0b1324] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors"
+                    className="w-full bg-[#0C1322] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors"
                   />
                   <datalist id="lib-categories">{categories.map(c => <option key={c} value={c} />)}</datalist>
                 </div>
               </div>
 
-              <div className="px-6 py-4 border-t border-slate-800 bg-[#0b1324] flex gap-3">
+              <div className="px-6 py-4 border-t border-slate-800 bg-[#0C1322] flex gap-3">
                 <button onClick={closePanel} className="flex-1 py-2.5 rounded-xl border border-slate-700 text-xs font-semibold text-slate-300 hover:bg-slate-800 transition-colors cursor-pointer">Cancel</button>
                 <button onClick={handleSave} disabled={saving} className="flex-1 py-2.5 rounded-xl kenzo-glow-btn text-white text-xs font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer">
                   {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
@@ -342,9 +338,9 @@ export default function ContentLibraryView({ projectId, headers }: GuidanceModul
       <AnimatePresence>
         {deleteTarget && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-[#0b1324] border border-slate-800 rounded-3xl p-6 w-full max-w-sm shadow-2xl">
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-[#0C1322] border border-slate-800 rounded-lg p-6 w-full max-w-sm">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center"><AlertCircle size={20} className="text-red-400" /></div>
+                <div className="w-10 h-10 rounded-lg bg-red-500/10 border border-red-500/30 flex items-center justify-center"><AlertCircle size={20} className="text-red-400" /></div>
                 <div><h4 className="font-bold font-syne text-white">Delete Asset</h4><p className="text-xs text-slate-400 mt-0.5">This action cannot be undone</p></div>
               </div>
               <p className="text-xs text-slate-300 mb-5 leading-relaxed">Are you sure you want to delete <span className="font-semibold text-white">"{deleteTarget.name}"</span>?</p>
@@ -365,7 +361,7 @@ export default function ContentLibraryView({ projectId, headers }: GuidanceModul
         <AnimatePresence>
           {toasts.map(toast => (
             <motion.div key={toast.id} initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }}
-              className={`flex items-center gap-3 px-4 py-3 rounded-2xl border shadow-xl pointer-events-auto backdrop-blur-md ${toast.type === 'success' ? 'bg-[#0b1324]/95 border-emerald-500/40 text-emerald-300' : 'bg-[#0b1324]/95 border-red-500/40 text-red-300'}`}>
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg border pointer-events-auto ${toast.type === 'success' ? 'bg-[#0C1322]/95 border-emerald-500/40 text-emerald-300' : 'bg-[#0C1322]/95 border-red-500/40 text-red-300'}`}>
               {toast.type === 'success' ? <CheckCircle size={16} className="text-emerald-400" /> : <AlertCircle size={16} className="text-red-400" />}
               <span className="text-xs font-medium">{toast.message}</span>
             </motion.div>

@@ -138,7 +138,7 @@ export default function InsightsBuilder({ apiKey, onBack }: InsightsBuilderProps
           </button>
           <div className="h-5 w-[1px] bg-slate-800" />
           <div className="flex items-center gap-2">
-            <span className="text-sm font-bold font-syne text-sky-400">Trend Insight Studio /</span>
+            <span className="text-xs font-semibold text-sky-400">Insights Studio /</span>
             {isEditingTitle ? (
               <input
                 type="text"
@@ -146,12 +146,12 @@ export default function InsightsBuilder({ apiKey, onBack }: InsightsBuilderProps
                 onChange={(e) => setInsightTitle(e.target.value)}
                 onBlur={() => setIsEditingTitle(false)}
                 autoFocus
-                className="text-xs font-medium border border-sky-400 rounded-xl px-2.5 py-1 outline-none bg-[#070d18] text-white"
+                className="text-xs font-medium border border-sky-400 rounded-lg px-2.5 py-1 outline-none bg-[#080e1a] text-white"
               />
             ) : (
               <div 
                 onClick={() => setIsEditingTitle(true)}
-                className="flex items-center gap-1.5 cursor-pointer text-xs font-medium text-slate-300 hover:text-white group"
+                className="flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-slate-200 hover:text-white group"
               >
                 <span>{insightTitle}</span>
                 <Edit2 size={12} className="text-slate-500 group-hover:text-sky-400" />
@@ -160,11 +160,11 @@ export default function InsightsBuilder({ apiKey, onBack }: InsightsBuilderProps
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button className="p-2 rounded-xl bg-[#0b1324] border border-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer" title="Duplicate Insight">
-            <Copy size={15} />
+        <div className="flex items-center gap-2">
+          <button className="p-2 rounded-lg bg-[#0c1322] border border-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer" title="Duplicate Insight">
+            <Copy size={14} />
           </button>
-          <button className="kenzo-glow-btn text-white px-5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer">
+          <button className="kenzo-btn-primary text-xs">
             Save Insight
           </button>
         </div>
@@ -172,24 +172,24 @@ export default function InsightsBuilder({ apiKey, onBack }: InsightsBuilderProps
 
       <div className="space-y-6">
         {/* Ask AI Prompt Bar */}
-        <div className="kenzo-glass-card rounded-2xl p-3 flex items-center gap-3 shadow-xl border border-sky-500/20">
-          <div className="w-8 h-8 rounded-xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400 shrink-0">
-            <Sparkles className="w-4 h-4 text-sky-400" />
+        <div className="bg-[#0c1322] border border-slate-800 rounded-xl p-3 flex items-center gap-3 shadow-sm">
+          <div className="w-7 h-7 rounded-lg bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 shrink-0">
+            <Sparkles className="w-3.5 h-3.5 text-sky-400" />
           </div>
           <input
             type="text"
             value={aiPrompt}
             onChange={(e) => setAiPrompt(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleAskAi()}
-            placeholder="Ask AI: 'Show drop-off rate for onboarding flow over the last 30 days by browser'..."
+            placeholder="Query query analytics: 'Show drop-off rate for onboarding flow over the last 30 days'..."
             className="flex-1 bg-transparent text-xs text-white placeholder-slate-500 outline-none"
           />
           <button
             onClick={handleAskAi}
             disabled={isAiLoading}
-            className="kenzo-glow-btn text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shrink-0 cursor-pointer disabled:opacity-60"
+            className="kenzo-btn-primary text-xs disabled:opacity-60"
           >
-            {isAiLoading ? 'Analyzing...' : 'Generate Insight'}
+            {isAiLoading ? 'Analyzing...' : 'Generate Query'}
           </button>
         </div>
 

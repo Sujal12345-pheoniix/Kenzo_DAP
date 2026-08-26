@@ -56,12 +56,12 @@ const emptyForm = (): Partial<SmartTip> => ({
 function StatusBadge({ status }: { status: string }) {
   const isPub = status === 'published';
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border ${
       isPub 
-        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' 
-        : 'bg-amber-500/10 border-amber-500/30 text-amber-400'
+        ? 'bg-emerald-500/10 border-transparent text-emerald-400' 
+        : 'bg-amber-500/10 border-transparent text-amber-400'
     }`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${isPub ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+      <span className={`w-1.5 h-1.5 rounded-full ${isPub ? 'bg-emerald-400' : 'bg-amber-400'}`} />
       <span>{isPub ? 'Published' : 'Draft'}</span>
     </span>
   );
@@ -208,27 +208,23 @@ export default function SmartTipsView({ projectId, headers }: GuidanceModuleProp
   return (
     <div className="space-y-6 select-none text-left w-full flex-1 flex flex-col">
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
-        <div className="flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-2xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-center text-sky-400 shadow-lg shadow-sky-500/10">
-            <Lightbulb size={20} className="text-sky-400" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-bold text-white tracking-tight">Smart Tips</h2>
+            <span className="text-xs bg-slate-800 text-slate-300 font-semibold px-2.5 py-0.5 rounded-md border border-slate-700">
+              {tips.length} configured
+            </span>
           </div>
-          <div>
-            <h2 className="text-xl font-bold font-syne text-white tracking-tight">Smart Tips & Contextual Guidance</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Manage inline field hints, tooltips, and interactive walkthrough anchors</p>
-          </div>
+          <p className="text-xs text-slate-400 mt-1">Contextual guidance helpers</p>
         </div>
         
-        <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#0b1324] border border-slate-800 text-xs text-slate-400 font-medium">
-            <span>Total Tips:</span>
-            <span className="font-bold text-sky-400">{tips.length}</span>
-          </div>
+        <div className="flex items-center gap-2.5">
           <button
             onClick={openCreate}
-            className="kenzo-glow-btn text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+            className="kenzo-btn-primary text-xs"
           >
-            <Plus size={15} />
+            <Plus size={14} />
             <span>New Smart Tip</span>
           </button>
         </div>
@@ -251,10 +247,10 @@ export default function SmartTipsView({ projectId, headers }: GuidanceModuleProp
           <button
             key={r.id}
             onClick={() => setSelectedRouteFilter(r.id)}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
               selectedRouteFilter === r.id 
-                ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40 shadow-sm shadow-sky-500/10' 
-                : 'bg-[#0b1324] border border-slate-800/80 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                ? 'bg-sky-600 text-white font-semibold' 
+                : 'bg-[#080e1a] border border-slate-800 text-slate-400 hover:text-slate-200'
             }`}
           >
             {r.label}
@@ -263,13 +259,13 @@ export default function SmartTipsView({ projectId, headers }: GuidanceModuleProp
       </div>
 
       {/* Table Container */}
-      <div className="kenzo-glass-card rounded-2xl overflow-hidden shadow-2xl flex-1 flex flex-col">
+      <div className="bg-[#0c1322] border border-slate-800 rounded-xl overflow-hidden flex-1 flex flex-col">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-xs text-left border-collapse min-w-[720px]">
             <thead>
-              <tr className="border-b border-slate-800/80 bg-[#070d18]/60">
+              <tr className="border-b border-slate-800 bg-[#080e1a] text-slate-400 font-semibold text-[11px] uppercase tracking-wider">
                 {['Name', 'Target Route', 'Target Element', 'Content Preview', 'Position', 'Status', 'Actions'].map(h => (
-                  <th key={h} className="px-5 py-3.5 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider font-syne">{h}</th>
+                  <th key={h} className="py-3 px-4">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -280,8 +276,8 @@ export default function SmartTipsView({ projectId, headers }: GuidanceModuleProp
                 <tr>
                   <td colSpan={7} className="px-5 py-20 text-center">
                     <div className="flex flex-col items-center gap-3.5 max-w-sm mx-auto">
-                      <div className="w-14 h-14 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
-                        <Lightbulb size={28} className="animate-pulse" />
+                      <div className="w-14 h-14 rounded-lg bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
+                        <Lightbulb size={28} />
                       </div>
                       <h4 className="text-base font-bold font-syne text-white">No Smart Tips Found</h4>
                       <p className="text-xs text-slate-400 leading-relaxed">There are no tips configured for this route. Add one to guide your application users seamlessly.</p>
@@ -351,9 +347,9 @@ export default function SmartTipsView({ projectId, headers }: GuidanceModuleProp
             <motion.div
               initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 280 }}
-              className="fixed right-0 top-0 h-full w-full max-w-md bg-[#070d18] border-l border-slate-800 z-50 flex flex-col shadow-2xl"
+              className="fixed right-0 top-0 h-full w-full max-w-md bg-[#070d18] border-l border-slate-800 z-50 flex flex-col"
             >
-              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-[#0b1324]">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-[#0C1322]">
                 <div>
                   <h3 className="text-base font-bold font-syne text-white">{editing ? 'Edit Smart Tip' : 'New Smart Tip'}</h3>
                   <p className="text-xs text-slate-400 mt-0.5">{editing ? `Editing: ${editing.name}` : 'Create a contextual guidance tip'}</p>
@@ -371,7 +367,7 @@ export default function SmartTipsView({ projectId, headers }: GuidanceModuleProp
                     value={form.name ?? ''}
                     onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                     placeholder="e.g. Dashboard Navigation Tip"
-                    className="w-full bg-[#0b1324] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors"
+                    className="w-full bg-[#0C1322] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors"
                   />
                 </div>
 
@@ -386,12 +382,12 @@ export default function SmartTipsView({ projectId, headers }: GuidanceModuleProp
                           setTargetRoutePattern(e.target.value);
                         }
                       }}
-                      className="w-full bg-[#0b1324] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none transition-colors"
+                      className="w-full bg-[#0C1322] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none transition-colors"
                     >
                       {COMMON_ROUTES.map(r => (
-                        <option key={r.pattern} value={r.pattern} className="bg-[#0b1324] text-white">{r.label}</option>
+                        <option key={r.pattern} value={r.pattern} className="bg-[#0C1322] text-white">{r.label}</option>
                       ))}
-                      <option value="custom" className="bg-[#0b1324] text-white">Custom URL Pattern...</option>
+                      <option value="custom" className="bg-[#0C1322] text-white">Custom URL Pattern...</option>
                     </select>
                     <input
                       type="text"
@@ -411,7 +407,7 @@ export default function SmartTipsView({ projectId, headers }: GuidanceModuleProp
                     value={targetCssSelector}
                     onChange={e => setTargetCssSelector(e.target.value)}
                     placeholder="e.g. button.btn-primary, #add-deal, .grid"
-                    className="w-full bg-[#0b1324] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-200 placeholder-slate-500 outline-none transition-colors"
+                    className="w-full bg-[#0C1322] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-200 placeholder-slate-500 outline-none transition-colors"
                   />
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     {['button', '.btn-primary', 'table', '.grid', 'body'].map(quickSel => (
@@ -419,7 +415,7 @@ export default function SmartTipsView({ projectId, headers }: GuidanceModuleProp
                         key={quickSel}
                         type="button"
                         onClick={() => setTargetCssSelector(quickSel)}
-                        className="px-2.5 py-1 rounded-lg bg-[#0b1324] border border-slate-700/60 text-[10px] font-mono text-slate-400 hover:text-sky-300 hover:border-sky-500/50 cursor-pointer transition-colors"
+                        className="px-2.5 py-1 rounded-lg bg-[#0C1322] border border-slate-700/60 text-[10px] font-mono text-slate-400 hover:text-sky-300 hover:border-sky-500/50 cursor-pointer transition-colors"
                       >
                         {quickSel}
                       </button>
@@ -434,7 +430,7 @@ export default function SmartTipsView({ projectId, headers }: GuidanceModuleProp
                     onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
                     placeholder="Enter the guidance message shown to users..."
                     rows={4}
-                    className="w-full bg-[#0b1324] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors resize-none"
+                    className="w-full bg-[#0C1322] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors resize-none"
                   />
                 </div>
 
@@ -444,9 +440,9 @@ export default function SmartTipsView({ projectId, headers }: GuidanceModuleProp
                     <select
                       value={form.position ?? 'top'}
                       onChange={e => setForm(f => ({ ...f, position: e.target.value as any }))}
-                      className="w-full bg-[#0b1324] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none appearance-none transition-colors"
+                      className="w-full bg-[#0C1322] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none appearance-none transition-colors"
                     >
-                      {POSITIONS.map(p => <option key={p} value={p} className="bg-[#0b1324] text-white capitalize">{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
+                      {POSITIONS.map(p => <option key={p} value={p} className="bg-[#0C1322] text-white capitalize">{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
                     </select>
                     <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                   </div>
@@ -462,7 +458,7 @@ export default function SmartTipsView({ projectId, headers }: GuidanceModuleProp
                         className={`py-2.5 rounded-xl border text-xs font-medium capitalize transition-all cursor-pointer ${
                           form.trigger === t 
                             ? 'border-sky-400 bg-sky-500/15 text-sky-300 font-semibold' 
-                            : 'border-slate-800 bg-[#0b1324] text-slate-400 hover:border-slate-700'
+                            : 'border-slate-800 bg-[#0C1322] text-slate-400 hover:border-slate-700'
                         }`}
                       >
                         {t}
@@ -481,7 +477,7 @@ export default function SmartTipsView({ projectId, headers }: GuidanceModuleProp
                         className={`py-2.5 rounded-xl border text-xs font-medium capitalize transition-all flex items-center justify-center gap-2 cursor-pointer ${
                           form.status === s 
                             ? 'border-sky-400 bg-sky-500/15 text-sky-300 font-semibold' 
-                            : 'border-slate-800 bg-[#0b1324] text-slate-400 hover:border-slate-700'
+                            : 'border-slate-800 bg-[#0C1322] text-slate-400 hover:border-slate-700'
                         }`}
                       >
                         {s === 'published' ? <Eye size={13} /> : <EyeOff size={13} />}
@@ -492,7 +488,7 @@ export default function SmartTipsView({ projectId, headers }: GuidanceModuleProp
                 </div>
               </div>
 
-              <div className="px-6 py-4 border-t border-slate-800 bg-[#0b1324] flex gap-3">
+              <div className="px-6 py-4 border-t border-slate-800 bg-[#0C1322] flex gap-3">
                 <button onClick={closePanel} className="flex-1 py-2.5 rounded-xl border border-slate-700 text-xs font-semibold text-slate-300 hover:bg-slate-800 transition-colors cursor-pointer">
                   Cancel
                 </button>
@@ -515,10 +511,10 @@ export default function SmartTipsView({ projectId, headers }: GuidanceModuleProp
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-[#0b1324] border border-slate-800 rounded-3xl p-6 w-full max-w-sm shadow-2xl"
+              className="bg-[#0C1322] border border-slate-800 rounded-lg p-6 w-full max-w-sm"
             >
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-lg bg-red-500/10 border border-red-500/30 flex items-center justify-center">
                   <AlertCircle size={20} className="text-red-400" />
                 </div>
                 <div>
@@ -552,10 +548,10 @@ export default function SmartTipsView({ projectId, headers }: GuidanceModuleProp
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 10, scale: 0.95 }}
-              className={`flex items-center gap-3 px-4 py-3 rounded-2xl border shadow-xl pointer-events-auto backdrop-blur-md ${
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg border pointer-events-auto backdrop-blur-md ${
                 toast.type === 'success' 
-                  ? 'bg-[#0b1324]/95 border-emerald-500/40 text-emerald-300' 
-                  : 'bg-[#0b1324]/95 border-red-500/40 text-red-300'
+                  ? 'bg-[#0C1322]/95 border-emerald-500/40 text-emerald-300' 
+                  : 'bg-[#0C1322]/95 border-red-500/40 text-red-300'
               }`}
             >
               {toast.type === 'success' ? <CheckCircle size={16} className="text-emerald-400" /> : <AlertCircle size={16} className="text-red-400" />}

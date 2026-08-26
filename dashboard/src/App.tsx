@@ -17,7 +17,11 @@ import SelfHelpView from './components/self-help-view';
 import ContentLibraryView from './components/content-library-view';
 import AuditLogsView from './components/audit-logs-view';
 import OrganizationsView from './components/organizations-view';
-import { X, Sparkles, Building2 } from 'lucide-react';
+import AIStudioView from './components/ai-studio-view';
+import ProjectKeysView from './components/project-keys-view';
+import FunnelsView from './components/funnels-view';
+import DAPStudioSimulator from './components/dap-studio-simulator';
+import { X, Building2 } from 'lucide-react';
 
 interface Flow {
   id: string;
@@ -72,6 +76,11 @@ export default function App() {
     return saved ? JSON.parse(saved) : null;
   });
 
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    const saved = localStorage.getItem('kenzo_theme');
+    return saved === 'light' ? 'light' : 'dark';
+  });
+
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [flows, setFlows] = useState<Flow[]>([]);
   const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
@@ -79,6 +88,21 @@ export default function App() {
   const [editingFlow, setEditingFlow] = useState<Flow | null>(null);
   const [apiBaseUrl, setApiBaseUrl] = useState('');
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('kenzo_theme', theme);
+    if (theme === 'light') {
+      document.documentElement.classList.add('light');
+      document.documentElement.classList.remove('dark');
+    } else {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+    }
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
+  };
   
   // Multi-tenant project states
   const [projects, setProjects] = useState<Project[]>([]);
@@ -310,17 +334,15 @@ export default function App() {
       />
 
       {/* Main Content Pane */}
-      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative bg-[#05090f]">
-        
-        {/* Ambient Kenzo Glow Blurs */}
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-sky-500/5 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-10 right-10 w-96 h-96 bg-amber-500/3 rounded-full blur-3xl pointer-events-none" />
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#05090f]">
 
         {/* Top Header */}
         <TopNav 
           activeTab={activeTab} 
           onSearchClick={() => setIsCommandPaletteOpen(true)}
           flowsCount={flows.length}
+          theme={theme}
+          onToggleTheme={toggleTheme}
         />
 
         {/* Dynamic Pages Area */}
@@ -336,17 +358,23 @@ export default function App() {
                 <div className="h-10 w-32 bg-slate-800/60 rounded-xl" />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="h-32 bg-[#0b1324]/80 border border-slate-800/60 rounded-2xl" />
-                <div className="h-32 bg-[#0b1324]/80 border border-slate-800/60 rounded-2xl" />
-                <div className="h-32 bg-[#0b1324]/80 border border-slate-800/60 rounded-2xl" />
+                <div className="h-32 bg-[#0C1322] border border-slate-800/60 rounded-lg" />
+                <div className="h-32 bg-[#0C1322] border border-slate-800/60 rounded-lg" />
+                <div className="h-32 bg-[#0C1322] border border-slate-800/60 rounded-lg" />
               </div>
-              <div className="h-96 bg-[#0b1324]/80 border border-slate-800/60 rounded-2xl" />
+              <div className="h-96 bg-[#0C1322] border border-slate-800/60 rounded-lg" />
             </div>
           ) : (
             <div className="fade-in transition-all duration-300 w-full max-w-7xl mx-auto flex-1 flex flex-col">
               {/* Analytics / Overview */}
               {(activeTab === 'overview' || activeTab === 'analytics_overview' || activeTab === 'ceo_overview' || activeTab === 'ceo_analytics') && (
-                <AnalyticsView analytics={analytics} flowsCount={flows.length} activePublishedCount={activePublishedCount} getCompletionRate={getCompletionRate} />
+                <AnalyticsView 
+                  analytics={analytics} 
+                  flowsCount={flows.length} 
+                  activePublishedCount={activePublishedCount} 
+                  getCompletionRate={getCompletionRate} 
+                  onLaunchStudio={() => setActiveTab('dap_studio')}
+                />
               )}
 
               {/* Flows / Walkthroughs */}
@@ -389,13 +417,33 @@ export default function App() {
                 <ContentLibraryView projectId={activeProjectId} headers={{ ...getAuthHeaders(), 'x-project-id': activeProjectId }} />
               )}
 
-              {/* Audit Logs */}
-              {(activeTab === 'audit_logs' || activeTab === 'ceo_audit') && (
+              {/* In-App DAP Creator Studio Sandbox */}
+              {(activeTab === 'dap_studio') && (
+                <DAPStudioSimulator apiKey={activeProject?.apiKey} projectId={activeProjectId} />
+              )}
+
+              {/* AI Guidance Studio */}
+              {(activeTab === 'ai_studio' || activeTab === 'ceo_ai') && (
+                <AIStudioView apiKey={activeProject?.apiKey || ''} projectId={activeProjectId} />
+              )}
+
+              {/* Project & API Keys */}
+              {activeTab === 'project_keys' && (
+                <ProjectKeysView apiKey={activeProject?.apiKey || ''} projectId={activeProjectId} projectName={activeProject?.name || ''} />
+              )}
+
+              {/* Funnels & User Journeys */}
+              {(activeTab === 'funnels' || activeTab === 'user_journeys' || activeTab === 'adoption_health') && (
+                <FunnelsView />
+              )}
+
+              {/* Audit Logs & Security */}
+              {(activeTab === 'audit_logs' || activeTab === 'ceo_audit' || activeTab === 'users' || activeTab === 'roles' || activeTab === 'settings' || activeTab === 'ceo_settings') && (
                 <AuditLogsView projectId={activeProjectId} headers={{ ...getAuthHeaders(), 'x-project-id': activeProjectId }} />
               )}
 
               {/* Organizations & Client Sites */}
-              {(activeTab === 'organizations' || activeTab === 'ceo_orgs') && (
+              {(activeTab === 'organizations' || activeTab === 'ceo_orgs' || activeTab === 'applications' || activeTab === 'ceo_apps') && (
                 <OrganizationsView userRole={user.role} headers={getAuthHeaders()} />
               )}
 
@@ -405,23 +453,8 @@ export default function App() {
               )}
 
               {/* Integrations */}
-              {activeTab === 'integrations' && (
+              {(activeTab === 'integrations' || activeTab === 'reports' || activeTab === 'ceo_reports') && (
                 <IntegrationView apiBaseUrl={apiBaseUrl} apiKey={activeProject?.apiKey || ''} />
-              )}
-
-              {/* Generic fallback for other tabs */}
-              {!['overview','analytics_overview','ceo_overview','ceo_analytics','organizations','ceo_orgs','guidance_flows','ceo_walkthroughs','smart_tips','guidance_tips','ceo_smart_tips','popups','guidance_popups','ceo_popups','beacons','guidance_beacons','ceo_beacons','task_lists','guidance_tasks','ceo_task_lists','surveys','guidance_surveys','ceo_surveys','self_help','ceo_self_help','guidance_selfhelp','ceo_selfhelp','content_library','audit_logs','ceo_audit','trends','ceo_growth','integrations'].includes(activeTab) && (
-                <div className="w-full flex-1 flex items-center justify-center py-16">
-                  <div className="kenzo-glass-card p-12 rounded-3xl border border-sky-500/20 text-center max-w-lg mx-auto space-y-4 shadow-2xl">
-                    <div className="w-14 h-14 rounded-2xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-center text-sky-400 mx-auto">
-                      <Sparkles size={28} className="animate-pulse" />
-                    </div>
-                    <h3 className="text-xl font-bold font-syne text-white capitalize">Kenzo_DAP — {activeTab.replace(/_/g, ' ')}</h3>
-                    <p className="text-xs text-slate-400 leading-relaxed">
-                      Module active under role <span className="font-bold text-sky-400">{user.role}</span>. Scoped to workspace: <span className="font-bold text-white">{activeProject?.name || 'Default Project'}</span>.
-                    </p>
-                  </div>
-                </div>
               )}
             </div>
           )}
@@ -440,28 +473,25 @@ export default function App() {
       {/* Register Workspace Modal */}
       <AnimatePresence>
         {isRegisterModalOpen && (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }}
+              initial={{ scale: 0.96, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="kenzo-glass-card rounded-3xl p-6 sm:p-8 w-full max-w-md shadow-2xl text-left relative overflow-hidden"
+              exit={{ scale: 0.96, opacity: 0 }}
+              className="bg-[#0c1322] border border-slate-800 rounded-lg p-6 w-full max-w-md shadow-2xl text-left relative overflow-hidden"
             >
-              {/* Header Gradient line */}
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-sky-400 via-blue-500 to-amber-400" />
-
-              <div className="flex items-center justify-between border-b border-slate-800/80 pb-4 mb-5">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
-                    <Building2 size={16} />
+                  <div className="w-7 h-7 rounded-lg bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
+                    <Building2 size={15} />
                   </div>
                   <div>
-                    <h3 className="text-base font-bold font-syne text-white">Create Workspace</h3>
+                    <h3 className="text-sm font-bold text-white">Create Workspace</h3>
                     <p className="text-[11px] text-slate-400">Register a new client application tenant</p>
                   </div>
                 </div>
                 <button onClick={() => setIsRegisterModalOpen(false)} className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors">
-                  <X size={18} />
+                  <X size={16} />
                 </button>
               </div>
 
@@ -473,7 +503,7 @@ export default function App() {
                     value={newProjectName}
                     onChange={(e) => setNewProjectName(e.target.value)}
                     placeholder="e.g. Acme Corp — ERP Portal"
-                    className="w-full bg-[#070d18] border border-slate-700/60 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors"
+                    className="w-full bg-[#070d18] border border-slate-700/60 focus:border-sky-400 rounded-lg px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors"
                   />
                 </div>
 
@@ -484,7 +514,7 @@ export default function App() {
                     value={newProjectUrl}
                     onChange={(e) => setNewProjectUrl(e.target.value)}
                     placeholder="e.g. https://erp.acmecorp.com"
-                    className="w-full bg-[#070d18] border border-slate-700/60 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors"
+                    className="w-full bg-[#070d18] border border-slate-700/60 focus:border-sky-400 rounded-lg px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors"
                   />
                 </div>
 
@@ -495,21 +525,21 @@ export default function App() {
                     value={newClientEmail}
                     onChange={(e) => setNewClientEmail(e.target.value)}
                     placeholder="e.g. client.admin@acmecorp.com"
-                    className="w-full bg-[#070d18] border border-slate-700/60 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors"
+                    className="w-full bg-[#070d18] border border-slate-700/60 focus:border-sky-400 rounded-lg px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors"
                   />
                 </div>
 
                 <div className="flex justify-end gap-3 pt-3">
                   <button
                     onClick={() => setIsRegisterModalOpen(false)}
-                    className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                    className="px-4 py-2.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={() => handleCreateProject(newProjectName, newProjectUrl, newClientEmail)}
                     disabled={!newProjectName.trim()}
-                    className="kenzo-glow-btn px-5 py-2.5 text-white rounded-xl text-xs font-bold disabled:opacity-50 transition-all cursor-pointer"
+                    className="kenzo-btn-primary px-5 py-2.5 text-white text-xs font-bold disabled:opacity-50 transition-all cursor-pointer"
                   >
                     Create Workspace
                   </button>

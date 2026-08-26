@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Building2, 
   ExternalLink, 
@@ -156,22 +156,22 @@ export default function OrganizationsView({ userRole = 'CLIENT_CEO', headers }: 
   };
 
   return (
-    <div className="space-y-8 select-none relative text-left w-full">
+    <div className="space-y-6 select-none relative text-left w-full">
       {/* Top Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
-        <div className="flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-2xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-center text-sky-400 shadow-lg shadow-sky-500/10">
-            <Building2 size={20} className="text-sky-400" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-bold text-white tracking-tight">Organizations</h2>
+            <span className="text-xs bg-slate-800 text-slate-300 font-semibold px-2.5 py-0.5 rounded-md border border-slate-700">
+              {orgs.length} client sites
+            </span>
           </div>
-          <div>
-            <h2 className="text-xl font-bold font-syne text-white tracking-tight">Organizations & Client Sites</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Manage deployed client application links, subscription contracts & scopes</p>
-          </div>
+          <p className="text-xs text-slate-400 mt-1">Client sites and deployments</p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           {!isSuperAdmin && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 text-xs font-medium">
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-medium">
               <Lock className="w-3.5 h-3.5" />
               <span>Read-Only (Super Admin Managed)</span>
             </div>
@@ -179,44 +179,46 @@ export default function OrganizationsView({ userRole = 'CLIENT_CEO', headers }: 
           {isSuperAdmin && (
             <button
               onClick={handleOpenCreate}
-              className="kenzo-glow-btn text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+              className="kenzo-btn-primary text-xs"
             >
-              <Plus className="w-4 h-4" />
-              <span>Add Organization Link</span>
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add Client Link</span>
             </button>
           )}
         </div>
       </div>
 
       {/* Search Bar */}
-      <div className="relative">
-        <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Filter organizations by name, URL, or owner email..."
-          className="w-full bg-[#0b1324] border border-slate-700/80 focus:border-sky-400 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors"
-        />
+      <div className="bg-[#0c1322] border border-slate-800 p-3 rounded-xl">
+        <div className="relative">
+          <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Filter organizations by name, URL, or owner email..."
+            className="kenzo-input w-full pl-8 py-1.5 text-xs placeholder-slate-500"
+          />
+        </div>
       </div>
 
       {/* Main Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="kenzo-glass-card rounded-3xl p-6 space-y-4 animate-pulse">
-              <div className="h-5 bg-slate-800 rounded w-1/3" />
+            <div key={i} className="bg-[#0c1322] border border-slate-800 rounded-xl p-5 space-y-3 animate-pulse">
+              <div className="h-4 bg-slate-800 rounded w-1/3" />
               <div className="h-3 bg-slate-800 rounded w-full" />
-              <div className="h-8 bg-slate-800 rounded w-1/2" />
+              <div className="h-6 bg-slate-800 rounded w-1/2" />
             </div>
           ))}
         </div>
       ) : filteredOrgs.length === 0 ? (
-        <div className="kenzo-glass-card rounded-3xl p-16 text-center shadow-2xl">
-          <div className="w-16 h-16 rounded-2xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-center text-sky-400 mx-auto mb-4">
-            <Building2 size={32} className="animate-pulse" />
+        <div className="bg-[#0C1322] border border-slate-800 rounded-lg p-16 text-center">
+          <div className="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 mx-auto mb-3">
+            <Building2 size={24} />
           </div>
-          <h3 className="text-base font-bold font-syne text-white">No Client Deployments Found</h3>
+          <h3 className="text-sm font-semibold text-white">No Client Deployments Found</h3>
           <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1 mb-5">
             {search ? 'No matching organizations found for your search filter.' : 'Register and manage client site links, access policies and API scopes.'}
           </p>
@@ -233,7 +235,7 @@ export default function OrganizationsView({ userRole = 'CLIENT_CEO', headers }: 
               key={org.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="kenzo-glass-card rounded-3xl p-6 group hover:border-sky-500/40 transition-all flex flex-col justify-between relative overflow-hidden shadow-xl"
+              className="bg-[#0C1322] border border-slate-800 rounded-lg p-6 group hover:border-sky-500/40 transition-all flex flex-col justify-between relative overflow-hidden"
             >
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-sky-400 via-blue-500 to-amber-400" />
 
@@ -332,7 +334,7 @@ export default function OrganizationsView({ userRole = 'CLIENT_CEO', headers }: 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-[#0b1324] border border-slate-800 rounded-3xl w-full max-w-lg p-6 shadow-2xl space-y-5"
+              className="bg-[#0C1322] border border-slate-800 rounded-xl w-full max-w-lg p-6 space-y-5"
             >
               <div className="flex items-center justify-between pb-3 border-b border-slate-800">
                 <div className="flex items-center gap-2.5">

@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ScrollText, Search, Filter, ChevronLeft, ChevronRight,
-  Loader2, Shield, Globe
+  ScrollText, Search, ChevronLeft, ChevronRight,
+  Loader2, Shield
 } from 'lucide-react';
 
 interface AuditLog {
@@ -84,59 +84,57 @@ export default function AuditLogsView({ projectId, headers }: GuidanceModuleProp
   const resourceTypes = [...new Set(logs.map(l => l.resource_type).filter(Boolean))];
 
   return (
-    <div className="space-y-8 select-none relative text-left w-full">
+    <div className="space-y-6 select-none relative text-left w-full">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
-        <div className="flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-2xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-center text-sky-400 shadow-lg shadow-sky-500/10">
-            <ScrollText size={20} className="text-sky-400" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-bold text-white tracking-tight">Audit Logs</h2>
+            <span className="text-xs bg-slate-800 text-slate-300 font-semibold px-2.5 py-0.5 rounded-md border border-slate-700">
+              {total.toLocaleString()} events
+            </span>
           </div>
-          <div>
-            <h2 className="text-xl font-bold font-syne text-white tracking-tight">Security & Activity Audit Logs</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Immutable audit trail of administrator changes, publish events & access</p>
-          </div>
+          <p className="text-xs text-slate-400 mt-1">Activity history and security events</p>
         </div>
         
-        <div className="flex items-center gap-2 text-xs text-slate-400 bg-[#0b1324] border border-slate-800 px-3.5 py-2 rounded-xl">
-          <Shield size={14} className="text-sky-400" />
-          <span>Read-only · <strong className="text-white">{total.toLocaleString()}</strong> events logged</span>
+        <div className="flex items-center gap-2 text-xs text-slate-400 bg-[#080e1a] border border-slate-800 px-3 py-1.5 rounded-lg">
+          <Shield size={13} className="text-sky-400" />
+          <span>Immutable Ledger</span>
         </div>
       </div>
 
       {/* Search & Filters */}
-      <div className="flex gap-3 flex-wrap">
+      <div className="flex gap-2.5 flex-wrap bg-[#0c1322] border border-slate-800 p-3 rounded-xl">
         <div className="flex-1 min-w-48 relative">
-          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
           <input
             type="text" value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Search by user email, resource name..."
-            className="w-full bg-[#0b1324] border border-slate-700/80 focus:border-sky-400 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors"
+            className="kenzo-input w-full pl-8 py-1.5 text-xs placeholder-slate-500"
           />
         </div>
 
         <div className="relative">
-          <Filter size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-          <select value={actionFilter} onChange={e => setActionFilter(e.target.value)} className="bg-[#0b1324] border border-slate-700/80 focus:border-sky-400 rounded-2xl pl-9 pr-8 py-2.5 text-xs text-slate-300 outline-none appearance-none cursor-pointer">
-            <option value="" className="bg-[#0b1324] text-white">All Actions</option>
+          <select value={actionFilter} onChange={e => setActionFilter(e.target.value)} className="kenzo-input py-1.5 text-xs cursor-pointer text-slate-300">
+            <option value="">All Actions</option>
             {['CREATE', 'UPDATE', 'DELETE', 'VIEW', 'PUBLISH'].map(a => (
-              <option key={a} value={a} className="bg-[#0b1324] text-white">{a}</option>
+              <option key={a} value={a}>{a}</option>
             ))}
           </select>
         </div>
 
         {resourceTypes.length > 0 && (
           <div className="relative">
-            <Globe size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-            <select value={resourceFilter} onChange={e => setResourceFilter(e.target.value)} className="bg-[#0b1324] border border-slate-700/80 focus:border-sky-400 rounded-2xl pl-9 pr-8 py-2.5 text-xs text-slate-300 outline-none appearance-none cursor-pointer">
-              <option value="" className="bg-[#0b1324] text-white">All Resources</option>
-              {resourceTypes.map(r => <option key={r} value={r} className="bg-[#0b1324] text-white">{r}</option>)}
+            <select value={resourceFilter} onChange={e => setResourceFilter(e.target.value)} className="kenzo-input py-1.5 text-xs cursor-pointer text-slate-300">
+              <option value="">All Resources</option>
+              {resourceTypes.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
           </div>
         )}
       </div>
 
       {/* Table */}
-      <div className="kenzo-glass-card rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+      <div className="bg-[#0C1322] border border-slate-800 rounded-lg overflow-hidden flex flex-col">
         <div className="overflow-x-auto">
           <table className="w-full text-xs min-w-[800px]">
             <thead>
@@ -250,7 +248,7 @@ export default function AuditLogsView({ projectId, headers }: GuidanceModuleProp
       {/* Loading indicator for refetch */}
       <AnimatePresence>
         {loading && logs.length > 0 && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2 bg-[#0b1324] border border-slate-700 rounded-2xl shadow-xl">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2 bg-[#0C1322] border border-slate-700 rounded-lg">
             <Loader2 size={14} className="animate-spin text-sky-400" />
             <span className="text-xs text-slate-300">Refreshing logs...</span>
           </motion.div>
