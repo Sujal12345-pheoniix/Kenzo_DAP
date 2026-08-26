@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Lightbulb, Plus, Edit, Trash2, X, Save, ChevronDown,
-  AlertCircle, CheckCircle, Eye, EyeOff, Loader2
+  AlertCircle, CheckCircle, Eye, EyeOff, Loader2, Filter
 } from 'lucide-react';
 
 interface SmartTip {
@@ -54,25 +54,25 @@ const emptyForm = (): Partial<SmartTip> => ({
 });
 
 function StatusBadge({ status }: { status: string }) {
-  const cfg = {
-    published: { dot: 'bg-emerald-400', text: 'text-emerald-400', label: 'Published' },
-    draft: { dot: 'bg-yellow-400', text: 'text-yellow-400', label: 'Draft' },
-    archived: { dot: 'bg-zinc-500', text: 'text-zinc-400', label: 'Archived' },
-  }[status] ?? { dot: 'bg-zinc-500', text: 'text-zinc-400', label: status };
+  const isPub = status === 'published';
   return (
-    <span className="inline-flex items-center gap-1.5">
-      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-      <span className={`text-xs font-medium ${cfg.text}`}>{cfg.label}</span>
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${
+      isPub 
+        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' 
+        : 'bg-amber-500/10 border-amber-500/30 text-amber-400'
+    }`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${isPub ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+      <span>{isPub ? 'Published' : 'Draft'}</span>
     </span>
   );
 }
 
 function SkeletonRow() {
   return (
-    <tr className="border-b border-[#1e2238]">
+    <tr className="border-b border-slate-800/80">
       {[...Array(7)].map((_, i) => (
-        <td key={i} className="px-4 py-3">
-          <div className="h-4 bg-[#1e2238] rounded animate-pulse" style={{ width: `${60 + i * 10}%` }} />
+        <td key={i} className="px-5 py-4">
+          <div className="h-4 bg-slate-800/60 rounded-lg animate-pulse" style={{ width: `${60 + i * 10}%` }} />
         </td>
       ))}
     </tr>
@@ -168,7 +168,7 @@ export default function SmartTipsView({ projectId, headers }: GuidanceModuleProp
       const saved = await res.json();
       if (editing) {
         setTips(prev => prev.map(t => t.id === saved.id ? saved : t));
-        addToast('success', 'Smart tip updated');
+        addToast('success', 'Smart tip updated successfully');
       } else {
         setTips(prev => [saved, ...prev]);
         addToast('success', 'Smart tip created & published');
@@ -206,30 +206,39 @@ export default function SmartTipsView({ projectId, headers }: GuidanceModuleProp
   });
 
   return (
-    <div className="relative min-h-screen">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-            <Lightbulb size={18} className="text-white" />
+    <div className="space-y-6 select-none text-left w-full flex-1 flex flex-col">
+      {/* Header Banner */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
+        <div className="flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-2xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-center text-sky-400 shadow-lg shadow-sky-500/10">
+            <Lightbulb size={20} className="text-sky-400" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-slate-900">Smart Tips</h2>
-            <p className="text-xs text-zinc-500">Contextual tooltips, inline guidance & field validations by route</p>
+            <h2 className="text-xl font-bold font-syne text-white tracking-tight">Smart Tips & Contextual Guidance</h2>
+            <p className="text-xs text-slate-400 mt-0.5">Manage inline field hints, tooltips, and interactive walkthrough anchors</p>
           </div>
         </div>
-        <button
-          onClick={openCreate}
-          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-sm font-semibold rounded-xl transition-all"
-        >
-          <Plus size={16} /> New Smart Tip
-        </button>
+        
+        <div className="flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#0b1324] border border-slate-800 text-xs text-slate-400 font-medium">
+            <span>Total Tips:</span>
+            <span className="font-bold text-sky-400">{tips.length}</span>
+          </div>
+          <button
+            onClick={openCreate}
+            className="kenzo-glow-btn text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+          >
+            <Plus size={15} />
+            <span>New Smart Tip</span>
+          </button>
+        </div>
       </div>
 
       {/* Route Filter Bar */}
-      <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-2">
-        <span className="text-xs font-semibold text-zinc-400 mr-1 flex items-center gap-1">
-          Route:
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+        <span className="text-xs font-semibold text-slate-400 mr-1 flex items-center gap-1.5 shrink-0">
+          <Filter size={13} className="text-sky-400" />
+          Filter Route:
         </span>
         {[
           { id: 'all', label: 'All Routes' },
@@ -242,78 +251,92 @@ export default function SmartTipsView({ projectId, headers }: GuidanceModuleProp
           <button
             key={r.id}
             onClick={() => setSelectedRouteFilter(r.id)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${selectedRouteFilter === r.id ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20' : 'bg-[#181b2e] border border-[#2a2f4c] text-zinc-400 hover:text-white'}`}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+              selectedRouteFilter === r.id 
+                ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40 shadow-sm shadow-sky-500/10' 
+                : 'bg-[#0b1324] border border-slate-800/80 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+            }`}
           >
             {r.label}
           </button>
         ))}
       </div>
 
-      {/* Table */}
-      <div className="bg-[#11131f] border border-[#1e2238] rounded-2xl overflow-hidden shadow-xl">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-[#1e2238]">
-              {['Name', 'Target Route', 'Target Element', 'Content Preview', 'Position', 'Status', 'Actions'].map(h => (
-                <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-zinc-400 uppercase tracking-wider">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              [...Array(4)].map((_, i) => <SkeletonRow key={i} />)
-            ) : filteredTips.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="px-4 py-20 text-center">
-                  <div className="flex flex-col items-center gap-3">
-                    <Lightbulb size={40} className="text-zinc-700" />
-                    <p className="text-zinc-400 font-medium">No smart tips found for this route</p>
-                    <button onClick={openCreate} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl transition-all">
-                      Create a tip for this route
-                    </button>
-                  </div>
-                </td>
+      {/* Table Container */}
+      <div className="kenzo-glass-card rounded-2xl overflow-hidden shadow-2xl flex-1 flex flex-col">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-800/80 bg-[#070d18]/60">
+                {['Name', 'Target Route', 'Target Element', 'Content Preview', 'Position', 'Status', 'Actions'].map(h => (
+                  <th key={h} className="px-5 py-3.5 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider font-syne">{h}</th>
+                ))}
               </tr>
-            ) : (
-              filteredTips.map(tip => {
-                const routePat = tip.url_rules && tip.url_rules[0]?.pattern ? tip.url_rules[0].pattern : '*';
-                const selVal = typeof tip.selector === 'string' ? tip.selector : (tip.selector?.value || 'body');
-                return (
-                  <tr key={tip.id} className="border-b border-[#1e2238] hover:bg-[#181b2e] transition-colors">
-                    <td className="px-4 py-3 font-semibold text-white">{tip.name}</td>
-                    <td className="px-4 py-3">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-indigo-950/60 border border-indigo-500/30 text-xs font-mono text-indigo-300">
-                        {routePat}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-xs font-mono text-zinc-400 max-w-[140px] truncate" title={selVal}>
-                      {selVal}
-                    </td>
-                    <td className="px-4 py-3 text-zinc-400 max-w-xs">
-                      <span className="line-clamp-1">{tip.content}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#181b2e] border border-[#2a2f4c] text-xs text-zinc-300 capitalize">
-                        {tip.position}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3"><StatusBadge status={tip.status} /></td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => openEdit(tip)} className="p-1.5 rounded-lg hover:bg-indigo-500/20 text-zinc-400 hover:text-indigo-400 transition-colors" title="Edit Tip">
-                          <Edit size={14} />
-                        </button>
-                        <button onClick={() => setDeleteTarget(tip)} className="p-1.5 rounded-lg hover:bg-red-500/20 text-zinc-400 hover:text-red-400 transition-colors" title="Delete Tip">
-                          <Trash2 size={14} />
-                        </button>
+            </thead>
+            <tbody className="divide-y divide-slate-800/60">
+              {loading ? (
+                [...Array(4)].map((_, i) => <SkeletonRow key={i} />)
+              ) : filteredTips.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-5 py-20 text-center">
+                    <div className="flex flex-col items-center gap-3.5 max-w-sm mx-auto">
+                      <div className="w-14 h-14 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
+                        <Lightbulb size={28} className="animate-pulse" />
                       </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+                      <h4 className="text-base font-bold font-syne text-white">No Smart Tips Found</h4>
+                      <p className="text-xs text-slate-400 leading-relaxed">There are no tips configured for this route. Add one to guide your application users seamlessly.</p>
+                      <button onClick={openCreate} className="kenzo-glow-btn text-white text-xs font-bold px-4 py-2 rounded-xl transition-all cursor-pointer mt-2">
+                        Create Smart Tip
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                filteredTips.map(tip => {
+                  const routePat = tip.url_rules && tip.url_rules[0]?.pattern ? tip.url_rules[0].pattern : '*';
+                  const selVal = typeof tip.selector === 'string' ? tip.selector : (tip.selector?.value || 'body');
+                  return (
+                    <tr key={tip.id} className="hover:bg-slate-800/30 transition-colors group">
+                      <td className="px-5 py-4 font-semibold text-white">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-sky-400/80"></span>
+                          <span>{tip.name}</span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-sky-500/10 border border-sky-500/20 text-xs font-mono text-sky-300">
+                          {routePat}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 text-xs font-mono text-slate-400 max-w-[150px] truncate" title={selVal}>
+                        {selVal}
+                      </td>
+                      <td className="px-5 py-4 text-slate-300 max-w-xs text-xs">
+                        <span className="line-clamp-1">{tip.content}</span>
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg bg-slate-800/80 border border-slate-700/60 text-xs text-slate-300 capitalize font-medium">
+                          {tip.position}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4"><StatusBadge status={tip.status} /></td>
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => openEdit(tip)} className="p-2 rounded-xl hover:bg-sky-500/20 text-slate-400 hover:text-sky-300 transition-colors cursor-pointer" title="Edit Tip">
+                            <Edit size={14} />
+                          </button>
+                          <button onClick={() => setDeleteTarget(tip)} className="p-2 rounded-xl hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors cursor-pointer" title="Delete Tip">
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Slide-out Panel */}
@@ -322,39 +345,39 @@ export default function SmartTipsView({ projectId, headers }: GuidanceModuleProp
           <>
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+              className="fixed inset-0 bg-black/75 backdrop-blur-sm z-40"
               onClick={closePanel}
             />
             <motion.div
               initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 280 }}
-              className="fixed right-0 top-0 h-full w-full max-w-md bg-[#11131f] border-l border-[#1e2238] z-50 flex flex-col shadow-2xl"
+              className="fixed right-0 top-0 h-full w-full max-w-md bg-[#070d18] border-l border-slate-800 z-50 flex flex-col shadow-2xl"
             >
-              <div className="flex items-center justify-between px-6 py-4 border-b border-[#1e2238]">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-[#0b1324]">
                 <div>
-                  <h3 className="text-base font-bold text-white">{editing ? 'Edit Smart Tip' : 'New Smart Tip'}</h3>
-                  <p className="text-xs text-zinc-500 mt-0.5">{editing ? `Editing: ${editing.name}` : 'Create a contextual guidance tip'}</p>
+                  <h3 className="text-base font-bold font-syne text-white">{editing ? 'Edit Smart Tip' : 'New Smart Tip'}</h3>
+                  <p className="text-xs text-slate-400 mt-0.5">{editing ? `Editing: ${editing.name}` : 'Create a contextual guidance tip'}</p>
                 </div>
-                <button onClick={closePanel} className="p-2 rounded-lg hover:bg-[#181b2e] text-zinc-400 hover:text-white transition-colors">
+                <button onClick={closePanel} className="p-2 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer">
                   <X size={18} />
                 </button>
               </div>
 
               <div className="flex-1 overflow-y-auto p-6 space-y-5">
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-400 mb-1.5">Name <span className="text-red-400">*</span></label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Tip Name <span className="text-sky-400">*</span></label>
                   <input
                     type="text"
                     value={form.name ?? ''}
                     onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                    placeholder="e.g. Dashboard Onboarding Tip"
-                    className="w-full bg-[#181b2e] border border-[#2a2f4c] rounded-xl px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none focus:border-indigo-500 transition-colors"
+                    placeholder="e.g. Dashboard Navigation Tip"
+                    className="w-full bg-[#0b1324] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors"
                   />
                 </div>
 
                 {/* Target Route / Page URL */}
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-400 mb-1.5">Target Route / Page URL <span className="text-red-400">*</span></label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Target Route / Page URL <span className="text-sky-400">*</span></label>
                   <div className="space-y-2">
                     <select
                       value={COMMON_ROUTES.some(r => r.pattern === targetRoutePattern) ? targetRoutePattern : 'custom'}
@@ -363,40 +386,40 @@ export default function SmartTipsView({ projectId, headers }: GuidanceModuleProp
                           setTargetRoutePattern(e.target.value);
                         }
                       }}
-                      className="w-full bg-[#181b2e] border border-[#2a2f4c] rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-indigo-500 transition-colors"
+                      className="w-full bg-[#0b1324] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none transition-colors"
                     >
                       {COMMON_ROUTES.map(r => (
-                        <option key={r.pattern} value={r.pattern}>{r.label}</option>
+                        <option key={r.pattern} value={r.pattern} className="bg-[#0b1324] text-white">{r.label}</option>
                       ))}
-                      <option value="custom">Custom URL Pattern...</option>
+                      <option value="custom" className="bg-[#0b1324] text-white">Custom URL Pattern...</option>
                     </select>
                     <input
                       type="text"
                       value={targetRoutePattern}
                       onChange={e => setTargetRoutePattern(e.target.value)}
                       placeholder="e.g. /dashboard/crm or /settings"
-                      className="w-full bg-[#181b2e] border border-[#2a2f4c] rounded-xl px-3 py-2 text-xs font-mono text-indigo-300 placeholder-zinc-600 outline-none focus:border-indigo-500"
+                      className="w-full bg-[#070d18] border border-slate-800 focus:border-sky-400 rounded-xl px-3.5 py-2 text-xs font-mono text-sky-300 placeholder-slate-500 outline-none"
                     />
                   </div>
                 </div>
 
                 {/* Target Element Selector */}
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-400 mb-1.5">Target Element CSS Selector</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Target Element CSS Selector</label>
                   <input
                     type="text"
                     value={targetCssSelector}
                     onChange={e => setTargetCssSelector(e.target.value)}
                     placeholder="e.g. button.btn-primary, #add-deal, .grid"
-                    className="w-full bg-[#181b2e] border border-[#2a2f4c] rounded-xl px-3 py-2.5 text-xs font-mono text-zinc-200 placeholder-zinc-600 outline-none focus:border-indigo-500 transition-colors"
+                    className="w-full bg-[#0b1324] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-200 placeholder-slate-500 outline-none transition-colors"
                   />
-                  <div className="flex flex-wrap gap-1.5 mt-1.5">
+                  <div className="flex flex-wrap gap-1.5 mt-2">
                     {['button', '.btn-primary', 'table', '.grid', 'body'].map(quickSel => (
                       <button
                         key={quickSel}
                         type="button"
                         onClick={() => setTargetCssSelector(quickSel)}
-                        className="px-2 py-0.5 rounded bg-[#181b2e] border border-[#2a2f4c] text-[10px] font-mono text-zinc-400 hover:text-indigo-300 hover:border-indigo-500"
+                        className="px-2.5 py-1 rounded-lg bg-[#0b1324] border border-slate-700/60 text-[10px] font-mono text-slate-400 hover:text-sky-300 hover:border-sky-500/50 cursor-pointer transition-colors"
                       >
                         {quickSel}
                       </button>
@@ -405,38 +428,42 @@ export default function SmartTipsView({ projectId, headers }: GuidanceModuleProp
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-400 mb-1.5">Content <span className="text-red-400">*</span></label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Tip Content <span className="text-sky-400">*</span></label>
                   <textarea
                     value={form.content ?? ''}
                     onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
-                    placeholder="Enter the tip message..."
+                    placeholder="Enter the guidance message shown to users..."
                     rows={4}
-                    className="w-full bg-[#181b2e] border border-[#2a2f4c] rounded-xl px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none focus:border-indigo-500 transition-colors resize-none"
+                    className="w-full bg-[#0b1324] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors resize-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-400 mb-1.5">Position</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Position</label>
                   <div className="relative">
                     <select
                       value={form.position ?? 'top'}
                       onChange={e => setForm(f => ({ ...f, position: e.target.value as any }))}
-                      className="w-full bg-[#181b2e] border border-[#2a2f4c] rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-indigo-500 appearance-none transition-colors"
+                      className="w-full bg-[#0b1324] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none appearance-none transition-colors"
                     >
-                      {POSITIONS.map(p => <option key={p} value={p} className="capitalize">{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
+                      {POSITIONS.map(p => <option key={p} value={p} className="bg-[#0b1324] text-white capitalize">{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
                     </select>
-                    <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
+                    <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-400 mb-1.5">Trigger</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Trigger</label>
                   <div className="grid grid-cols-2 gap-2">
                     {TRIGGERS.map(t => (
                       <button
                         key={t}
                         onClick={() => setForm(f => ({ ...f, trigger: t }))}
-                        className={`py-2.5 rounded-xl border text-sm font-medium capitalize transition-all ${form.trigger === t ? 'border-indigo-500 bg-indigo-500/10 text-indigo-400' : 'border-[#2a2f4c] bg-[#181b2e] text-zinc-400 hover:border-zinc-600'}`}
+                        className={`py-2.5 rounded-xl border text-xs font-medium capitalize transition-all cursor-pointer ${
+                          form.trigger === t 
+                            ? 'border-sky-400 bg-sky-500/15 text-sky-300 font-semibold' 
+                            : 'border-slate-800 bg-[#0b1324] text-slate-400 hover:border-slate-700'
+                        }`}
                       >
                         {t}
                       </button>
@@ -445,15 +472,19 @@ export default function SmartTipsView({ projectId, headers }: GuidanceModuleProp
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-400 mb-1.5">Status</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Status</label>
                   <div className="grid grid-cols-2 gap-2">
                     {(['draft', 'published'] as const).map(s => (
                       <button
                         key={s}
                         onClick={() => setForm(f => ({ ...f, status: s }))}
-                        className={`py-2.5 rounded-xl border text-sm font-medium capitalize transition-all flex items-center justify-center gap-2 ${form.status === s ? 'border-indigo-500 bg-indigo-500/10 text-indigo-400' : 'border-[#2a2f4c] bg-[#181b2e] text-zinc-400 hover:border-zinc-600'}`}
+                        className={`py-2.5 rounded-xl border text-xs font-medium capitalize transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                          form.status === s 
+                            ? 'border-sky-400 bg-sky-500/15 text-sky-300 font-semibold' 
+                            : 'border-slate-800 bg-[#0b1324] text-slate-400 hover:border-slate-700'
+                        }`}
                       >
-                        {s === 'published' ? <Eye size={14} /> : <EyeOff size={14} />}
+                        {s === 'published' ? <Eye size={13} /> : <EyeOff size={13} />}
                         {s}
                       </button>
                     ))}
@@ -461,13 +492,13 @@ export default function SmartTipsView({ projectId, headers }: GuidanceModuleProp
                 </div>
               </div>
 
-              <div className="px-6 py-4 border-t border-[#1e2238] flex gap-3">
-                <button onClick={closePanel} className="flex-1 py-2.5 rounded-xl border border-[#2a2f4c] text-sm font-semibold text-zinc-400 hover:bg-[#181b2e] transition-colors">
+              <div className="px-6 py-4 border-t border-slate-800 bg-[#0b1324] flex gap-3">
+                <button onClick={closePanel} className="flex-1 py-2.5 rounded-xl border border-slate-700 text-xs font-semibold text-slate-300 hover:bg-slate-800 transition-colors cursor-pointer">
                   Cancel
                 </button>
-                <button onClick={handleSave} disabled={saving} className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-sm font-semibold transition-all flex items-center justify-center gap-2 disabled:opacity-60">
-                  {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
-                  {saving ? 'Saving...' : 'Save Tip'}
+                <button onClick={handleSave} disabled={saving} className="flex-1 py-2.5 rounded-xl kenzo-glow-btn text-white text-xs font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer">
+                  {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                  {saving ? 'Saving...' : 'Save Smart Tip'}
                 </button>
               </div>
             </motion.div>
@@ -480,30 +511,30 @@ export default function SmartTipsView({ projectId, headers }: GuidanceModuleProp
         {deleteTarget && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-[#11131f] border border-[#1e2238] rounded-2xl p-6 w-full max-w-sm shadow-2xl"
+              className="bg-[#0b1324] border border-slate-800 rounded-3xl p-6 w-full max-w-sm shadow-2xl"
             >
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center">
                   <AlertCircle size={20} className="text-red-400" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-white">Delete Smart Tip</h4>
-                  <p className="text-xs text-zinc-500 mt-0.5">This action cannot be undone</p>
+                  <h4 className="font-bold font-syne text-white">Delete Smart Tip</h4>
+                  <p className="text-xs text-slate-400 mt-0.5">This action cannot be undone</p>
                 </div>
               </div>
-              <p className="text-sm text-zinc-400 mb-5">
+              <p className="text-xs text-slate-300 mb-5 leading-relaxed">
                 Are you sure you want to delete <span className="font-semibold text-white">"{deleteTarget.name}"</span>?
               </p>
               <div className="flex gap-3">
-                <button onClick={() => setDeleteTarget(null)} className="flex-1 py-2.5 rounded-xl border border-[#2a2f4c] text-sm font-semibold text-zinc-400 hover:bg-[#181b2e] transition-colors">
+                <button onClick={() => setDeleteTarget(null)} className="flex-1 py-2.5 rounded-xl border border-slate-700 text-xs font-semibold text-slate-300 hover:bg-slate-800 transition-colors cursor-pointer">
                   Cancel
                 </button>
-                <button onClick={handleDelete} disabled={deleting} className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-60">
-                  {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                <button onClick={handleDelete} disabled={deleting} className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition-colors flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer">
+                  {deleting ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
                   {deleting ? 'Deleting...' : 'Delete'}
                 </button>
               </div>
@@ -521,10 +552,14 @@ export default function SmartTipsView({ projectId, headers }: GuidanceModuleProp
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 10, scale: 0.95 }}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl border shadow-xl pointer-events-auto ${toast.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-red-500/10 border-red-500/30 text-red-400'}`}
+              className={`flex items-center gap-3 px-4 py-3 rounded-2xl border shadow-xl pointer-events-auto backdrop-blur-md ${
+                toast.type === 'success' 
+                  ? 'bg-[#0b1324]/95 border-emerald-500/40 text-emerald-300' 
+                  : 'bg-[#0b1324]/95 border-red-500/40 text-red-300'
+              }`}
             >
-              {toast.type === 'success' ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
-              <span className="text-sm font-medium">{toast.message}</span>
+              {toast.type === 'success' ? <CheckCircle size={16} className="text-emerald-400" /> : <AlertCircle size={16} className="text-red-400" />}
+              <span className="text-xs font-medium">{toast.message}</span>
             </motion.div>
           ))}
         </AnimatePresence>

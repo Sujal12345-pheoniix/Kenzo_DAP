@@ -852,28 +852,33 @@ export default function ToursView({
   ];
 
   return (
-    <div className="space-y-12 select-none relative text-left">
+    <div className="space-y-8 select-none relative text-left w-full">
 
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800/40 pb-4">
-        <div>
-          <h2 className="text-2xl font-bold font-outfit text-slate-900 tracking-tight leading-tight">Walkthrough Tours</h2>
-          <p className="text-slate-600 text-xs mt-1 font-medium">Deploy, monitor, and configure active user onboarding flows.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
+        <div className="flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-2xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-center text-sky-400 shadow-lg shadow-sky-500/10">
+            <Layers size={20} className="text-sky-400" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold font-syne text-white tracking-tight">Enterprise Walkthrough Tours</h2>
+            <p className="text-xs text-slate-400 mt-0.5">Deploy, monitor, and configure active multi-step user onboarding flows</p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <button
             onClick={handleAutoGenerateAI}
             disabled={isGeneratingAI}
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all duration-300 shadow-lg shadow-emerald-600/25 active:scale-95 cursor-pointer disabled:opacity-50"
+            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl transition-all duration-200 shadow-md shadow-emerald-600/20 active:scale-95 cursor-pointer disabled:opacity-50"
           >
             <Zap size={14} className={isGeneratingAI ? 'animate-spin' : ''} />
-            <span>{isGeneratingAI ? 'Generating 5 AI Tours...' : '⚡ Auto-Generate 5 AI Walkthroughs'}</span>
+            <span>{isGeneratingAI ? 'Generating 5 AI Tours...' : '⚡ Auto-Generate 5 AI Tours'}</span>
           </button>
 
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 bg-gradient-to-r from-violet-600 to-indigo-650 hover:from-violet-500 hover:to-indigo-550 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all duration-300 shadow-lg shadow-indigo-600/25 active:scale-95 cursor-pointer"
+            className="kenzo-glow-btn text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all duration-200 shadow-md flex items-center gap-2 active:scale-95 cursor-pointer"
           >
             <Plus size={14} />
             <span>Create Walkthrough Tour</span>
@@ -883,9 +888,9 @@ export default function ToursView({
             href={`/sandbox.html?kenzo_builder=true&api_key=${apiKey}`}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-2 bg-zinc-950 border border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all active:scale-95 cursor-pointer"
+            className="flex items-center gap-2 bg-[#0b1324] border border-slate-700/80 hover:border-sky-500/50 hover:bg-slate-800 text-slate-300 hover:text-white text-xs font-bold px-3.5 py-2.5 rounded-xl transition-all active:scale-95 cursor-pointer shadow-inner"
           >
-            <Sparkles size={13} className="text-indigo-400" />
+            <Sparkles size={13} className="text-sky-400" />
             <span>Open Visual Builder</span>
           </a>
         </div>
@@ -893,49 +898,60 @@ export default function ToursView({
 
       {/* Empty State */}
       {flows.length === 0 ? (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 relative bg-zinc-900 border border-zinc-800/50 rounded-2xl p-8 flex flex-col items-center justify-center text-center min-h-[360px] shadow-xl mt-4">
-            <div className="w-16 h-16 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center text-indigo-400 mb-4 shadow-inner">
-              <Compass size={28} className="text-indigo-400 animate-pulse" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 kenzo-glass-card rounded-3xl p-8 sm:p-12 flex flex-col items-center justify-center text-center min-h-[360px] shadow-2xl">
+            <div className="w-16 h-16 rounded-2xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-center text-sky-400 mb-4 shadow-lg">
+              <Compass size={30} className="animate-pulse" />
             </div>
-            <h3 className="text-base font-bold text-white font-outfit">No Walkthroughs Configured</h3>
-            <p className="text-zinc-500 text-xs mt-2 max-w-sm leading-relaxed">
-              Launch the Sandbox Builder to visually select HTML elements, capture click events, and create step-by-step guides.
+            <h3 className="text-lg font-bold font-syne text-white">No Walkthroughs Configured</h3>
+            <p className="text-slate-400 text-xs mt-2 max-w-md leading-relaxed">
+              Launch the Sandbox Builder to visually select HTML elements, capture click events, and create interactive guided tours in seconds.
             </p>
-            <a
-              href={`/sandbox.html?kenzo_builder=true&api_key=${apiKey}`}
-              target="_blank"
-              className="mt-6 flex items-center gap-2 bg-zinc-950 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow"
-            >
-              <span>Launch Visual Sandbox Builder</span>
-              <ArrowRight size={13} />
-            </a>
+            <div className="mt-6 flex items-center gap-3">
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="kenzo-glow-btn text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow cursor-pointer"
+              >
+                Create First Tour
+              </button>
+              <a
+                href={`/sandbox.html?kenzo_builder=true&api_key=${apiKey}`}
+                target="_blank"
+                className="flex items-center gap-2 bg-[#0b1324] border border-slate-700 hover:border-sky-500/40 text-slate-300 hover:text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow"
+              >
+                <span>Launch Visual Sandbox</span>
+                <ArrowRight size={13} />
+              </a>
+            </div>
           </div>
 
-          <div className="relative bg-zinc-900 border border-zinc-800/50 rounded-2xl p-5 pt-8 shadow-xl mt-4">
-            <div className="absolute -top-5 left-4 right-4 h-11 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-xl flex items-center px-4 shadow-lg shadow-violet-600/20 ring-1 ring-white/10">
-              <Sparkles size={14} className="text-indigo-200 mr-2" />
-              <h4 className="text-[10px] font-bold tracking-wider text-white uppercase">AI Recommendations</h4>
+          <div className="kenzo-glass-card rounded-3xl p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
+              <div className="flex items-center gap-2 text-sky-400 font-bold text-xs uppercase tracking-wider font-syne">
+                <Sparkles size={14} />
+                <span>AI Recommendations</span>
+              </div>
+              <span className="text-[10px] bg-sky-500/10 text-sky-300 px-2 py-0.5 rounded-full font-semibold">Ready</span>
             </div>
-            <div className="space-y-3 mt-4">
+            <div className="space-y-3 pt-1">
               {aiSuggestions.map((sug, idx) => (
-                <div key={idx} className="p-3 bg-zinc-950/40 border border-zinc-850 hover:border-zinc-800 rounded-xl flex flex-col gap-1 transition-all cursor-pointer">
+                <div key={idx} className="p-3.5 bg-[#070d18] border border-slate-800 hover:border-sky-500/40 rounded-2xl flex flex-col gap-1 transition-all cursor-pointer group">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-zinc-350">{sug.title}</span>
-                    <span className="text-[9px] bg-indigo-500/10 text-indigo-300 font-semibold px-1.5 py-0.5 rounded-full">{sug.steps} steps</span>
+                    <span className="text-xs font-bold text-slate-200 group-hover:text-sky-300 transition-colors">{sug.title}</span>
+                    <span className="text-[10px] bg-sky-500/10 text-sky-300 font-semibold px-2 py-0.5 rounded-full">{sug.steps} steps</span>
                   </div>
-                  <p className="text-[10px] text-zinc-550 leading-normal">{sug.desc}</p>
+                  <p className="text-[11px] text-slate-400 leading-normal">{sug.desc}</p>
                 </div>
               ))}
             </div>
-            <div className="mt-4 pt-3 border-t border-zinc-850/50 text-[9px] text-zinc-500 flex items-center gap-1.5 leading-relaxed font-semibold">
-              <AlertCircle size={12} className="text-indigo-400 shrink-0" />
+            <div className="pt-2 text-[10px] text-slate-500 flex items-center gap-1.5 font-medium border-t border-slate-800/80">
+              <AlertCircle size={12} className="text-sky-400 shrink-0" />
               <span>Select templates inside builder to generate immediately.</span>
             </div>
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {flows.map((flow) => {
             const pattern = flow.urlRules?.[0]?.pattern || 'Any Route (/)';
             const isPublished = flow.status === 'published';
@@ -945,60 +961,63 @@ export default function ToursView({
                 key={flow.id}
                 whileHover={{ y: -3 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                className="relative bg-zinc-900 border border-zinc-800/50 rounded-2xl p-5 pt-8 shadow-xl flex flex-col justify-between mt-6 group"
+                className="kenzo-glass-card rounded-3xl p-6 shadow-2xl flex flex-col justify-between group relative overflow-hidden"
               >
-                {/* Flow Card Header Banner */}
-                <div className={`absolute -top-5 left-4 right-4 h-12 rounded-xl flex items-center justify-between px-4 shadow-lg ring-1 ring-white/10 ${
-                  isPublished
-                    ? 'bg-gradient-to-r from-violet-600 to-indigo-600 shadow-indigo-600/25'
-                    : 'bg-zinc-800 shadow-black/40 border border-zinc-700/40'
-                }`}>
-                  <span className="text-[10px] font-bold font-mono text-white">ID: {flow.id.substring(0, 8)}</span>
-                  {isPublished ? (
-                    <span className="text-[9px] font-bold bg-white/20 text-white px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                      <span>Live</span>
-                    </span>
-                  ) : (
-                    <span className="text-[9px] font-bold bg-zinc-900/50 text-zinc-400 px-2 py-0.5 rounded-full uppercase tracking-wider">Draft</span>
-                  )}
-                </div>
+                {/* Header Gradient line */}
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-sky-400 via-blue-500 to-amber-400" />
 
-                <div className="mt-4">
-                  <h3 className="text-base font-bold text-zinc-100 font-outfit truncate">{flow.name}</h3>
-                  <p className="text-xs text-zinc-500 mt-2 leading-relaxed min-h-[36px] line-clamp-2">
+                <div>
+                  {/* Card Header Info */}
+                  <div className="flex items-center justify-between gap-2 mb-3">
+                    <span className="text-[11px] font-bold font-mono text-sky-400/90 bg-sky-500/10 px-2.5 py-0.5 rounded-lg border border-sky-500/20">
+                      ID: {flow.id.substring(0, 8)}
+                    </span>
+                    {isPublished ? (
+                      <span className="text-[10px] font-bold bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        <span>Live</span>
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-bold bg-amber-500/10 border border-amber-500/30 text-amber-400 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                        Draft
+                      </span>
+                    )}
+                  </div>
+
+                  <h3 className="text-base font-bold text-white font-syne truncate group-hover:text-sky-300 transition-colors">{flow.name}</h3>
+                  <p className="text-xs text-slate-400 mt-1.5 leading-relaxed min-h-[36px] line-clamp-2">
                     {flow.description || 'No description provided. Click edit to add details.'}
                   </p>
 
-                  <div className="grid grid-cols-2 gap-2.5 mt-5 pt-3 border-t border-zinc-850/50 text-[10px]">
-                    <div className="flex items-center gap-1.5 text-zinc-400 font-semibold">
-                      <Globe size={11} className="text-indigo-400" />
+                  <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-slate-800/80 text-[11px]">
+                    <div className="flex items-center gap-1.5 text-slate-300 font-medium">
+                      <Globe size={13} className="text-sky-400" />
                       <span className="truncate" title={pattern}>{pattern}</span>
                     </div>
-                    <div className="flex items-center gap-1.5 text-zinc-400 font-semibold">
-                      <Layers size={11} className="text-indigo-400" />
+                    <div className="flex items-center gap-1.5 text-slate-300 font-medium">
+                      <Layers size={13} className="text-sky-400" />
                       <span>{flow.stepCount || 0} steps</span>
                     </div>
-                    <div className="flex items-center gap-1.5 text-zinc-400 font-semibold">
-                      <Tag size={11} className="text-indigo-400" />
+                    <div className="flex items-center gap-1.5 text-slate-300 font-medium">
+                      <Tag size={13} className="text-sky-400" />
                       <span>Priority: {flow.priority}</span>
                     </div>
-                    <div className="flex items-center gap-1.5 text-zinc-400 font-semibold">
-                      <Calendar size={11} className="text-indigo-400" />
+                    <div className="flex items-center gap-1.5 text-slate-300 font-medium">
+                      <Calendar size={13} className="text-sky-400" />
                       <span>Version: v{flow.version}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Action Footer */}
-                <div className="flex items-center justify-between mt-5 pt-3 border-t border-zinc-850/50">
+                <div className="flex items-center justify-between mt-5 pt-3 border-t border-slate-800/80">
                   <a
                     href={`/sandbox.html?kenzo_flow=${flow.id}&api_key=${apiKey}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="py-1.5 px-3 bg-zinc-950 border border-zinc-800 hover:border-zinc-700 hover:text-white rounded-lg text-zinc-400 flex items-center gap-1 text-[10px] transition-colors cursor-pointer font-bold"
+                    className="py-1.5 px-3 bg-[#070d18] border border-slate-700/80 hover:border-sky-500/50 hover:text-white rounded-xl text-slate-300 flex items-center gap-1.5 text-xs transition-colors cursor-pointer font-bold"
                   >
-                    <Eye size={12} />
+                    <Eye size={13} className="text-sky-400" />
                     <span>Preview</span>
                   </a>
 
@@ -1006,14 +1025,14 @@ export default function ToursView({
                     {isPublished ? (
                       <button
                         onClick={() => handleUpdateFlowStatus(flow.id, 'draft')}
-                        className="text-[10px] bg-zinc-950 border border-zinc-800 hover:border-zinc-750 hover:text-white px-2.5 py-1.5 rounded-lg text-zinc-400 transition-all cursor-pointer font-bold"
+                        className="text-xs bg-[#070d18] border border-slate-700 hover:border-slate-600 hover:text-white px-3 py-1.5 rounded-xl text-slate-400 transition-all cursor-pointer font-semibold"
                       >
                         Draft
                       </button>
                     ) : (
                       <button
                         onClick={() => handleUpdateFlowStatus(flow.id, 'published')}
-                        className="text-[10px] bg-indigo-600/10 border border-indigo-500/20 hover:bg-indigo-650 hover:text-white px-2.5 py-1.5 rounded-lg text-indigo-300 transition-all cursor-pointer font-bold"
+                        className="text-xs bg-sky-500/15 border border-sky-500/30 hover:bg-sky-500 hover:text-white px-3 py-1.5 rounded-xl text-sky-300 transition-all cursor-pointer font-bold"
                       >
                         Publish
                       </button>
@@ -1022,26 +1041,26 @@ export default function ToursView({
                     {/* Edit Steps button */}
                     <button
                       onClick={() => setStepEditorFlow(flow)}
-                      className="p-1.5 bg-indigo-600/10 border border-indigo-500/20 hover:bg-indigo-600 hover:border-indigo-500 rounded-lg text-indigo-400 hover:text-white transition-colors cursor-pointer"
+                      className="p-2 bg-sky-500/10 border border-sky-500/20 hover:bg-sky-500 hover:border-sky-500 rounded-xl text-sky-400 hover:text-white transition-colors cursor-pointer"
                       title="Edit Steps"
                     >
-                      <GripVertical size={12} />
+                      <GripVertical size={13} />
                     </button>
 
                     <button
                       onClick={() => setEditingFlow(flow)}
-                      className="p-1.5 bg-zinc-950 border border-zinc-800 hover:border-zinc-700 hover:text-white rounded-lg text-zinc-400 transition-colors cursor-pointer"
+                      className="p-2 bg-[#070d18] border border-slate-700 hover:border-slate-600 hover:text-white rounded-xl text-slate-400 transition-colors cursor-pointer"
                       title="Edit Flow Settings"
                     >
-                      <Edit size={12} />
+                      <Edit size={13} />
                     </button>
 
                     <button
                       onClick={() => handleDeleteFlow(flow.id)}
-                      className="p-1.5 bg-zinc-950 border border-zinc-800 hover:border-red-900/40 hover:bg-red-500/10 hover:text-red-400 rounded-lg text-zinc-500 transition-colors cursor-pointer"
+                      className="p-2 bg-[#070d18] border border-slate-700 hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-400 rounded-xl text-slate-500 transition-colors cursor-pointer"
                       title="Delete Flow"
                     >
-                      <Trash2 size={12} />
+                      <Trash2 size={13} />
                     </button>
                   </div>
                 </div>

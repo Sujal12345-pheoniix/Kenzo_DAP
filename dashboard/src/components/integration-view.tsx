@@ -110,54 +110,60 @@ export class AppComponent implements OnInit {
   };
 
   return (
-    <div className="p-8 space-y-6 text-left antialiased">
-      {/* High Contrast Header */}
-      <div>
-        <h2 className="text-2xl font-bold font-outfit text-slate-900 leading-tight">Snippet Installation</h2>
-        <p className="text-slate-600 text-xs mt-1 font-medium">Deploy this single-snippet script to initialize Kenzo_DAP walkthroughs globally on your domains.</p>
+    <div className="space-y-8 select-none relative text-left w-full text-slate-100">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
+        <div className="flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-2xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-center text-sky-400 shadow-lg shadow-sky-500/10">
+            <Cpu size={20} className="text-sky-400" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold font-syne text-white tracking-tight">SDK Integration & Snippets</h2>
+            <p className="text-xs text-slate-400 mt-0.5">Embed the zero-latency client script to initialize Kenzo_DAP workflows globally</p>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
         {/* Left Side: Wizard Checklist */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between space-y-6">
+        <div className="kenzo-glass-card rounded-3xl p-6 shadow-2xl flex flex-col justify-between space-y-6">
           <div className="space-y-4">
-            <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 border-b border-slate-100 pb-3 flex items-center gap-2">
-              <Cpu size={14} className="text-indigo-600" />
-              Installation Wizard
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800/80 pb-3 flex items-center gap-2">
+              <Cpu size={14} className="text-sky-400" />
+              <span>Integration Steps</span>
             </h3>
 
-            <div className="space-y-4 text-xs font-semibold text-slate-700">
-              <div className="flex items-start gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] shrink-0 font-bold">1</span>
+            <div className="space-y-3 text-xs font-semibold text-slate-300">
+              <div className="flex items-start gap-3 bg-[#070d18] p-3.5 rounded-2xl border border-slate-800">
+                <span className="w-5 h-5 rounded-full bg-sky-500 text-white flex items-center justify-center text-[10px] shrink-0 font-bold">1</span>
                 <div>
-                  <span className="text-slate-900 font-bold block">Select Platform</span>
-                  <span className="text-[11px] text-slate-500 font-normal">Choose target HTML or JS framework below.</span>
+                  <span className="text-white font-bold block">Select Framework</span>
+                  <span className="text-[11px] text-slate-400 font-normal">Choose target HTML or Frontend framework.</span>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] shrink-0 font-bold">2</span>
+              <div className="flex items-start gap-3 bg-[#070d18] p-3.5 rounded-2xl border border-slate-800">
+                <span className="w-5 h-5 rounded-full bg-sky-500 text-white flex items-center justify-center text-[10px] shrink-0 font-bold">2</span>
                 <div>
-                  <span className="text-slate-900 font-bold block">Copy Snippet</span>
-                  <span className="text-[11px] text-slate-500 font-normal">Paste before closing &lt;/head&gt; tag on target app.</span>
+                  <span className="text-white font-bold block">Embed Client Script</span>
+                  <span className="text-[11px] text-slate-400 font-normal">Paste before closing &lt;/head&gt; tag on target app.</span>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] shrink-0 font-bold">3</span>
+              <div className="flex items-start gap-3 bg-[#070d18] p-3.5 rounded-2xl border border-slate-800">
+                <span className="w-5 h-5 rounded-full bg-sky-500 text-white flex items-center justify-center text-[10px] shrink-0 font-bold">3</span>
                 <div>
-                  <span className="text-slate-900 font-bold block">Verify SDK Connection</span>
-                  <span className="text-[11px] text-slate-500 font-normal">Confirm client app establishes live handshake.</span>
+                  <span className="text-white font-bold block">Verify SDK Handshake</span>
+                  <span className="text-[11px] text-slate-400 font-normal">Test real-time heartbeat connection.</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3">
+          <div className="bg-[#070d18] border border-slate-800 rounded-2xl p-4 space-y-3">
             <div className="flex items-center justify-between text-xs">
               <span className="font-bold text-white">SDK Status</span>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+              <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
                 verificationState === 'success' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'
               }`}>
                 {verificationState === 'idle' && 'Not Tested'}
@@ -169,26 +175,26 @@ export class AppComponent implements OnInit {
             <button
               onClick={handleVerify}
               disabled={verificationState === 'checking'}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
+              className="w-full kenzo-glow-btn text-white text-xs font-bold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg disabled:opacity-50"
             >
               {verificationState === 'checking' ? <RefreshCw size={13} className="animate-spin" /> : <Link2 size={13} />}
-              Verify Connection Handshake
+              <span>Verify Connection</span>
             </button>
           </div>
         </div>
 
         {/* Right Side: Code Tabs & Snippet Box */}
-        <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+        <div className="lg:col-span-2 kenzo-glass-card rounded-3xl p-6 shadow-2xl flex flex-col justify-between space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-800/80 pb-4 flex-wrap gap-2">
             <div className="flex items-center gap-2">
               {(['html', 'react', 'nextjs', 'vue', 'angular'] as const).map((fw) => (
                 <button
                   key={fw}
                   onClick={() => setActiveTab(fw)}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase transition-all cursor-pointer ${
                     activeTab === fw
-                      ? 'bg-indigo-600 text-white shadow-sm'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                      ? 'bg-sky-500 text-white shadow-md'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
                   }`}
                 >
                   {fw}
@@ -198,15 +204,15 @@ export class AppComponent implements OnInit {
 
             <button
               onClick={handleCopy}
-              className="bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-slate-700"
+              className="bg-[#070d18] hover:bg-slate-800 text-slate-200 hover:text-white px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-slate-700"
             >
               {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
-              <span>{copied ? 'Copied!' : 'Copy Code'}</span>
+              <span>{copied ? 'Copied!' : 'Copy Snippet'}</span>
             </button>
           </div>
 
-          <div className="bg-[#0b0d17] border border-slate-800 rounded-xl p-4 font-mono text-xs overflow-x-auto text-slate-200">
-            <pre className="whitespace-pre-wrap">{snippets[activeTab]}</pre>
+          <div className="bg-[#070d18] border border-slate-800 rounded-2xl p-4 font-mono text-xs overflow-x-auto text-sky-200">
+            <pre className="whitespace-pre-wrap leading-relaxed">{snippets[activeTab]}</pre>
           </div>
         </div>
       </div>

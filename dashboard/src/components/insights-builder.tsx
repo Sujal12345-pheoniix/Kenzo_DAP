@@ -125,20 +125,20 @@ export default function InsightsBuilder({ apiKey, onBack }: InsightsBuilderProps
   };
 
   return (
-    <div className="min-h-screen bg-[#f3f4f6] text-[#1f2937] font-sans antialiased pb-16">
-      {/* Top Header Bar matching Kenzo_DAP screenshot */}
-      <header className="bg-white border-b border-gray-200 px-6 py-3.5 flex items-center justify-between shadow-sm sticky top-0 z-20">
-        <div className="flex items-center gap-4">
+    <div className="space-y-8 select-none relative text-left w-full text-slate-100">
+      {/* Top Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
+        <div className="flex items-center gap-3.5">
           <button 
             onClick={onBack}
-            className="flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+            className="p-2 rounded-xl bg-[#0b1324] border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700 transition-colors flex items-center gap-1.5 text-xs font-semibold cursor-pointer"
           >
             <ChevronLeft size={16} />
             <span>Back</span>
           </button>
-          <div className="h-4 w-[1px] bg-gray-300" />
+          <div className="h-5 w-[1px] bg-slate-800" />
           <div className="flex items-center gap-2">
-            <span className="text-sm font-bold text-gray-800">Trend Insight /</span>
+            <span className="text-sm font-bold font-syne text-sky-400">Trend Insight Studio /</span>
             {isEditingTitle ? (
               <input
                 type="text"
@@ -146,58 +146,60 @@ export default function InsightsBuilder({ apiKey, onBack }: InsightsBuilderProps
                 onChange={(e) => setInsightTitle(e.target.value)}
                 onBlur={() => setIsEditingTitle(false)}
                 autoFocus
-                className="text-sm font-medium border border-orange-400 rounded px-2 py-0.5 outline-none bg-orange-50 text-gray-900"
+                className="text-xs font-medium border border-sky-400 rounded-xl px-2.5 py-1 outline-none bg-[#070d18] text-white"
               />
             ) : (
               <div 
                 onClick={() => setIsEditingTitle(true)}
-                className="flex items-center gap-1.5 cursor-pointer text-sm font-medium text-gray-600 hover:text-gray-900"
+                className="flex items-center gap-1.5 cursor-pointer text-xs font-medium text-slate-300 hover:text-white group"
               >
                 <span>{insightTitle}</span>
-                <Edit2 size={13} className="text-gray-500" />
+                <Edit2 size={12} className="text-slate-500 group-hover:text-sky-400" />
               </div>
             )}
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <button className="p-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors" title="Duplicate Insight">
+          <button className="p-2 rounded-xl bg-[#0b1324] border border-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer" title="Duplicate Insight">
             <Copy size={15} />
           </button>
-          <button className="bg-[#d9534f] hover:bg-[#c9302c] text-white px-5 py-1.5 rounded-lg text-sm font-semibold shadow-sm transition-colors">
-            Save
+          <button className="kenzo-glow-btn text-white px-5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer">
+            Save Insight
           </button>
         </div>
-      </header>
+      </div>
 
-      <main className="max-w-7xl mx-auto px-6 py-6 space-y-6">
+      <div className="space-y-6">
         {/* Ask AI Prompt Bar */}
-        <div className="bg-gradient-to-r from-orange-50 via-white to-amber-50 border border-orange-200 rounded-xl p-3 flex items-center gap-3 shadow-sm">
-          <Sparkles className="w-5 h-5 text-orange-600 shrink-0" />
+        <div className="kenzo-glass-card rounded-2xl p-3 flex items-center gap-3 shadow-xl border border-sky-500/20">
+          <div className="w-8 h-8 rounded-xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400 shrink-0">
+            <Sparkles className="w-4 h-4 text-sky-400" />
+          </div>
           <input
             type="text"
             value={aiPrompt}
             onChange={(e) => setAiPrompt(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleAskAi()}
             placeholder="Ask AI: 'Show drop-off rate for onboarding flow over the last 30 days by browser'..."
-            className="flex-1 bg-transparent text-sm text-gray-900 placeholder-gray-500 outline-none"
+            className="flex-1 bg-transparent text-xs text-white placeholder-slate-500 outline-none"
           />
           <button
             onClick={handleAskAi}
             disabled={isAiLoading}
-            className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors shrink-0"
+            className="kenzo-glow-btn text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shrink-0 cursor-pointer disabled:opacity-60"
           >
-            {isAiLoading ? 'Analyzing...' : 'Generate'}
+            {isAiLoading ? 'Analyzing...' : 'Generate Insight'}
           </button>
         </div>
 
-        {/* Events Setup Collapsible Box matching screenshot */}
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50/50">
-            <h2 className="text-base font-bold text-gray-800">Events setup</h2>
+        {/* Events Setup Collapsible Box */}
+        <div className="kenzo-glass-card rounded-3xl overflow-hidden shadow-2xl">
+          <div className="px-6 py-4 border-b border-slate-800/80 flex items-center justify-between bg-[#070d18]/60">
+            <h2 className="text-sm font-bold font-syne text-white">Events Setup & User Breakdowns</h2>
             <button 
               onClick={() => setIsEventsSetupOpen(!isEventsSetupOpen)}
-              className="text-gray-500 hover:text-gray-700 p-1"
+              className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
             >
               <X size={18} />
             </button>
@@ -207,15 +209,15 @@ export default function InsightsBuilder({ apiKey, onBack }: InsightsBuilderProps
             <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Left Column: Add Events */}
               <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-gray-700">Add Events</h3>
-                <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3 shadow-2xs">
-                  <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-                    <span className="font-semibold text-sm text-gray-900">Flow Start</span>
+                <h3 className="text-xs font-semibold text-slate-300">Add Events</h3>
+                <div className="bg-[#070d18] border border-slate-800 rounded-2xl p-4 space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-800/60 pb-2">
+                    <span className="font-bold text-xs text-white">Flow Start</span>
                     <div className="flex items-center gap-3 text-xs">
-                      <button className="text-blue-600 font-medium hover:underline flex items-center gap-1">
+                      <button className="text-sky-400 font-semibold hover:underline flex items-center gap-1 cursor-pointer">
                         <Plus size={12} /> Filter
                       </button>
-                      <button className="text-blue-600 font-medium hover:underline flex items-center gap-1">
+                      <button className="text-sky-400 font-semibold hover:underline flex items-center gap-1 cursor-pointer">
                         <Plus size={12} /> Breakdown
                       </button>
                     </div>
@@ -223,42 +225,42 @@ export default function InsightsBuilder({ apiKey, onBack }: InsightsBuilderProps
 
                   {/* Applied Filter Chips */}
                   <div className="flex flex-wrap gap-2">
-                    <span className="bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded-full text-xs flex items-center gap-2">
+                    <span className="bg-sky-500/10 text-sky-300 border border-sky-500/25 px-3 py-1 rounded-xl text-xs flex items-center gap-2">
                       Flow name = Create lead in Salesforce + 3 Others
-                      <X size={12} className="cursor-pointer hover:text-blue-900" />
+                      <X size={12} className="cursor-pointer hover:text-white" />
                     </span>
-                    <span className="bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded-full text-xs flex items-center gap-2">
+                    <span className="bg-sky-500/10 text-sky-300 border border-sky-500/25 px-3 py-1 rounded-xl text-xs flex items-center gap-2">
                       Flow origin
-                      <X size={12} className="cursor-pointer hover:text-blue-900" />
+                      <X size={12} className="cursor-pointer hover:text-white" />
                     </span>
                   </div>
 
-                  <button className="mt-2 border border-orange-500 text-orange-600 hover:bg-orange-50 font-semibold px-4 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-colors">
+                  <button className="mt-2 bg-[#0b1324] border border-slate-700 hover:border-sky-500/50 text-slate-300 hover:text-white font-semibold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer">
                     <Plus size={14} /> Add Event
                   </button>
                 </div>
               </div>
 
               {/* Right Column: Select users by */}
-              <div className="space-y-4 border-l lg:border-gray-200 lg:pl-6">
+              <div className="space-y-4 lg:border-l lg:border-slate-800/80 lg:pl-6">
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-700 mb-3">Select users by</h3>
+                  <h3 className="text-xs font-semibold text-slate-300 mb-3">Select Users By</h3>
                   <div className="space-y-3">
-                    <span className="bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded-full text-xs inline-flex items-center gap-2">
+                    <span className="bg-sky-500/10 text-sky-300 border border-sky-500/25 px-3 py-1 rounded-xl text-xs inline-flex items-center gap-2">
                       Browser = Chrome
-                      <X size={12} className="cursor-pointer hover:text-blue-900" />
+                      <X size={12} className="cursor-pointer hover:text-white" />
                     </span>
                     <div>
-                      <button className="border border-orange-500 text-orange-600 hover:bg-orange-50 font-semibold px-4 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-colors">
+                      <button className="bg-[#0b1324] border border-slate-700 hover:border-sky-500/50 text-slate-300 hover:text-white font-semibold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer">
                         <Plus size={14} /> Add User Filter
                       </button>
                     </div>
                   </div>
                 </div>
 
-                <div className="pt-2 border-t border-gray-100">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-3">Group users by</h3>
-                  <button className="border border-orange-500 text-orange-600 hover:bg-orange-50 font-semibold px-4 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-colors">
+                <div className="pt-2 border-t border-slate-800/60">
+                  <h3 className="text-xs font-semibold text-slate-300 mb-3">Group Users By</h3>
+                  <button className="bg-[#0b1324] border border-slate-700 hover:border-sky-500/50 text-slate-300 hover:text-white font-semibold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer">
                     <Plus size={14} /> Add User Breakdown
                   </button>
                 </div>
@@ -267,18 +269,18 @@ export default function InsightsBuilder({ apiKey, onBack }: InsightsBuilderProps
           )}
         </div>
 
-        {/* Chart Container matching Kenzo_DAP screenshot */}
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 space-y-8">
+        {/* Chart Container */}
+        <div className="kenzo-glass-card rounded-3xl p-6 space-y-8 shadow-2xl">
           {/* Controls Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-100 pb-4">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
             <div className="flex items-center gap-2">
-              <div className="border border-gray-300 rounded-lg p-0.5 flex bg-gray-50">
+              <div className="border border-slate-800 rounded-xl p-0.5 flex bg-[#070d18]">
                 {(['7D', '30D', '90D'] as const).map((r) => (
                   <button
                     key={r}
                     onClick={() => setDateRange(r)}
-                    className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
-                      dateRange === r ? 'bg-blue-600 text-white shadow-2xs' : 'text-gray-600 hover:text-gray-900'
+                    className={`px-3 py-1 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
+                      dateRange === r ? 'bg-sky-500 text-white shadow-sm' : 'text-slate-400 hover:text-white'
                     }`}
                   >
                     {r}
@@ -286,7 +288,7 @@ export default function InsightsBuilder({ apiKey, onBack }: InsightsBuilderProps
                 ))}
               </div>
 
-              <button className="bg-blue-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-2xs">
+              <button className="bg-[#070d18] border border-slate-800 text-sky-400 text-xs font-semibold px-3.5 py-1.5 rounded-xl flex items-center gap-1.5">
                 <Calendar size={13} />
                 <span>11/03 - 31/03</span>
               </button>
@@ -294,46 +296,47 @@ export default function InsightsBuilder({ apiKey, onBack }: InsightsBuilderProps
 
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <label className="text-xs font-medium text-gray-600">Metric</label>
+                <label className="text-xs font-medium text-slate-400">Metric</label>
                 <select
                   value={metric}
                   onChange={(e) => setMetric(e.target.value)}
-                  className="border border-gray-300 rounded-lg text-xs font-medium px-3 py-1.5 bg-white text-gray-800 outline-none"
+                  className="bg-[#070d18] border border-slate-700/80 focus:border-sky-400 rounded-xl text-xs font-medium px-3 py-1.5 text-white outline-none cursor-pointer"
                 >
-                  <option value="Unique Users">Unique Users</option>
-                  <option value="Total Events">Total Events</option>
-                  <option value="Completion Rate">Completion Rate</option>
+                  <option value="Unique Users" className="bg-[#0b1324] text-white">Unique Users</option>
+                  <option value="Total Events" className="bg-[#0b1324] text-white">Total Events</option>
+                  <option value="Completion Rate" className="bg-[#0b1324] text-white">Completion Rate</option>
                 </select>
               </div>
 
               <div className="flex items-center gap-2">
-                <label className="text-xs font-medium text-gray-600">Chart Type</label>
+                <label className="text-xs font-medium text-slate-400">Chart Type</label>
                 <select
                   value={chartType}
                   onChange={(e) => setChartType(e.target.value)}
-                  className="border border-gray-300 rounded-lg text-xs font-medium px-3 py-1.5 bg-white text-gray-800 outline-none"
+                  className="bg-[#070d18] border border-slate-700/80 focus:border-sky-400 rounded-xl text-xs font-medium px-3 py-1.5 text-white outline-none cursor-pointer"
                 >
-                  <option value="Pie Chart">Pie Chart</option>
-                  <option value="Line Chart">Line Chart</option>
-                  <option value="Bar Chart">Bar Chart</option>
+                  <option value="Pie Chart" className="bg-[#0b1324] text-white">Pie Chart</option>
+                  <option value="Line Chart" className="bg-[#0b1324] text-white">Line Chart</option>
+                  <option value="Bar Chart" className="bg-[#0b1324] text-white">Bar Chart</option>
                 </select>
               </div>
             </div>
           </div>
 
           {/* Donut Chart Display */}
-          <div className="flex flex-col items-center justify-center space-y-8 py-4">
-            <div className="relative w-64 h-64 rounded-full flex items-center justify-center shadow-inner" style={{
-              background: 'conic-gradient(#6366f1 0% 35%, #eab308 35% 54%, #f97316 54% 69%, #a855f7 69% 82%, #3b82f6 82% 91%, #14b8a6 91% 97%, #f43f5e 97% 100%)'
+          <div className="flex flex-col items-center justify-center space-y-8 py-6">
+            <div className="relative w-64 h-64 rounded-full flex items-center justify-center shadow-2xl" style={{
+              background: 'conic-gradient(#0284c7 0% 35%, #38bdf8 35% 54%, #f59e0b 54% 69%, #a855f7 69% 82%, #3b82f6 82% 91%, #14b8a6 91% 97%, #f43f5e 97% 100%)'
             }}>
               {/* Inner cutout for Donut */}
-              <div className="w-36 h-36 bg-white rounded-full flex flex-col items-center justify-center shadow-md">
-                <span className="text-3xl font-extrabold text-gray-900 tracking-tight">{totalCount}</span>
+              <div className="w-36 h-36 bg-[#070d18] border border-slate-800 rounded-full flex flex-col items-center justify-center shadow-inner">
+                <span className="text-3xl font-bold text-white tracking-tight">{totalCount}</span>
+                <span className="text-[10px] text-slate-400 font-medium">TOTAL EVENTS</span>
               </div>
             </div>
 
-            {/* Labeled Color Legend matching screenshot */}
-            <div className="flex flex-wrap justify-center gap-x-6 gap-y-3 max-w-4xl text-xs font-medium text-gray-700">
+            {/* Labeled Color Legend */}
+            <div className="flex flex-wrap justify-center gap-x-6 gap-y-3 max-w-4xl text-xs font-medium text-slate-300">
               {rows.map((item, i) => (
                 <div key={i} className="flex items-center gap-2">
                   <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
@@ -344,10 +347,10 @@ export default function InsightsBuilder({ apiKey, onBack }: InsightsBuilderProps
           </div>
         </div>
 
-        {/* Data Table Section matching Kenzo_DAP screenshot */}
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden space-y-4">
-          <div className="p-4 border-b border-gray-200 flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+        {/* Data Table Section */}
+        <div className="kenzo-glass-card rounded-3xl shadow-2xl overflow-hidden space-y-4">
+          <div className="p-5 border-b border-slate-800/80 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-2.5 text-xs font-semibold text-white">
               <input 
                 type="checkbox" 
                 checked={selectedAll}
@@ -355,7 +358,7 @@ export default function InsightsBuilder({ apiKey, onBack }: InsightsBuilderProps
                   setSelectedAll(e.target.checked);
                   setRows(rows.map(r => ({ ...r, checked: e.target.checked })));
                 }}
-                className="w-4 h-4 rounded text-blue-600" 
+                className="w-4 h-4 rounded text-sky-500 bg-[#070d18] border-slate-700 cursor-pointer" 
               />
               <span>Selected {rows.filter(r => r.checked).length} of {rows.length} Events</span>
             </div>
@@ -363,65 +366,62 @@ export default function InsightsBuilder({ apiKey, onBack }: InsightsBuilderProps
             <div className="flex items-center gap-3">
               <button 
                 onClick={handleExportData}
-                className="border border-orange-500 text-orange-600 hover:bg-orange-50 font-semibold px-4 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-colors"
+                className="bg-[#0b1324] border border-slate-700 hover:border-sky-500/50 text-slate-300 hover:text-white font-semibold px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
               >
-                <Download size={14} /> Export data
+                <Download size={14} /> Export CSV
               </button>
 
               <div className="relative">
-                <Search size={14} className="absolute left-3 top-2.5 text-gray-400" />
+                <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Search"
+                  placeholder="Filter events..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8 pr-3 py-1.5 border border-gray-300 rounded-lg text-xs text-gray-800 outline-none w-48 focus:border-blue-500"
+                  className="pl-8 pr-3 py-1.5 bg-[#070d18] border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 outline-none w-48 focus:border-sky-400"
                 />
               </div>
             </div>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-gray-700">
-              <thead className="bg-gray-50 border-b border-gray-200 font-semibold text-gray-600">
+            <table className="w-full text-left text-xs text-slate-300">
+              <thead className="bg-[#070d18]/70 border-b border-slate-800/80 font-bold text-[11px] text-slate-400 uppercase tracking-wider">
                 <tr>
                   <th className="p-3.5 w-10 text-center"></th>
                   <th className="p-3.5">
                     <div className="flex items-center gap-1 cursor-pointer">
                       <span>Event</span>
-                      <span className="text-gray-400">⇕</span>
                     </div>
                   </th>
                   <th className="p-3.5">
                     <div className="flex items-center gap-1 cursor-pointer">
-                      <span>Flow origin</span>
-                      <span className="text-gray-400">⇕</span>
+                      <span>Flow Origin</span>
                     </div>
                   </th>
                   <th className="p-3.5 text-right">
                     <div className="flex items-center justify-end gap-1 cursor-pointer">
                       <span>Unique Users</span>
-                      <span className="text-gray-400">⇕</span>
                     </div>
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-slate-800/60">
                 {rows
                   .filter(r => !searchQuery || r.label.toLowerCase().includes(searchQuery.toLowerCase()))
                   .map((row, idx) => (
-                    <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                    <tr key={idx} className="hover:bg-slate-800/20 transition-colors">
                       <td className="p-3.5 text-center">
                         <input
                           type="checkbox"
                           checked={row.checked}
                           onChange={() => toggleRowCheck(idx)}
-                          className="w-4 h-4 rounded text-blue-600"
+                          className="w-4 h-4 rounded text-sky-500 bg-[#070d18] border-slate-700 cursor-pointer"
                         />
                       </td>
-                      <td className="p-3.5 font-medium text-gray-900">Flow Stat</td>
-                      <td className="p-3.5 font-medium text-gray-700">{row.label.replace('Flow Start / ', '').replace('Flow Start/ ', '')}</td>
-                      <td className="p-3.5 text-right font-bold text-gray-900">{row.count}</td>
+                      <td className="p-3.5 font-medium text-white">Flow Stat</td>
+                      <td className="p-3.5 font-medium text-slate-300">{row.label.replace('Flow Start / ', '').replace('Flow Start/ ', '')}</td>
+                      <td className="p-3.5 text-right font-bold text-sky-400 font-mono">{row.count}</td>
                     </tr>
                   ))}
               </tbody>
@@ -429,13 +429,13 @@ export default function InsightsBuilder({ apiKey, onBack }: InsightsBuilderProps
           </div>
 
           {/* Table Pagination Footer */}
-          <div className="px-6 py-3 bg-gray-50 border-t border-gray-200 flex flex-wrap items-center justify-between gap-4 text-xs text-gray-600">
+          <div className="px-6 py-3.5 bg-[#070d18]/40 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-4 text-xs text-slate-400">
             <div className="flex items-center gap-2">
               <span>Show</span>
               <select
                 value={entriesPerPage}
                 onChange={(e) => setEntriesPerPage(e.target.value)}
-                className="border border-gray-300 rounded px-2 py-1 bg-white outline-none"
+                className="border border-slate-700 rounded-lg px-2 py-1 bg-[#0b1324] text-white outline-none"
               >
                 <option value="10">10</option>
                 <option value="25">25</option>
@@ -445,23 +445,20 @@ export default function InsightsBuilder({ apiKey, onBack }: InsightsBuilderProps
             </div>
 
             <div className="flex items-center gap-4">
-              <span>Showing 1 of {rows.length} out of {rows.length} entries</span>
+              <span>Showing 1 to {rows.length} of {rows.length} entries</span>
               <div className="flex items-center gap-1">
-                <button className="p-1.5 border border-gray-300 rounded hover:bg-white disabled:opacity-50" disabled>
+                <button className="p-1.5 border border-slate-700 rounded-lg text-slate-400 hover:bg-slate-800 disabled:opacity-30" disabled>
                   <ChevronLeft size={14} />
                 </button>
-                <button className="px-3 py-1 bg-blue-600 text-white font-semibold rounded">1</button>
-                <button className="px-3 py-1 border border-gray-300 rounded hover:bg-white">2</button>
-                <button className="px-3 py-1 border border-gray-300 rounded hover:bg-white">3</button>
-                <span className="px-1 text-gray-400">...</span>
-                <button className="p-1.5 border border-gray-300 rounded hover:bg-white">
+                <button className="px-3 py-1 bg-sky-500 text-white font-semibold rounded-lg">1</button>
+                <button className="p-1.5 border border-slate-700 rounded-lg text-slate-400 hover:bg-slate-800">
                   <ChevronRight size={14} />
                 </button>
               </div>
             </div>
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

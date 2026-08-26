@@ -17,7 +17,7 @@ import SelfHelpView from './components/self-help-view';
 import ContentLibraryView from './components/content-library-view';
 import AuditLogsView from './components/audit-logs-view';
 import OrganizationsView from './components/organizations-view';
-import { X } from 'lucide-react';
+import { X, Sparkles, Building2 } from 'lucide-react';
 
 interface Flow {
   id: string;
@@ -159,7 +159,6 @@ export default function App() {
     localStorage.setItem('kenzo_jwt_token', data.token);
     localStorage.setItem('kenzo_user_session', JSON.stringify(data.user));
     setUser(data.user);
-    // Use only the projects the server returned for THIS user
     const userProjects = (data.projects || []) as any[];
     setProjects(userProjects);
     setActiveProjectId(userProjects.length > 0 ? userProjects[0].id : '');
@@ -293,7 +292,7 @@ export default function App() {
   const activePublishedCount = flows.filter(f => f.status === 'published').length;
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#f3f4f6] text-[#1f2937] font-sans antialiased">
+    <div className="flex h-screen w-screen overflow-hidden bg-[#05090f] text-[#f8fafc] font-sans antialiased selection:bg-sky-500/30 selection:text-white">
       
       {/* Sidebar Navigation */}
       <Sidebar 
@@ -311,8 +310,12 @@ export default function App() {
       />
 
       {/* Main Content Pane */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative bg-[#05090f]">
         
+        {/* Ambient Kenzo Glow Blurs */}
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-sky-500/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-10 right-10 w-96 h-96 bg-amber-500/3 rounded-full blur-3xl pointer-events-none" />
+
         {/* Top Header */}
         <TopNav 
           activeTab={activeTab} 
@@ -321,36 +324,34 @@ export default function App() {
         />
 
         {/* Dynamic Pages Area */}
-        <main className="flex-1 overflow-y-auto relative">
+        <main className="flex-1 overflow-y-auto relative p-6 md:p-8 flex flex-col min-h-0">
           
           {loading ? (
-            <div className="p-8 space-y-8 animate-pulse text-left">
+            <div className="space-y-6 animate-pulse text-left w-full max-w-7xl mx-auto">
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
-                  <div className="h-6 w-48 bg-slate-300 rounded-lg" />
-                  <div className="h-3 w-64 bg-slate-200 rounded" />
+                  <div className="h-7 w-56 bg-slate-800/80 rounded-xl" />
+                  <div className="h-3.5 w-72 bg-slate-800/40 rounded-lg" />
                 </div>
+                <div className="h-10 w-32 bg-slate-800/60 rounded-xl" />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="h-28 bg-white border border-slate-200 rounded-xl" />
-                <div className="h-28 bg-white border border-slate-200 rounded-xl" />
-                <div className="h-28 bg-white border border-slate-200 rounded-xl" />
+                <div className="h-32 bg-[#0b1324]/80 border border-slate-800/60 rounded-2xl" />
+                <div className="h-32 bg-[#0b1324]/80 border border-slate-800/60 rounded-2xl" />
+                <div className="h-32 bg-[#0b1324]/80 border border-slate-800/60 rounded-2xl" />
               </div>
+              <div className="h-96 bg-[#0b1324]/80 border border-slate-800/60 rounded-2xl" />
             </div>
           ) : (
-            <div className="fade-in transition-all duration-350">
+            <div className="fade-in transition-all duration-300 w-full max-w-7xl mx-auto flex-1 flex flex-col">
               {/* Analytics / Overview */}
               {(activeTab === 'overview' || activeTab === 'analytics_overview' || activeTab === 'ceo_overview' || activeTab === 'ceo_analytics') && (
-                <div className="p-8">
-                  <AnalyticsView analytics={analytics} flowsCount={flows.length} activePublishedCount={activePublishedCount} getCompletionRate={getCompletionRate} />
-                </div>
+                <AnalyticsView analytics={analytics} flowsCount={flows.length} activePublishedCount={activePublishedCount} getCompletionRate={getCompletionRate} />
               )}
 
               {/* Flows / Walkthroughs */}
               {(activeTab === 'guidance_flows' || activeTab === 'ceo_walkthroughs') && (
-                <div className="p-8">
-                  <ToursView flows={flows} editingFlow={editingFlow} setEditingFlow={setEditingFlow} handleDeleteFlow={handleDeleteFlow} handleUpdateFlowStatus={handleUpdateFlowStatus} handleSaveFlowDetails={handleSaveFlowDetails} apiKey={activeProject?.apiKey || ''} />
-                </div>
+                <ToursView flows={flows} editingFlow={editingFlow} setEditingFlow={setEditingFlow} handleDeleteFlow={handleDeleteFlow} handleUpdateFlowStatus={handleUpdateFlowStatus} handleSaveFlowDetails={handleSaveFlowDetails} apiKey={activeProject?.apiKey || ''} />
               )}
 
               {/* Smart Tips */}
@@ -408,13 +409,16 @@ export default function App() {
                 <IntegrationView apiBaseUrl={apiBaseUrl} apiKey={activeProject?.apiKey || ''} />
               )}
 
-              {/* Generic fallback for unimplemented tabs */}
+              {/* Generic fallback for other tabs */}
               {!['overview','analytics_overview','ceo_overview','ceo_analytics','organizations','ceo_orgs','guidance_flows','ceo_walkthroughs','smart_tips','guidance_tips','ceo_smart_tips','popups','guidance_popups','ceo_popups','beacons','guidance_beacons','ceo_beacons','task_lists','guidance_tasks','ceo_task_lists','surveys','guidance_surveys','ceo_surveys','self_help','ceo_self_help','guidance_selfhelp','ceo_selfhelp','content_library','audit_logs','ceo_audit','trends','ceo_growth','integrations'].includes(activeTab) && (
-                <div className="p-8">
-                  <div className="bg-[#11131f] p-12 rounded-2xl border border-[#1e2238] text-center py-20 space-y-3">
-                    <h3 className="text-xl font-bold text-white capitalize">Kenzo_DAP — {activeTab.replace(/_/g, ' ')}</h3>
-                    <p className="text-sm text-zinc-400 max-w-md mx-auto">
-                      Module active under role <span className="font-bold text-indigo-400">{user.role}</span>. Scoped to workspace: <span className="font-bold text-white">{activeProject?.name || 'Default Project'}</span>.
+                <div className="w-full flex-1 flex items-center justify-center py-16">
+                  <div className="kenzo-glass-card p-12 rounded-3xl border border-sky-500/20 text-center max-w-lg mx-auto space-y-4 shadow-2xl">
+                    <div className="w-14 h-14 rounded-2xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-center text-sky-400 mx-auto">
+                      <Sparkles size={28} className="animate-pulse" />
+                    </div>
+                    <h3 className="text-xl font-bold font-syne text-white capitalize">Kenzo_DAP — {activeTab.replace(/_/g, ' ')}</h3>
+                    <p className="text-xs text-slate-400 leading-relaxed">
+                      Module active under role <span className="font-bold text-sky-400">{user.role}</span>. Scoped to workspace: <span className="font-bold text-white">{activeProject?.name || 'Default Project'}</span>.
                     </p>
                   </div>
                 </div>
@@ -436,65 +440,76 @@ export default function App() {
       {/* Register Workspace Modal */}
       <AnimatePresence>
         {isRegisterModalOpen && (
-          <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
             <motion.div 
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white border border-slate-200 rounded-2xl p-6 w-full max-w-md shadow-2xl text-left"
+              className="kenzo-glass-card rounded-3xl p-6 sm:p-8 w-full max-w-md shadow-2xl text-left relative overflow-hidden"
             >
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-                <h3 className="text-base font-bold text-slate-900">Create Application Workspace</h3>
-                <button onClick={() => setIsRegisterModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+              {/* Header Gradient line */}
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-sky-400 via-blue-500 to-amber-400" />
+
+              <div className="flex items-center justify-between border-b border-slate-800/80 pb-4 mb-5">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
+                    <Building2 size={16} />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold font-syne text-white">Create Workspace</h3>
+                    <p className="text-[11px] text-slate-400">Register a new client application tenant</p>
+                  </div>
+                </div>
+                <button onClick={() => setIsRegisterModalOpen(false)} className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors">
                   <X size={18} />
                 </button>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">Application Name</label>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1.5">Application Name <span className="text-sky-400">*</span></label>
                   <input
                     type="text"
                     value={newProjectName}
                     onChange={(e) => setNewProjectName(e.target.value)}
-                    placeholder="e.g. Company A - ERP Portal"
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 outline-none focus:border-indigo-500"
+                    placeholder="e.g. Acme Corp — ERP Portal"
+                    className="w-full bg-[#070d18] border border-slate-700/60 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">Domain URL (Optional)</label>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1.5">Domain URL (Optional)</label>
                   <input
                     type="text"
                     value={newProjectUrl}
                     onChange={(e) => setNewProjectUrl(e.target.value)}
-                    placeholder="e.g. https://erp.companya.com"
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 outline-none focus:border-indigo-500"
+                    placeholder="e.g. https://erp.acmecorp.com"
+                    className="w-full bg-[#070d18] border border-slate-700/60 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">Assigned Client Email (Optional)</label>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1.5">Assigned Client Email (Optional)</label>
                   <input
                     type="email"
                     value={newClientEmail}
                     onChange={(e) => setNewClientEmail(e.target.value)}
-                    placeholder="e.g. client1@kenzo.com"
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 outline-none focus:border-indigo-500"
+                    placeholder="e.g. client.admin@acmecorp.com"
+                    className="w-full bg-[#070d18] border border-slate-700/60 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors"
                   />
                 </div>
 
-                <div className="flex justify-end gap-2 pt-2">
+                <div className="flex justify-end gap-3 pt-3">
                   <button
                     onClick={() => setIsRegisterModalOpen(false)}
-                    className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100"
+                    className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={() => handleCreateProject(newProjectName, newProjectUrl, newClientEmail)}
                     disabled={!newProjectName.trim()}
-                    className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold disabled:opacity-50"
+                    className="kenzo-glow-btn px-5 py-2.5 text-white rounded-xl text-xs font-bold disabled:opacity-50 transition-all cursor-pointer"
                   >
                     Create Workspace
                   </button>

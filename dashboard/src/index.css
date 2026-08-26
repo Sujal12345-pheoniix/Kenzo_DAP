@@ -1,30 +1,33 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @import "tailwindcss";
 
 @theme {
-  --color-background: #09090b;
-  --color-surface-default: #18181b;
-  --color-surface-elevated: #27272a;
-  --color-surface-hover: #3f3f46;
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-accent: #6366f1;
-  --color-accent-hover: #4f46e5;
-  --color-accent-glow: rgba(99, 102, 241, 0.15);
-  --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-danger: #ef4444;
+  --color-kenzo-bg: #05090f;
+  --color-kenzo-navy: #09101d;
+  --color-kenzo-card: #0b1324;
+  --color-kenzo-card2: #101c33;
+  --color-kenzo-border: rgba(148, 163, 184, 0.12);
+  --color-kenzo-border-hover: rgba(56, 189, 248, 0.35);
+  --color-kenzo-blue: #0284c7;
+  --color-kenzo-sky: #38bdf8;
+  --color-kenzo-gold: #f59e0b;
+  --color-kenzo-text: #f8fafc;
+  --color-kenzo-muted: #94a3b8;
+  --color-kenzo-muted2: #64748b;
 
-  --font-sans: "Plus Jakarta Sans", sans-serif;
+  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-syne: "Outfit", "Plus Jakarta Sans", sans-serif;
   --font-outfit: "Outfit", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
 
-  --animate-pulse-subtle: pulseSubtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  --animate-shimmer: shimmer 1.5s infinite linear;
+  --animate-pulse-subtle: pulseSubtle 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-shimmer: shimmer 2s infinite linear;
 }
 
 @keyframes pulseSubtle {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.02); }
 }
 
 @keyframes shimmer {
@@ -33,54 +36,70 @@
 }
 
 :root {
-  --bg: #09090b;
-  --sidebar-bg: #121214;
-  --card-bg: rgba(24, 24, 27, 0.6);
-  --border: rgba(255, 255, 255, 0.08);
-  --primary: #6366f1;
-  --primary-hover: #4f46e5;
-  --text: #f4f4f5;
-  --text-muted: #a1a1aa;
+  --bg: #05090f;
+  --sidebar-bg: #070d18;
+  --card-bg: rgba(11, 19, 36, 0.85);
+  --border: rgba(148, 163, 184, 0.12);
+  --primary: #0284c7;
+  --primary-sky: #38bdf8;
+  --primary-hover: #0369a1;
+  --text: #f8fafc;
+  --text-muted: #94a3b8;
+  --gold: #f59e0b;
   --success: #10b981;
 }
 
 body {
   margin: 0;
   padding: 0;
-  background-color: var(--bg);
+  background-color: #05090f;
   background-image: 
-    radial-gradient(at 50% 0%, rgba(99, 102, 241, 0.08) 0px, transparent 50%),
-    radial-gradient(at 0% 100%, rgba(139, 92, 246, 0.03) 0px, transparent 50%);
+    linear-gradient(rgba(148, 163, 184, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.035) 1px, transparent 1px),
+    radial-gradient(at 20% 0%, rgba(2, 132, 199, 0.12) 0px, transparent 50%),
+    radial-gradient(at 80% 100%, rgba(245, 158, 11, 0.05) 0px, transparent 45%);
+  background-size: 32px 32px, 32px 32px, 100% 100%, 100% 100%;
   color: var(--text);
   font-family: 'Plus Jakarta Sans', sans-serif;
   height: 100vh;
   overflow: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Custom CSS Helpers */
-.glass {
-  background: var(--card-bg);
+/* Glassmorphism Surface Helpers */
+.kenzo-glass {
+  background: rgba(11, 19, 36, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.kenzo-glass-card {
+  background: linear-gradient(180deg, rgba(16, 28, 51, 0.85) 0%, rgba(9, 16, 29, 0.9) 100%);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--border);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-.custom-shadow {
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.05);
+.kenzo-glass-card:hover {
+  border-color: rgba(56, 189, 248, 0.3);
 }
 
-.glow-border {
-  position: relative;
+.hero-gradient-text {
+  background: linear-gradient(135deg, #38bdf8 0%, #60a5fa 50%, #c084fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-.glow-border::after {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(139, 92, 246, 0.05));
-  border-radius: inherit;
-  z-index: -1;
-  pointer-events: none;
+.kenzo-glow-btn {
+  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+  box-shadow: 0 4px 18px rgba(2, 132, 199, 0.35);
+}
+
+.kenzo-glow-btn:hover {
+  background: linear-gradient(135deg, #0369a1 0%, #1d4ed8 100%);
+  box-shadow: 0 6px 24px rgba(2, 132, 199, 0.5);
 }
 
 /* Scrollbar styling */
@@ -90,14 +109,14 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(5, 9, 15, 0.8);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(148, 163, 184, 0.2);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(56, 189, 248, 0.4);
 }

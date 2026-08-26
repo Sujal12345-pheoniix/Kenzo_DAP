@@ -139,7 +139,7 @@ export default function CommandPalette({ isOpen, onClose, setActiveTab, loadData
       {isOpen && (
         <div 
           onClick={handleBackdropClick}
-          className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-start justify-center pt-24 px-4 cursor-default select-none"
+          className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-start justify-center pt-24 px-4 cursor-default select-none"
         >
           <motion.div
             ref={containerRef}
@@ -147,37 +147,37 @@ export default function CommandPalette({ isOpen, onClose, setActiveTab, loadData
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.97, y: -10 }}
             transition={{ type: 'spring', duration: 0.3 }}
-            className="w-full max-w-xl bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden shadow-2xl custom-shadow flex flex-col"
+            className="w-full max-w-xl bg-[#0b1324] border border-slate-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col"
           >
             {/* Input Bar */}
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-zinc-850 bg-zinc-900/50">
-              <Search size={18} className="text-zinc-500 shrink-0" />
+            <div className="flex items-center gap-3 px-5 py-3.5 border-b border-slate-800 bg-[#070d18]/60">
+              <Search size={18} className="text-sky-400 shrink-0" />
               <input
                 ref={inputRef}
                 type="text"
-                placeholder="Type a command or search tours..."
+                placeholder="Type a command or search tours, workflows..."
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
                   setSelectedIndex(0);
                 }}
-                className="w-full bg-transparent text-white border-none outline-none placeholder-zinc-500 text-sm py-0.5"
+                className="w-full bg-transparent text-white border-none outline-none placeholder-slate-500 text-xs py-0.5"
               />
               <button 
                 onClick={onClose}
-                className="p-1 rounded hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300 transition-colors shrink-0"
+                className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors shrink-0 cursor-pointer"
               >
-                <X size={14} />
+                <X size={15} />
               </button>
             </div>
 
             {/* Results List */}
-            <div className="max-h-[340px] overflow-y-auto p-2 flex flex-col gap-0.5">
+            <div className="max-h-[340px] overflow-y-auto p-2.5 flex flex-col gap-1">
               {filteredItems.length === 0 ? (
                 <div className="py-12 text-center flex flex-col items-center justify-center gap-2">
-                  <Sparkles size={24} className="text-indigo-400/60 animate-pulse" />
-                  <p className="text-sm text-zinc-300 font-medium">No results found</p>
-                  <p className="text-xs text-zinc-500">Try searching for "navigation" or "sync"</p>
+                  <Sparkles size={24} className="text-sky-400/60 animate-pulse" />
+                  <p className="text-xs text-white font-medium">No commands found</p>
+                  <p className="text-[11px] text-slate-500">Try searching for "navigation" or "sync"</p>
                 </div>
               ) : (
                 filteredItems.map((item, index) => {
@@ -190,21 +190,23 @@ export default function CommandPalette({ isOpen, onClose, setActiveTab, loadData
                         item.action();
                         onClose();
                       }}
-                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left transition-all ${
+                      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-left transition-all cursor-pointer ${
                         isSelected 
-                          ? 'bg-indigo-600/15 border border-indigo-500/30 text-white font-medium' 
-                          : 'border border-transparent hover:bg-zinc-850 text-zinc-400 hover:text-zinc-200'
+                          ? 'bg-sky-500/15 border border-sky-500/40 text-white font-medium shadow-sm' 
+                          : 'border border-transparent hover:bg-slate-800/40 text-slate-300 hover:text-white'
                       }`}
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <Icon size={16} className={isSelected ? 'text-indigo-400' : 'text-zinc-500'} />
+                        <div className={`w-7 h-7 rounded-xl flex items-center justify-center ${isSelected ? 'bg-sky-500/20 text-sky-300' : 'bg-[#070d18] text-slate-400'}`}>
+                          <Icon size={14} />
+                        </div>
                         <div className="flex flex-col min-w-0">
-                          <span className="text-xs font-sans tracking-wide truncate">{item.title}</span>
-                          <span className="text-[10px] text-zinc-500 truncate">{item.category}</span>
+                          <span className="text-xs font-syne tracking-wide truncate">{item.title}</span>
+                          <span className="text-[10px] text-slate-500 truncate">{item.category}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
-                        <span className="text-[10px] bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded border border-zinc-700 font-mono font-bold">
+                        <span className="text-[10px] bg-[#070d18] text-slate-400 px-2 py-0.5 rounded-lg border border-slate-800 font-mono font-bold">
                           {item.shortcut}
                         </span>
                       </div>
@@ -215,7 +217,7 @@ export default function CommandPalette({ isOpen, onClose, setActiveTab, loadData
             </div>
 
             {/* Footer */}
-            <div className="px-4 py-2 border-t border-zinc-850 bg-zinc-950/40 text-[10px] text-zinc-500 flex items-center justify-between font-medium">
+            <div className="px-5 py-2.5 border-t border-slate-800 bg-[#070d18]/80 text-[10px] text-slate-400 flex items-center justify-between font-medium">
               <div className="flex items-center gap-2">
                 <span>↑↓ Navigate</span>
                 <span>•</span>
@@ -223,9 +225,9 @@ export default function CommandPalette({ isOpen, onClose, setActiveTab, loadData
                 <span>•</span>
                 <span>ESC Close</span>
               </div>
-              <div className="flex items-center gap-1 text-[9px] tracking-wide text-zinc-600 uppercase">
+              <div className="flex items-center gap-1 text-[9px] tracking-wide text-sky-400 uppercase font-mono">
                 <Command size={10} />
-                <span>K Console</span>
+                <span>Kenzo Command Palette</span>
               </div>
             </div>
           </motion.div>

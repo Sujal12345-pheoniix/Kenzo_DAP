@@ -151,10 +151,10 @@ export default function Sidebar({
 
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
-  // Super Admin Full Navigation Hierarchy
+  // Super Admin Navigation Hierarchy
   const superAdminNav: NavGroup[] = [
     {
-      category: 'Core',
+      category: 'Core Platform',
       items: [
         { id: 'overview', label: 'Overview', icon: Home },
         { id: 'organizations', label: 'Organizations', icon: Building },
@@ -165,7 +165,7 @@ export default function Sidebar({
     {
       category: 'Guidance Suite',
       items: [
-        { id: 'guidance_flows', label: 'Flows', icon: Layers, badge: flowsCount > 0 ? flowsCount : undefined },
+        { id: 'guidance_flows', label: 'Walkthroughs', icon: Layers, badge: flowsCount > 0 ? flowsCount : undefined },
         { id: 'guidance_tips', label: 'Smart Tips', icon: Tag },
         { id: 'guidance_popups', label: 'Pop-ups', icon: MessageSquare },
         { id: 'guidance_beacons', label: 'Beacons', icon: Sparkles },
@@ -211,7 +211,7 @@ export default function Sidebar({
       category: 'Company Portal',
       items: [
         { id: 'ceo_overview', label: 'Company Overview', icon: Home },
-        { id: 'ceo_orgs', label: 'Company Organization', icon: Building },
+        { id: 'ceo_orgs', label: 'Organization Sites', icon: Building },
         { id: 'ceo_apps', label: 'My Applications', icon: Boxes },
         { id: 'ceo_walkthroughs', label: 'My Walkthroughs', icon: Layers, badge: flowsCount > 0 ? flowsCount : undefined },
         { id: 'ceo_selfhelp', label: 'Self Help Content', icon: User },
@@ -245,29 +245,31 @@ export default function Sidebar({
 
   return (
     <motion.div 
-      animate={{ width: isCollapsed ? 80 : 250 }}
-      transition={{ type: 'spring', damping: 22, stiffness: 130 }}
-      className="h-screen bg-[#11131f] border-r border-[#1e2238] flex flex-col justify-between relative z-30 select-none shrink-0 text-[#e0e0e0] font-sans"
+      animate={{ width: isCollapsed ? 76 : 256 }}
+      transition={{ type: 'spring', damping: 24, stiffness: 150 }}
+      className="h-screen bg-[#070d18] border-r border-slate-800/80 flex flex-col justify-between relative z-30 select-none shrink-0 text-[#f8fafc] font-sans"
     >
       {/* Collapse Trigger Button */}
       <button 
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute -right-3 top-7 bg-[#1e2238] border border-[#2e3454] text-zinc-300 hover:text-white w-6 h-6 rounded-full flex items-center justify-center cursor-pointer transition-all z-50 shadow-md"
+        className="absolute -right-3.5 top-6 bg-[#0b1324] border border-slate-700/80 text-slate-300 hover:text-sky-400 hover:border-sky-500/50 w-7 h-7 rounded-full flex items-center justify-center cursor-pointer transition-all z-50 shadow-lg"
       >
-        {isCollapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
+        {isCollapsed ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
       </button>
 
       <div className="flex flex-col h-full overflow-hidden">
         {/* Header Branding */}
-        <div className={`p-4 flex items-center gap-3 border-b border-[#1e2238] ${isCollapsed ? 'justify-center' : ''}`}>
+        <div className={`p-4 flex items-center gap-3 border-b border-slate-800/80 ${isCollapsed ? 'justify-center' : ''}`}>
           <div className="shrink-0 flex items-center justify-center">
             <KenLogo size={32} />
           </div>
           {!isCollapsed && (
             <div className="flex flex-col">
-              <h1 className="font-bold text-base tracking-tight text-white leading-tight font-outfit">Kenzo_DAP</h1>
-              <span className="text-[10px] font-bold text-indigo-400 tracking-wider uppercase">
-                {isSuperAdmin ? 'SUPER ADMIN' : user?.companyName || 'CLIENT CEO'}
+              <h1 className="font-bold text-base tracking-tight text-white leading-tight font-syne flex items-center gap-1">
+                Kenzo<span className="text-sky-400">_DAP</span>
+              </h1>
+              <span className="text-[9px] font-bold text-sky-400/90 tracking-wider uppercase">
+                {isSuperAdmin ? 'Enterprise Portal' : user?.companyName || 'Client Portal'}
               </span>
             </div>
           )}
@@ -275,18 +277,18 @@ export default function Sidebar({
 
         {/* Workspace Switcher */}
         {!isCollapsed && (
-          <div className="p-3 border-b border-[#1e2238] relative">
+          <div className="p-3 border-b border-slate-800/80 relative">
             <button
               onClick={() => setWorkspaceMenuOpen(!workspaceMenuOpen)}
-              className="w-full bg-[#181b2e] hover:bg-[#20243d] border border-[#2a2f4c] text-left px-3 py-2 rounded-xl flex items-center justify-between text-xs transition-colors"
+              className="w-full bg-[#0b1324] hover:bg-[#101c33] border border-slate-700/60 hover:border-sky-500/40 text-left px-3 py-2.5 rounded-xl flex items-center justify-between text-xs transition-all shadow-inner"
             >
               <div className="flex items-center gap-2 truncate">
-                <Building size={14} className="text-indigo-400 shrink-0" />
-                <span className="font-semibold text-zinc-200 truncate">
-                  {activeProject ? activeProject.name : 'Select Project'}
+                <Building size={14} className="text-sky-400 shrink-0" />
+                <span className="font-semibold text-slate-200 truncate">
+                  {activeProject ? activeProject.name : 'Select Workspace'}
                 </span>
               </div>
-              <ChevronDown size={14} className={`text-zinc-400 transition-transform ${workspaceMenuOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 ${workspaceMenuOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {/* Workspace Dropdown */}
@@ -296,12 +298,12 @@ export default function Sidebar({
                   initial={{ opacity: 0, y: -6 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
-                  className="absolute left-3 right-3 top-14 bg-[#181b2e] border border-[#2a2f4c] rounded-xl shadow-2xl z-50 py-1 overflow-hidden"
+                  className="absolute left-3 right-3 top-14 bg-[#0b1324] border border-slate-700/80 rounded-2xl shadow-2xl z-50 py-1.5 overflow-hidden backdrop-blur-xl"
                 >
-                  <div className="px-3 py-1.5 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
-                    Projects ({projects.length})
+                  <div className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    Workspaces ({projects.length})
                   </div>
-                  <div className="max-h-40 overflow-y-auto">
+                  <div className="max-h-48 overflow-y-auto">
                     {projects.map((p) => (
                       <div
                         key={p.id}
@@ -312,14 +314,14 @@ export default function Sidebar({
                           loadData();
                         }}
                         className={`px-3 py-2 text-xs flex items-center justify-between cursor-pointer transition-colors ${
-                          p.id === activeProjectId ? 'bg-indigo-600/20 text-indigo-400 font-semibold' : 'text-zinc-300 hover:bg-[#20243d]'
+                          p.id === activeProjectId ? 'bg-sky-500/15 text-sky-400 font-semibold' : 'text-slate-300 hover:bg-slate-800/60'
                         }`}
                       >
                         <span className="truncate">{p.name}</span>
                         {isSuperAdmin && projects.length > 1 && (
                           <Trash2
                             size={12}
-                            className="text-zinc-500 hover:text-red-400 transition-colors ml-2 shrink-0"
+                            className="text-slate-500 hover:text-red-400 transition-colors ml-2 shrink-0"
                             onClick={(e) => {
                               e.stopPropagation();
                               onDeleteProject(p.id, p.name);
@@ -330,15 +332,15 @@ export default function Sidebar({
                     ))}
                   </div>
                   {isSuperAdmin && (
-                    <div className="border-t border-[#1e2238] pt-1">
+                    <div className="border-t border-slate-800/80 pt-1">
                       <button
                         onClick={() => {
                           setWorkspaceMenuOpen(false);
                           onOpenRegisterModal();
                         }}
-                        className="w-full text-left px-3 py-2 text-xs text-indigo-400 hover:bg-[#20243d] font-semibold flex items-center gap-2"
+                        className="w-full text-left px-3 py-2 text-xs text-sky-400 hover:bg-slate-800/60 font-semibold flex items-center gap-2"
                       >
-                        <Plus size={12} /> New Application / Project
+                        <Plus size={12} /> New Application Workspace
                       </button>
                     </div>
                   )}
@@ -353,7 +355,7 @@ export default function Sidebar({
           {currentNav.map((group, idx) => (
             <div key={idx} className="space-y-1">
               {!isCollapsed && (
-                <div className="px-3 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                <div className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest font-syne">
                   {group.category}
                 </div>
               )}
@@ -366,15 +368,15 @@ export default function Sidebar({
                     onClick={() => setActiveTab(item.id)}
                     className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
                       isActive
-                        ? 'bg-gradient-to-r from-indigo-600/30 to-purple-600/30 text-white border-l-4 border-indigo-500 font-semibold shadow-sm'
-                        : 'text-zinc-400 hover:bg-[#181b2e] hover:text-white'
+                        ? 'bg-gradient-to-r from-sky-500/20 via-blue-600/15 to-transparent text-white border-l-2 border-sky-400 font-semibold shadow-sm'
+                        : 'text-slate-400 hover:bg-[#0b1324]/70 hover:text-slate-200'
                     } ${isCollapsed ? 'justify-center px-0' : ''}`}
                     title={isCollapsed ? item.label : undefined}
                   >
-                    <Icon size={16} className={isActive ? 'text-indigo-400' : 'text-zinc-400'} />
+                    <Icon size={16} className={isActive ? 'text-sky-400' : 'text-slate-400'} />
                     {!isCollapsed && <span className="truncate flex-1 text-left">{item.label}</span>}
                     {!isCollapsed && item.badge !== undefined && (
-                      <span className="bg-indigo-500/20 text-indigo-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-indigo-500/30">
+                      <span className="bg-sky-500/20 text-sky-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-sky-500/30">
                         {item.badge}
                       </span>
                     )}
@@ -386,21 +388,21 @@ export default function Sidebar({
         </div>
 
         {/* User Footer & Logout */}
-        <div className="p-3 border-t border-[#1e2238] bg-[#0d0f17]">
+        <div className="p-3 border-t border-slate-800/80 bg-[#05090f]">
           {!isCollapsed ? (
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 truncate">
-                <div className="w-7 h-7 rounded-full bg-indigo-600/30 border border-indigo-500/50 flex items-center justify-center text-indigo-300 font-bold text-xs shrink-0">
-                  {user?.name ? user.name[0].toUpperCase() : 'A'}
+              <div className="flex items-center gap-2.5 truncate">
+                <div className="w-8 h-8 rounded-full bg-sky-500/20 border border-sky-500/40 flex items-center justify-center text-sky-300 font-bold text-xs shrink-0">
+                  {user?.name ? user.name[0].toUpperCase() : 'K'}
                 </div>
                 <div className="flex flex-col truncate">
-                  <span className="text-xs font-bold text-white truncate">{user?.name || 'Super Admin'}</span>
-                  <span className="text-[10px] text-zinc-400 truncate">{user?.email || 'Kenzo@gmail.com'}</span>
+                  <span className="text-xs font-bold text-white truncate">{user?.name || 'Administrator'}</span>
+                  <span className="text-[10px] text-slate-400 truncate">{user?.email || 'admin@kenzo.com'}</span>
                 </div>
               </div>
               <button
                 onClick={onLogout}
-                className="p-1.5 text-zinc-400 hover:text-red-400 hover:bg-zinc-800/80 rounded-lg transition-colors"
+                className="p-2 text-slate-400 hover:text-red-400 hover:bg-slate-800/60 rounded-xl transition-colors cursor-pointer"
                 title="Sign out"
               >
                 <LogOut size={15} />
@@ -409,7 +411,7 @@ export default function Sidebar({
           ) : (
             <button
               onClick={onLogout}
-              className="w-full flex items-center justify-center p-2 text-zinc-400 hover:text-red-400 transition-colors"
+              className="w-full flex items-center justify-center p-2 text-slate-400 hover:text-red-400 transition-colors"
               title="Sign out"
             >
               <LogOut size={16} />

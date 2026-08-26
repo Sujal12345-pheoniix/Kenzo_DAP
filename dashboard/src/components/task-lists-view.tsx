@@ -173,100 +173,119 @@ export default function TaskListsView({ projectId, headers }: GuidanceModuleProp
   };
 
   return (
-    <div className="relative">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-            <CheckSquare size={18} className="text-white" />
+    <div className="space-y-8 select-none relative text-left w-full">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
+        <div className="flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-2xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-center text-sky-400 shadow-lg shadow-sky-500/10">
+            <CheckSquare size={20} className="text-sky-400" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-slate-900">Task Lists</h2>
-            <p className="text-xs text-zinc-500">Onboarding checklists and guided workflows</p>
+            <h2 className="text-xl font-bold font-syne text-white tracking-tight">Onboarding Checklists & Task Lists</h2>
+            <p className="text-xs text-slate-400 mt-0.5">Interactive guided progress checklists and feature adoption workflows</p>
           </div>
         </div>
-        <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-sm font-semibold rounded-xl transition-all">
-          <Plus size={16} /> New Task List
-        </button>
+        
+        <div className="flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#0b1324] border border-slate-800 text-xs text-slate-400 font-medium">
+            <span>Total Checklists:</span>
+            <span className="font-bold text-sky-400">{lists.length}</span>
+          </div>
+          <button 
+            onClick={openCreate} 
+            className="kenzo-glow-btn text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+          >
+            <Plus size={15} />
+            <span>New Task List</span>
+          </button>
+        </div>
       </div>
 
       {loading ? (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-[#11131f] border border-[#1e2238] rounded-2xl p-5 animate-pulse space-y-3">
-              <div className="h-4 bg-[#1e2238] rounded w-1/3" />
-              <div className="h-3 bg-[#1e2238] rounded w-1/2" />
-              <div className="h-1.5 bg-[#1e2238] rounded-full w-full" />
+            <div key={i} className="kenzo-glass-card rounded-2xl p-6 animate-pulse space-y-3">
+              <div className="h-4 bg-slate-800 rounded w-1/3" />
+              <div className="h-3 bg-slate-800 rounded w-1/2" />
+              <div className="h-2 bg-slate-800 rounded-full w-full" />
             </div>
           ))}
         </div>
       ) : lists.length === 0 ? (
-        <div className="bg-[#11131f] border border-[#1e2238] rounded-2xl p-20 text-center">
-          <CheckSquare size={48} className="text-zinc-700 mx-auto mb-4" />
-          <p className="text-zinc-500 font-medium mb-4">No task lists created</p>
-          <button onClick={openCreate} className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition-all">Create your first checklist</button>
+        <div className="kenzo-glass-card rounded-3xl p-16 text-center shadow-2xl">
+          <div className="w-16 h-16 rounded-2xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-center text-sky-400 mx-auto mb-4">
+            <CheckSquare size={32} className="animate-pulse" />
+          </div>
+          <h3 className="text-base font-bold font-syne text-white">No Task Lists Configured</h3>
+          <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1 mb-5">
+            Create an onboarding checklist to guide new users through critical milestones.
+          </p>
+          <button onClick={openCreate} className="kenzo-glow-btn px-5 py-2.5 text-white text-xs font-bold rounded-xl transition-all cursor-pointer">
+            Create First Checklist
+          </button>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {lists.map(list => (
             <motion.div
               key={list.id}
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-[#11131f] border border-[#1e2238] rounded-2xl overflow-hidden hover:border-[#2a2f4c] transition-all"
+              className="kenzo-glass-card rounded-3xl overflow-hidden hover:border-sky-500/40 transition-all shadow-xl"
             >
               <div
-                className="flex items-center justify-between px-5 py-4 cursor-pointer"
+                className="flex items-center justify-between px-6 py-5 cursor-pointer"
                 onClick={() => setExpandedId(prev => prev === list.id ? null : list.id)}
               >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-semibold text-white text-sm">{list.title}</h3>
-                    <span className="text-xs text-zinc-400 bg-[#0d0f17] border border-[#2a2f4c] px-2 py-0.5 rounded-full font-medium">
-                      {list.items?.length ?? 0} tasks
-                    </span>
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center gap-1">
-                      <CheckCircle size={11} />
-                      {list.completed_count ?? 0} users completed
-                    </span>
+                <div className="flex items-center gap-4 flex-1 min-w-0">
+                  <div className="w-10 h-10 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 shrink-0">
+                    <Target size={18} />
                   </div>
-                  <p className="text-xs text-zinc-500 mt-0.5">{list.name}</p>
-                  <CompletionBar total={list.items?.length ?? 0} label="Task count" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <h3 className="font-bold text-white text-sm font-syne truncate">{list.title}</h3>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-sky-500/10 border border-sky-500/20 text-[10px] font-mono text-sky-300">
+                        {list.url_rules?.[0]?.pattern || '*'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-0.5">{list.name}</p>
+                    <CompletionBar total={list.items?.length ?? 0} label="Milestones" />
+                  </div>
                 </div>
+
                 <div className="flex items-center gap-2 ml-4">
-                  <button onClick={e => { e.stopPropagation(); openEdit(list); }} className="p-1.5 rounded-lg hover:bg-indigo-500/20 text-zinc-400 hover:text-indigo-400 transition-colors"><Edit size={14} /></button>
-                  <button onClick={e => { e.stopPropagation(); setDeleteTarget(list); }} className="p-1.5 rounded-lg hover:bg-red-500/20 text-zinc-400 hover:text-red-400 transition-colors"><Trash2 size={14} /></button>
-                  {expandedId === list.id ? <ChevronUp size={16} className="text-zinc-500" /> : <ChevronDown size={16} className="text-zinc-500" />}
+                  <button onClick={e => { e.stopPropagation(); openEdit(list); }} className="p-2 rounded-xl hover:bg-sky-500/20 text-slate-400 hover:text-sky-300 transition-colors cursor-pointer">
+                    <Edit size={14} />
+                  </button>
+                  <button onClick={e => { e.stopPropagation(); setDeleteTarget(list); }} className="p-2 rounded-xl hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors cursor-pointer">
+                    <Trash2 size={14} />
+                  </button>
+                  <div className="p-2 text-slate-400">
+                    {expandedId === list.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  </div>
                 </div>
               </div>
 
-              <AnimatePresence>
-                {expandedId === list.id && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                    className="overflow-hidden border-t border-[#1e2238]"
-                  >
-                    <div className="px-5 py-4 space-y-2">
-                      {(list.items ?? []).map((item, idx) => (
-                        <div key={idx} className="flex items-start gap-3 p-3 bg-[#0d0f17] rounded-xl border border-[#2a2f4c]">
-                          <div className="w-5 h-5 rounded-full border-2 border-[#2a2f4c] flex-shrink-0 mt-0.5 flex items-center justify-center">
-                            <span className="text-[10px] text-zinc-500">{idx + 1}</span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-white">{item.title}</p>
-                            {item.description && <p className="text-xs text-zinc-500 mt-0.5">{item.description}</p>}
-                            {item.completion_trigger && (
-                              <div className="flex items-center gap-1.5 mt-1.5">
-                                <Target size={11} className="text-indigo-400" />
-                                <span className="text-xs text-indigo-400">{item.completion_trigger}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+              {expandedId === list.id && (
+                <div className="border-t border-slate-800/80 px-6 py-4 bg-[#070d18]/60 space-y-2.5">
+                  {(list.items ?? []).map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-3 p-3 bg-[#0b1324] border border-slate-800 rounded-2xl">
+                      <div className="w-5 h-5 rounded-full bg-sky-500/20 text-sky-400 flex items-center justify-center text-[10px] font-bold shrink-0">
+                        {idx + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-slate-200">{item.title}</p>
+                        {item.description && <p className="text-[11px] text-slate-400 mt-0.5">{item.description}</p>}
+                      </div>
+                      {item.completion_trigger && (
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-lg bg-[#070d18] border border-slate-800 text-sky-300">
+                          {item.completion_trigger}
+                        </span>
+                      )}
                     </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                  ))}
+                </div>
+              )}
             </motion.div>
           ))}
         </div>
@@ -276,29 +295,28 @@ export default function TaskListsView({ projectId, headers }: GuidanceModuleProp
       <AnimatePresence>
         {panelOpen && (
           <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" onClick={closePanel} />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/75 backdrop-blur-sm z-40" onClick={closePanel} />
             <motion.div
               initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 280 }}
-              className="fixed right-0 top-0 h-full w-full max-w-lg bg-[#11131f] border-l border-[#1e2238] z-50 flex flex-col shadow-2xl"
+              className="fixed right-0 top-0 h-full w-full max-w-lg bg-[#070d18] border-l border-slate-800 z-50 flex flex-col shadow-2xl"
             >
-              <div className="flex items-center justify-between px-6 py-4 border-b border-[#1e2238]">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-[#0b1324]">
                 <div>
-                  <h3 className="text-base font-bold text-white">{editing ? 'Edit Task List' : 'New Task List'}</h3>
-                  <p className="text-xs text-zinc-500 mt-0.5">Configure checklist and add task items</p>
+                  <h3 className="text-base font-bold font-syne text-white">{editing ? 'Edit Task List' : 'New Task List'}</h3>
+                  <p className="text-xs text-slate-400 mt-0.5">Configure onboarding steps and completion triggers</p>
                 </div>
-                <button onClick={closePanel} className="p-2 rounded-lg hover:bg-[#181b2e] text-zinc-400 hover:text-white transition-colors"><X size={18} /></button>
+                <button onClick={closePanel} className="p-2 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"><X size={18} /></button>
               </div>
 
               <div className="flex-1 overflow-y-auto p-6 space-y-5">
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-400 mb-1.5">Internal Name <span className="text-red-400">*</span></label>
-                  <input type="text" value={form.name ?? ''} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. new-user-onboarding" className="w-full bg-[#181b2e] border border-[#2a2f4c] rounded-xl px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none focus:border-indigo-500 transition-colors" />
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Internal Name <span className="text-sky-400">*</span></label>
+                  <input type="text" value={form.name ?? ''} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. core-onboarding-checklist" className="w-full bg-[#0b1324] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors" />
                 </div>
 
-                {/* Target Route / Page URL */}
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-400 mb-1.5">Target Route / Page URL <span className="text-red-400">*</span></label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Target Route / Page URL <span className="text-sky-400">*</span></label>
                   <div className="space-y-2">
                     <select
                       value={COMMON_ROUTES.some(r => r.pattern === targetRoutePattern) ? targetRoutePattern : 'custom'}
@@ -307,62 +325,62 @@ export default function TaskListsView({ projectId, headers }: GuidanceModuleProp
                           setTargetRoutePattern(e.target.value);
                         }
                       }}
-                      className="w-full bg-[#181b2e] border border-[#2a2f4c] rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-indigo-500 transition-colors"
+                      className="w-full bg-[#0b1324] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none transition-colors"
                     >
                       {COMMON_ROUTES.map(r => (
-                        <option key={r.pattern} value={r.pattern}>{r.label}</option>
+                        <option key={r.pattern} value={r.pattern} className="bg-[#0b1324] text-white">{r.label}</option>
                       ))}
-                      <option value="custom">Custom URL Pattern...</option>
+                      <option value="custom" className="bg-[#0b1324] text-white">Custom URL Pattern...</option>
                     </select>
                     <input
                       type="text"
                       value={targetRoutePattern}
                       onChange={e => setTargetRoutePattern(e.target.value)}
                       placeholder="e.g. /dashboard or /dashboard/projects"
-                      className="w-full bg-[#181b2e] border border-[#2a2f4c] rounded-xl px-3 py-2 text-xs font-mono text-indigo-300 placeholder-zinc-600 outline-none focus:border-indigo-500"
+                      className="w-full bg-[#070d18] border border-slate-800 focus:border-sky-400 rounded-xl px-3.5 py-2 text-xs font-mono text-sky-300 placeholder-slate-500 outline-none"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-400 mb-1.5">Display Title <span className="text-red-400">*</span></label>
-                  <input type="text" value={form.title ?? ''} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Get Started with Kenzo" className="w-full bg-[#181b2e] border border-[#2a2f4c] rounded-xl px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none focus:border-indigo-500 transition-colors" />
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Display Title <span className="text-sky-400">*</span></label>
+                  <input type="text" value={form.title ?? ''} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Get Started with Kenzo Platform" className="w-full bg-[#0b1324] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-colors" />
                 </div>
 
                 {/* Tasks */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <label className="text-xs font-semibold text-zinc-400">Task Items ({form.items?.length ?? 0})</label>
-                    <button onClick={addItem} className="flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 transition-colors font-medium">
+                    <label className="text-xs font-semibold text-slate-300">Task Items ({form.items?.length ?? 0})</label>
+                    <button onClick={addItem} className="flex items-center gap-1.5 text-xs text-sky-400 hover:text-sky-300 transition-colors font-semibold cursor-pointer">
                       <Plus size={13} /> Add Task
                     </button>
                   </div>
 
                   <div className="space-y-3">
                     {(form.items ?? []).map((item, idx) => (
-                      <div key={idx} className="bg-[#0d0f17] border border-[#2a2f4c] rounded-xl p-4 space-y-3">
+                      <div key={idx} className="bg-[#0b1324] border border-slate-800 rounded-2xl p-4 space-y-2.5">
                         <div className="flex items-center gap-2 mb-2">
-                          <GripVertical size={14} className="text-zinc-600" />
-                          <span className="text-xs font-semibold text-zinc-500">Task {idx + 1}</span>
+                          <GripVertical size={14} className="text-slate-500" />
+                          <span className="text-xs font-bold text-sky-400 font-syne">Milestone {idx + 1}</span>
                           <div className="flex gap-1 ml-auto">
-                            <button onClick={() => moveItem(idx, 'up')} disabled={idx === 0} className="p-1 rounded text-zinc-600 hover:text-zinc-400 disabled:opacity-30 transition-colors"><ChevronUp size={13} /></button>
-                            <button onClick={() => moveItem(idx, 'down')} disabled={idx === (form.items?.length ?? 0) - 1} className="p-1 rounded text-zinc-600 hover:text-zinc-400 disabled:opacity-30 transition-colors"><ChevronDown size={13} /></button>
-                            <button onClick={() => removeItem(idx)} className="p-1 rounded hover:bg-red-500/20 text-zinc-500 hover:text-red-400 transition-colors"><X size={13} /></button>
+                            <button onClick={() => moveItem(idx, 'up')} disabled={idx === 0} className="p-1 rounded text-slate-400 hover:text-white disabled:opacity-30 transition-colors"><ChevronUp size={13} /></button>
+                            <button onClick={() => moveItem(idx, 'down')} disabled={idx === (form.items?.length ?? 0) - 1} className="p-1 rounded text-slate-400 hover:text-white disabled:opacity-30 transition-colors"><ChevronDown size={13} /></button>
+                            <button onClick={() => removeItem(idx)} className="p-1 rounded hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors"><X size={13} /></button>
                           </div>
                         </div>
-                        <input type="text" value={item.title} onChange={e => updateItem(idx, 'title', e.target.value)} placeholder="Task title..." className="w-full bg-[#181b2e] border border-[#2a2f4c] rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 outline-none focus:border-indigo-500 transition-colors" />
-                        <input type="text" value={item.description} onChange={e => updateItem(idx, 'description', e.target.value)} placeholder="Description (optional)..." className="w-full bg-[#181b2e] border border-[#2a2f4c] rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 outline-none focus:border-indigo-500 transition-colors" />
-                        <input type="text" value={item.completion_trigger} onChange={e => updateItem(idx, 'completion_trigger', e.target.value)} placeholder="Completion trigger (e.g. button.clicked)..." className="w-full bg-[#181b2e] border border-[#2a2f4c] rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 outline-none focus:border-indigo-500 transition-colors" />
+                        <input type="text" value={item.title} onChange={e => updateItem(idx, 'title', e.target.value)} placeholder="Task title..." className="w-full bg-[#070d18] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 outline-none transition-colors" />
+                        <input type="text" value={item.description} onChange={e => updateItem(idx, 'description', e.target.value)} placeholder="Description (optional)..." className="w-full bg-[#070d18] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 outline-none transition-colors" />
+                        <input type="text" value={item.completion_trigger} onChange={e => updateItem(idx, 'completion_trigger', e.target.value)} placeholder="Completion trigger (e.g. button.clicked)..." className="w-full bg-[#070d18] border border-slate-700/80 focus:border-sky-400 rounded-xl px-3 py-2 text-xs font-mono text-sky-300 placeholder-slate-500 outline-none transition-colors" />
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
 
-              <div className="px-6 py-4 border-t border-[#1e2238] flex gap-3">
-                <button onClick={closePanel} className="flex-1 py-2.5 rounded-xl border border-[#2a2f4c] text-sm font-semibold text-zinc-400 hover:bg-[#181b2e] transition-colors">Cancel</button>
-                <button onClick={handleSave} disabled={saving} className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-sm font-semibold transition-all flex items-center justify-center gap-2 disabled:opacity-60">
-                  {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
+              <div className="px-6 py-4 border-t border-slate-800 bg-[#0b1324] flex gap-3">
+                <button onClick={closePanel} className="flex-1 py-2.5 rounded-xl border border-slate-700 text-xs font-semibold text-slate-300 hover:bg-slate-800 transition-colors cursor-pointer">Cancel</button>
+                <button onClick={handleSave} disabled={saving} className="flex-1 py-2.5 rounded-xl kenzo-glow-btn text-white text-xs font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer">
+                  {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
                   {saving ? 'Saving...' : 'Save Task List'}
                 </button>
               </div>
@@ -374,17 +392,17 @@ export default function TaskListsView({ projectId, headers }: GuidanceModuleProp
       {/* Delete Modal */}
       <AnimatePresence>
         {deleteTarget && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-[#11131f] border border-[#1e2238] rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-[#0b1324] border border-slate-800 rounded-3xl p-6 w-full max-w-sm shadow-2xl">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center"><AlertCircle size={20} className="text-red-400" /></div>
-                <div><h4 className="font-bold text-white">Delete Task List</h4><p className="text-xs text-zinc-500 mt-0.5">This action cannot be undone</p></div>
+                <div className="w-10 h-10 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center"><AlertCircle size={20} className="text-red-400" /></div>
+                <div><h4 className="font-bold font-syne text-white">Delete Task List</h4><p className="text-xs text-slate-400 mt-0.5">This action cannot be undone</p></div>
               </div>
-              <p className="text-sm text-zinc-400 mb-5">Delete <span className="font-semibold text-white">"{deleteTarget.title}"</span>?</p>
+              <p className="text-xs text-slate-300 mb-5 leading-relaxed">Are you sure you want to delete <span className="font-semibold text-white">"{deleteTarget.title}"</span>?</p>
               <div className="flex gap-3">
-                <button onClick={() => setDeleteTarget(null)} className="flex-1 py-2.5 rounded-xl border border-[#2a2f4c] text-sm font-semibold text-zinc-400 hover:bg-[#181b2e] transition-colors">Cancel</button>
-                <button onClick={handleDelete} disabled={deleting} className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-60">
-                  {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                <button onClick={() => setDeleteTarget(null)} className="flex-1 py-2.5 rounded-xl border border-slate-700 text-xs font-semibold text-slate-300 hover:bg-slate-800 transition-colors cursor-pointer">Cancel</button>
+                <button onClick={handleDelete} disabled={deleting} className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition-colors flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer">
+                  {deleting ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
                   {deleting ? 'Deleting...' : 'Delete'}
                 </button>
               </div>
@@ -398,9 +416,9 @@ export default function TaskListsView({ projectId, headers }: GuidanceModuleProp
         <AnimatePresence>
           {toasts.map(toast => (
             <motion.div key={toast.id} initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl border shadow-xl pointer-events-auto ${toast.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-red-500/10 border-red-500/30 text-red-400'}`}>
-              {toast.type === 'success' ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
-              <span className="text-sm font-medium">{toast.message}</span>
+              className={`flex items-center gap-3 px-4 py-3 rounded-2xl border shadow-xl pointer-events-auto backdrop-blur-md ${toast.type === 'success' ? 'bg-[#0b1324]/95 border-emerald-500/40 text-emerald-300' : 'bg-[#0b1324]/95 border-red-500/40 text-red-300'}`}>
+              {toast.type === 'success' ? <CheckCircle size={16} className="text-emerald-400" /> : <AlertCircle size={16} className="text-red-400" />}
+              <span className="text-xs font-medium">{toast.message}</span>
             </motion.div>
           ))}
         </AnimatePresence>
